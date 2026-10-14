@@ -168,3 +168,29 @@ metric/eval.py	评估脚本（准确率 / 召回率 / 响应质量等）
 ├── 数据评估/                 # 数据评估相关
 ├── docker-compose.yml
 └── README.md
+
+---
+
+## 十一、提交规范
+
+提交信息采用 `类型: 简述` 的格式，类型取值如下：
+
+| 类型 | 含义 |
+|:---|:---|
+| `feat` | 新增功能 |
+| `fix` | 修复缺陷 |
+| `docs` | 仅文档改动 |
+| `refactor` | 重构（不改变外部行为） |
+| `chore` | 构建 / 依赖 / 配置等杂项 |
+
+示例：
+
+```bash
+git commit -m "feat: 新增 Agent 工具调用重试逻辑"
+git commit -m "fix: 修复 RAG 检索返回空结果的问题"
+```
+
+注意事项：
+
+- `backend/data/` 与 `backend/chroma_db/` 下包含较大的二进制文件，改动前请确认是否确实需要入库。
+- `.env` 已在 `.gitignore` 中忽略，请勿将真实 API Key 写入代码或提交到仓库。
