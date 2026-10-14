@@ -9,7 +9,8 @@ DATA_PATH = PROJECT_DIR.parent / "data" / "Online Retail.xlsx"
 OUTPUT_DIR = PROJECT_DIR / "output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-load_dotenv(PROJECT_DIR.parent.parent / ".env")
+# override=True：项目 .env 优先于系统环境变量，避免被外部遗留的同名变量覆盖
+load_dotenv(PROJECT_DIR.parent.parent / ".env", override=True)
 def get_llm(temperature: float = 0):
     api_key = os.getenv("DEEPSEEK_API_KEY")
     if not api_key:
