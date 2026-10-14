@@ -1,12 +1,34 @@
 # rag/chain.py
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# 从本文件所在目录逐级向上查找 .env，同时兼容两种放置方式：
+#   项目根目录/.env（本机现状）与 backend/.env（README 第 4 节的写法）。
+_env_file = next(
+    (p / ".env" for p in Path(__file__).resolve().parents if (p / ".env").is_file()),
+    None,
+)
+# override=True：项目 .env 优先于系统环境变量。
+# 原因：本机系统环境变量里的 DEEPSEEK_API_KEY 是缺了 sk- 前缀的坏值（实测 401），
+# 而 .env 里是有效值（实测 200）。不加 override 就改不动，读到的仍是坏值。
+if _env_file is not None:
+    load_dotenv(_env_file, override=True)
+
 
 def get_llm():
     from langchain_openai import ChatOpenAI
     import httpx
+    api_key = os.environ.get("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "未找到 DEEPSEEK_API_KEY。请在项目根目录或 backend/ 下创建 .env 并写入："
+            "DEEPSEEK_API_KEY=sk-xxxxxxxx"
+        )
     http_client = httpx.Client(trust_env=False, timeout=35)
     llm = ChatOpenAI(
-        api_key=os.environ["DEEPSEEK_API_KEY"],
+        api_key=api_key,
         base_url="https://api.deepseek.com/v1",
         model="deepseek-chat",
         http_client=http_client,
