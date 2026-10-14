@@ -1,0 +1,53 @@
+.chat-container{
+  max-width:700px;
+  margin:40px auto;
+  padding: 20px;
+}
+.chat-box{
+  height: 500px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding:15px;
+  overflow-y:auto;
+  margin-bottom: 20px;
+}
+.user{
+  background-color:#007bff;
+  color:white;
+  padding:10px 14px;
+  border-radius:12px;
+  margin:8px 0 8px auto;
+  max-width:70%;
+}
+.ai{
+  background-color:#eeeeee;
+  color:#222;
+  padding:10px 14px;
+  border-radius:12px;
+  margin:8px 0;
+  max-width:70%;
+}
+.input-area{
+  display:flex;
+  gap:10px;
+}
+input{
+  flex: 1;
+  padding:12px;
+  font-size:16px;
+  border-radius: 6px;
+  border:1px solid #ccc;
+}
+button{
+  padding:12px 24px;
+  background:#007bff;
+  border:none;
+  color:white;
+  border-radius: 6px;
+  cursor:pointer;
+}
+
+.markdown-body {
+  white-space: pre-wrap; /* 强制保留换行符 */
+  word-break: break-word; /* 遇到长链接或长单词自动折行 */
+}
