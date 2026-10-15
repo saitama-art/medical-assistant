@@ -1,0 +1,344 @@
+"""主 Agent Step 4（router / session / orchestrator / /agent/chat）的测试。
+
+用标准库 unittest，不引入 pytest 等额外依赖。全部用例不依赖网络：
+LLM 用假实现注入，检索 monkeypatch 掉 service.retrieve_with_scores。
+在 backend/ 目录下运行：
+
+    python -m unittest discover -s tests -p "test_*.py" -v
+"""
+
+from __future__ import annotations
+
+import uuid
+import unittest
+from unittest.mock import patch
+
+from app.medical_agent import orchestrator, respond, router, session
+from app.medical_agent.state import (
+    ContextStatus,
+    EmergencyLevel,
+    QuestionCategory,
+    RetrievedChunk,
+    RetrievalOutcome,
+    RetrievalResult,
+    Route,
+    TerminationReason,
+)
+from app.rag import service
+
+
+class _FakeMessage:
+    def __init__(self, content: str):
+        self.content = content
+
+
+class FakeLLM:
+    """按 Prompt 角色分发的假 LLM：分类 / 判定 / 生成各返回固定内容。
+
+    用法：FakeLLM(classify={...}, judge={...}, answer="...")，
+    或 raise_on_invoke=True 用于断言"该路径根本不应调用 LLM"。
+    """
+
+    def __init__(self, *, classify=None, judge=None, answer="生成回答正文。", raise_on_invoke=False):
+        self.classify = classify
+        self.judge = judge
+        self.answer = answer
+        self.raise_on_invoke = raise_on_invoke
+        self.calls = 0
+
+    def invoke(self, messages):
+        self.calls += 1
+        if self.raise_on_invoke:
+            raise AssertionError("该路径不应调用 LLM")
+        system = ""
+        for m in messages:
+            role = getattr(m, "type", "")
+            if role == "system":
+                system = getattr(m, "content", "") or ""
+        import json
+
+        if "意图分类器" in system:
+            return _FakeMessage(json.dumps(self.classify, ensure_ascii=False))
+        if "证据充分性判定器" in system:
+            return _FakeMessage(json.dumps(self.judge, ensure_ascii=False))
+        return _FakeMessage(self.answer)
+
+
+def _chunk(text: str) -> RetrievedChunk:
+    return RetrievedChunk(
+        content=text,
+        document=r"F:\project_my\backend\data\国药准字H20184130_盐酸二甲双胍片.pdf",
+        page=1,
+        distance=0.5,
+    )
+
+
+def _fresh_session() -> str:
+    return f"test-{uuid.uuid4().hex[:12]}"
+
+
+# ==================== router ====================
+
+
+class TestRouter(unittest.TestCase):
+    def test_greeting_short_circuit(self):
+        for text in ["你好", "您好！", "在吗", "hello", "早上好"]:
+            self.assertTrue(router.is_greeting(text), text)
+        self.assertFalse(router.is_greeting("你好，二甲双胍怎么用"))
+        self.assertFalse(router.is_greeting("二甲双胍的适应症"))
+
+    def test_route_table_priorities(self):
+        none = EmergencyLevel.NONE
+        # 1. 强紧急优先于一切
+        self.assertIs(
+            router.decide_route(QuestionCategory.KNOWLEDGE, EmergencyLevel.STRONG,
+                                ContextStatus.OK, "x"), Route.EMERGENCY)
+        # 2. 上下文缺失 + 指代 → 要求重述
+        self.assertIs(
+            router.decide_route(QuestionCategory.KNOWLEDGE, none,
+                                ContextStatus.MISSING, "那它的副作用呢"), Route.CONTEXT_MISSING)
+        # 2b. 上下文缺失但无指代 → 正常按类别走
+        self.assertIs(
+            router.decide_route(QuestionCategory.KNOWLEDGE, none,
+                                ContextStatus.MISSING, "二甲双胍的适应症"), Route.KNOWLEDGE)
+        # 3~6. 类别映射
+        self.assertIs(router.decide_route(QuestionCategory.CHITCHAT, none, ContextStatus.OK, "x"), Route.CHITCHAT)
+        self.assertIs(router.decide_route(QuestionCategory.UNCLASSIFIABLE, none, ContextStatus.OK, "x"), Route.UNCLASSIFIABLE)
+        self.assertIs(router.decide_route(None, none, ContextStatus.OK, "x"), Route.UNCLASSIFIABLE)
+        self.assertIs(router.decide_route(QuestionCategory.TRIAGE, none, ContextStatus.OK, "x"), Route.TRIAGE)
+        self.assertIs(router.decide_route(QuestionCategory.KNOWLEDGE, none, ContextStatus.OK, "x"), Route.KNOWLEDGE)
+
+    def test_classify_failure_goes_unclassifiable(self):
+        class _Boom:
+            def invoke(self, messages):
+                raise RuntimeError("network down")
+
+        cat, conf = router.classify("whatever", llm=_Boom())
+        self.assertIs(cat, QuestionCategory.UNCLASSIFIABLE)
+        self.assertEqual(conf, 0.0)
+
+
+# ==================== session ====================
+
+
+class TestSession(unittest.TestCase):
+    def test_roundtrip_and_turn_count(self):
+        sid = _fresh_session()
+        got, history, status = session.acquire(sid)
+        self.assertTrue(got)
+        self.assertEqual(history, [])
+        self.assertIs(status, ContextStatus.NOT_NEEDED)
+        session.complete(sid, "q1", "a1", got_lock=got)
+        got, history, status = session.acquire(sid)
+        self.assertEqual(history, [("user", "q1"), ("assistant", "a1")])
+        self.assertIs(status, ContextStatus.OK)
+        session.complete(sid, "q2", "a2", got_lock=got)
+
+    def test_truncation_marks_missing(self):
+        sid = _fresh_session()
+        got, _, _ = session.acquire(sid)
+        # 写满 10 条（5 轮）后再写一轮 ⇒ 最早一轮被挤出 ⇒ truncated
+        for i in range(session.MAX_CONTEXT_TURNS + 1):
+            session.complete(sid, f"q{i}", f"a{i}", got_lock=got)
+            got, _, status = session.acquire(sid)
+        self.assertIs(status, ContextStatus.MISSING)
+
+    def test_degraded_without_lock_keeps_history_intact(self):
+        sid = _fresh_session()
+        session.complete(sid, "q1", "a1", got_lock=True)
+        # got_lock=False（锁超时降级）不写历史、不释放别人的锁
+        session.complete(sid, "qX", "aX", got_lock=False)
+        got, history, _ = session.acquire(sid)
+        self.assertEqual(history, [("user", "q1"), ("assistant", "a1")])
+        session.complete(sid, "q2", "a2", got_lock=got)
+
+
+# ==================== orchestrator ====================
+
+
+def _run(state_holder, question, fake_llm, retrieval_result, side_effect=None):
+    """跑一遍 run_agent，LLM 与检索全部替换。"""
+    calls = {"retrieval": 0}
+
+    def fake_retrieve(question, k=service.DEFAULT_TOP_K):
+        calls["retrieval"] += 1
+        if side_effect:
+            return side_effect(question, k)
+        return retrieval_result
+
+    with patch.object(orchestrator, "get_llm", lambda timeout=35: fake_llm), \
+         patch.object(service, "retrieve_with_scores", fake_retrieve):
+        state = orchestrator.run_agent(state_holder, question)
+    return state, calls
+
+
+class TestOrchestratorN00(unittest.TestCase):
+    def test_missing_params_rejected_before_orch(self):
+        with self.assertRaises(orchestrator.AgentRequestError):
+            orchestrator.run_agent("", "你好")
+        with self.assertRaises(orchestrator.AgentRequestError):
+            orchestrator.run_agent("s1", "   ")
+
+
+class TestOrchestratorEmergency(unittest.TestCase):
+    def test_strong_emergency_terminates_without_llm(self):
+        llm = FakeLLM(raise_on_invoke=True)
+        state, calls = _run(_fresh_session(), "我突然胸痛，呼吸困难怎么办", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.EMERGENCY_HANDLED)
+        self.assertEqual(llm.calls, 0)
+        self.assertEqual(calls["retrieval"], 0)
+        self.assertEqual(state.tool_calls, [])
+        # 文案 = 紧急应答 + 免责声明；不含病因判断/用药建议
+        self.assertIn(respond.EMERGENCY_ANSWER, state.answer_text)
+        self.assertIn(respond.DISCLAIMER, state.answer_text)
+
+    def test_emergency_across_turns_second_pass(self):
+        # 原文不含急症词，N02 补全后才命中 → N03 第二趟拦截
+        sid = _fresh_session()
+        session.complete(sid, "我胸口疼该怎么办", "……", got_lock=True)
+
+        def fake_retrieve(question, k=service.DEFAULT_TOP_K):
+            raise AssertionError("紧急路径不得调用检索")
+
+        class _ResolveLLM(FakeLLM):
+            def invoke(self, messages):
+                system = "".join(
+                    getattr(m, "content", "") or "" for m in messages
+                    if getattr(m, "type", "") == "system"
+                )
+                if "对话上下文整理器" in system:
+                    return _FakeMessage('{"question": "胸口疼要挂什么科"}')
+                return super().invoke(messages)
+
+        with patch.object(orchestrator, "get_llm", lambda timeout=35: _ResolveLLM(
+                classify={"category": "knowledge", "confidence": 0.9},
+                answer="无关回答")), \
+             patch.object(service, "retrieve_with_scores", fake_retrieve):
+            state = orchestrator.run_agent(sid, "它要挂什么科")
+
+        self.assertIs(state.termination_reason, TerminationReason.EMERGENCY_HANDLED)
+        self.assertEqual(state.emergency.level, EmergencyLevel.STRONG)
+
+
+class TestOrchestratorChitchat(unittest.TestCase):
+    def test_greeting_zero_llm_invocations(self):
+        llm = FakeLLM(raise_on_invoke=True)
+        state, calls = _run(_fresh_session(), "你好", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
+        self.assertEqual(state.answer_text, respond.CHITCHAT_REPLY)
+        self.assertEqual(llm.calls, 0)
+        self.assertEqual(calls["retrieval"], 0)
+
+    def test_unclassifiable_never_retrieves(self):
+        llm = FakeLLM(classify={"category": "unclassifiable", "confidence": 0.2})
+        state, calls = _run(_fresh_session(), "*&^%$#@", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.UNCLASSIFIED)
+        self.assertEqual(calls["retrieval"], 0)
+
+
+class TestOrchestratorKnowledge(unittest.TestCase):
+    def test_completed_path_assembles_sources_without_drive_path(self):
+        chunks = [_chunk("盐酸二甲双胍片适用于2型糖尿病患者。")]
+        retrieval = RetrievalResult(outcome=None, chunks=chunks, distance_metric="l2")
+        llm = FakeLLM(
+            classify={"category": "knowledge", "confidence": 0.95},
+            judge={"answerable": True, "supporting_quote": "适用于2型糖尿病患者"},
+            answer="二甲双胍用于2型糖尿病。",
+        )
+        state, calls = _run(_fresh_session(), "二甲双胍的适应症是什么", llm, retrieval)
+
+        self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
+        self.assertEqual(state.tool_rounds, 1)
+        self.assertEqual(len(state.tool_calls), 1)
+        self.assertEqual(calls["retrieval"], 1)
+        # 来源只含文档名，不含盘符与目录（设计文档 4.1 / T-14⑥）
+        self.assertEqual(len(state.sources), 1)
+        displayed = orchestrator.display_sources(state)
+        self.assertEqual(len(displayed), 1)
+        self.assertNotIn("\\", displayed[0]["document"])
+        self.assertNotIn(":", displayed[0]["document"])
+        self.assertIn("盐酸二甲双胍片.pdf", displayed[0]["document"])
+        self.assertIn("第1页", displayed[0]["document"])  # 状态层页码已是 1 基
+        # 正文 + 来源 + 免责声明
+        self.assertIn("二甲双胍用于2型糖尿病。", state.answer_text)
+        self.assertIn("【参考来源】", state.answer_text)
+        self.assertIn(respond.DISCLAIMER, state.answer_text)
+
+    def test_insufficient_evidence_retries_once_then_gives_up(self):
+        chunks = [_chunk(" unrelated 片段，不含所问内容。")]
+        retrieval = RetrievalResult(outcome=None, chunks=chunks, distance_metric="l2")
+        llm = FakeLLM(
+            classify={"category": "knowledge", "confidence": 0.95},
+            judge={"answerable": False, "supporting_quote": ""},
+        )
+        state, calls = _run(_fresh_session(), "血压的正常范围是多少", llm, retrieval)
+
+        self.assertIs(state.termination_reason, TerminationReason.INSUFFICIENT_EVIDENCE)
+        # 回边恰好 1 次：检索执行 2 轮，之后终止，不进入生成
+        self.assertEqual(state.tool_rounds, 2)
+        self.assertEqual(calls["retrieval"], 2)
+        self.assertEqual(len(state.tool_calls), 2)
+        self.assertEqual(llm.calls, 3)  # 分类 1 + 判定 2，无生成调用
+        self.assertIn(respond.EVIDENCE_INSUFFICIENT, state.answer_text)
+        # 证据不足文案不得拼出来源（T-14① 精神：非完成路径不展示来源）
+        self.assertNotIn("【参考来源】", state.answer_text)
+
+    def test_empty_result_distinct_from_error(self):
+        retrieval = RetrievalResult(outcome=RetrievalOutcome.EMPTY_RESULT)
+        llm = FakeLLM(classify={"category": "knowledge", "confidence": 0.9})
+        state, _ = _run(_fresh_session(), "随便问一句", llm, retrieval)
+        self.assertIs(state.termination_reason, TerminationReason.EMPTY_KNOWLEDGE_BASE)
+        self.assertEqual(state.answer_text, respond.EMPTY_RESULT)
+        self.assertNotEqual(respond.EMPTY_RESULT, respond.RETRIEVAL_ERROR)
+
+    def test_retrieval_error_terminates_without_generation(self):
+        error = RetrievalResult(outcome=RetrievalOutcome.RETRIEVAL_ERROR, error="TimeoutError")
+        llm = FakeLLM(
+            classify={"category": "knowledge", "confidence": 0.9},
+            answer="不应被生成",
+        )
+        state, calls = _run(_fresh_session(), "二甲双胍怎么吃", llm, None, side_effect=lambda q, k: error)
+        self.assertIs(state.termination_reason, TerminationReason.RETRIEVAL_FAILED)
+        self.assertEqual(state.answer_text, respond.RETRIEVAL_ERROR)
+        self.assertNotIn("不应被生成", state.answer_text)
+
+
+class TestOrchestratorContext(unittest.TestCase):
+    def test_context_missing_with_reference_asks_restatement(self):
+        llm = FakeLLM(raise_on_invoke=True)
+        sid = _fresh_session()
+        # 制造 truncated 状态
+        got, _, _ = session.acquire(sid)
+        for i in range(session.MAX_CONTEXT_TURNS + 1):
+            session.complete(sid, f"q{i}", f"a{i}", got_lock=got)
+            got, _, status = session.acquire(sid)
+        self.assertIs(status, ContextStatus.MISSING)
+        session.complete(sid, "q_end", "a_end", got_lock=got)  # 释放会话锁
+
+        state, calls = _run(sid, "那它的副作用呢", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.CONTEXT_MISSING)
+        self.assertEqual(calls["retrieval"], 0)
+        # N04 仍会尝试一次分类（失败归入 unclassifiable），但 N05 优先级 2 覆盖为要求重述
+        self.assertLessEqual(llm.calls, 1)
+
+    def test_triage_route_returns_guidance_without_tool(self):
+        llm = FakeLLM(classify={"category": "triage", "confidence": 0.9})
+        state, calls = _run(_fresh_session(), "我这种情况要不要去医院", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
+        self.assertEqual(state.answer_text, respond.TRIAGE_GUIDANCE)
+        self.assertEqual(calls["retrieval"], 0)
+
+
+class TestTraceIntegrity(unittest.TestCase):
+    def test_every_termination_lands_on_trace(self):
+        llm = FakeLLM(classify={"category": "chitchat", "confidence": 0.9})
+        state, _ = _run(_fresh_session(), "今天天气不错", llm, None)
+        self.assertIsNotNone(state.termination_reason)
+        nodes = [t.node for t in state.trace]
+        self.assertIn("N00", nodes)
+        self.assertEqual(state.trace[-1].node, "N12")
+        self.assertEqual(state.trace[-1].detail["termination"], "completed")
+
+
+if __name__ == "__main__":
+    unittest.main()

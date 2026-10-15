@@ -1,12 +1,64 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import os
 import shutil
 # 从 chain.py 导入正确的函数名：get_vector_store
 from app.rag import get_rag_chain, get_llm, get_vector_store
 
 app = FastAPI(title="医疗知识库问答")
+
+
+@app.on_event("startup")
+def startup_checks():
+    """启动自检（设计文档 Step 4 / 5.6）：
+
+    1. 证据判定能力自检——两段判定都不可用时直接报错，禁止无判定能力地提供服务；
+    2. 向量库/embedding 预热——一次 warm-up 检索，避免首次请求承担模型加载耗时。
+    """
+    from app.rag import service as rag_service
+    from app.rag.chain import get_vector_store
+
+    rag_service.assert_evidence_judge_available()  # 失败即拒绝启动（5.4 fail-safe）
+
+    try:
+        vector_store = get_vector_store()
+        vector_store.similarity_search_with_score("健康", k=1)
+        print("[startup] 向量库预热完成")
+    except Exception as exc:
+        # 预热失败不阻断启动：首个请求会走 RETRIEVAL_ERROR 分支并给出固定文案
+        print(f"[startup] 向量库预热失败（不阻断启动）: {type(exc).__name__}")
+
+
+class AgentChatRequest(BaseModel):
+    session_id: str
+    question: str
+
+
+@app.post("/agent/chat")
+def agent_chat(req: AgentChatRequest):
+    """主 Agent 问答接口（F4 编排链路）。同步端点，FastAPI 会在线程池执行，
+    不阻塞事件循环；原有 /chat/stream、/upload 行为不变。"""
+    from app.medical_agent import orchestrator
+    from app.medical_agent import respond
+
+    try:
+        state = orchestrator.run_agent(req.session_id, req.question)
+    except orchestrator.AgentRequestError:
+        # N00 参数缺失 → 400，不进入编排
+        raise HTTPException(status_code=400, detail=respond.INVALID_ARGS_REPLY)
+    except Exception:
+        # 编排器承诺不抛异常；这里是双保险，不向用户泄露内部信息
+        raise HTTPException(status_code=500, detail=respond.SERVICE_UNAVAILABLE)
+
+    return {
+        "request_id": state.request_id,
+        "answer": state.answer_text,
+        "sources": orchestrator.display_sources(state),
+        "category": state.category.value if state.category else None,
+        "outcome": state.termination_reason.value if state.termination_reason else None,
+    }
 
 # 配置 CORS
 app.add_middleware(
