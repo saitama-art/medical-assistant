@@ -1,0 +1,187 @@
+"""紧急风险识别。
+
+纯规则实现：无 LLM、无 IO、无状态。同一输入必定得到同一结果，可复现、可审计。
+
+规则优先级（自上而下，先命中先返回）：
+
+    1. 未命中急症词                        → NONE   (no_acute_term)
+    2. 命中但全部被否定                     → NONE   (all_negated, hit_negated=True)
+    3. 出现求助主体（第一/第三人称）        → STRONG (help_subject)
+    4. 出现当前急症语境词或求助语           → STRONG (acute_context)
+    5. 出现说明书等元问题标记               → WEAK   (meta_question)
+    6. 其余（裸症状词）                     → BARE_SYMPTOM_LEVEL
+
+第 3、4 条排在元问题标记之前，因此"我吃了这个药突然胸痛"这类既有元问题词又有真实
+急症信号的说法，会按 STRONG 处理，不会被"说明书/这个药"压成 WEAK。
+
+保守性：宁可误拦，不可漏拦。需求 9.3.5 要求"判定不确定但存在风险可能时，按紧急处理"。
+"""
+
+from __future__ import annotations
+
+from .state import EmergencyHit, EmergencyLevel
+
+
+class EmergencyRuleError(RuntimeError):
+    """紧急规则自身异常（词表为空、输入类型非法）。
+
+    调用方（编排器）必须捕获本异常并保守降级为就医提示，
+    不得因为规则不可用就继续常规问答。
+    """
+
+
+# ==================== 词表 ====================
+# 说明：词表为模块级常量。若后续需要纳入配置管理，整体搬移即可，规则逻辑不变。
+
+# 急症词：每组是同一含义的不同表述，命中组内任一即算命中该组。共 8 组。
+ACUTE_TERMS: tuple[tuple[str, ...], ...] = (
+    ("胸痛", "胸口疼", "胸口痛", "心口疼", "心口痛", "胸闷痛", "胸骨后疼", "压榨样痛"),
+    ("呼吸困难", "喘不上气", "喘不过气", "窒息", "呼吸急促", "气促", "憋气"),
+    ("意识障碍", "意识不清", "昏迷", "抽搐", "晕厥", "昏倒", "叫不醒"),
+    ("大出血", "大量出血", "呕血", "咯血", "吐血", "便血", "血便", "止不住血"),
+    ("剧烈头痛", "爆炸样头痛", "头痛得厉害", "头疼得厉害"),
+    ("言语不清", "说话不清楚", "口齿不清", "一侧无力", "半边身子", "口角歪斜", "偏瘫", "面瘫"),
+    ("误服", "吃错药", "吃多了药", "过量服药"),
+    ("高热惊厥",),
+)
+
+# 第一人称：说话人自己正在出现症状。
+FIRST_PERSON: tuple[str, ...] = ("我", "本人", "自己")
+
+# 第三人称求助主体：替家人/他人求助。
+# 刻意不收裸的"他/她"——"阿托伐他汀"里含"他"，会把药品说明书类问题误判为紧急。
+# 这类说法（如"他胸痛怎么办"）会由 HELP_SEEKING 兜住，不会漏。
+THIRD_PERSON_SUBJECTS: tuple[str, ...] = (
+    "我妈", "我爸", "妈妈", "爸爸", "母亲", "父亲", "家长",
+    "孩子", "小孩", "宝宝", "婴儿", "幼儿", "儿子", "女儿",
+    "家人", "家里人", "家属", "老人", "老年人", "爷爷", "奶奶",
+    "姥姥", "姥爷", "外公", "外婆", "老公", "老婆", "妻子", "丈夫",
+    "爱人", "对象", "朋友", "同事", "病人", "患者", "室友", "亲戚",
+)
+
+# 当前急症语境：症状正在发生或正在加重。
+CURRENT_CONTEXT: tuple[str, ...] = (
+    "现在", "此刻", "这会儿", "刚刚", "刚才", "突然", "一直", "正在",
+    "目前", "眼下", "越来越", "加重", "持续", "急诊", "马上", "立刻",
+)
+
+# 求助语：没有主语也能表明是真实求助，而不是在问资料。
+HELP_SEEKING: tuple[str, ...] = (
+    "怎么办", "咋办", "如何是好", "怎么处理", "怎么急救", "救命", "急救",
+    "要不要去医院", "该不该去医院", "要去医院吗", "需要去医院吗", "需要急诊吗",
+    "挂什么科", "挂哪个科", "该挂哪个科", "哪个科",
+    "严重吗", "危险吗", "有危险吗", "会不会有事", "吃什么药",
+)
+
+# 否定词：出现在急症词之前的小窗口内即视为否定。
+NEGATION: tuple[str, ...] = ("不", "没", "无", "未", "别")
+
+# 含否定字但不是否定语义的搭配，避免误判为"没有症状"。
+NEGATION_EXCEPTIONS: tuple[str, ...] = ("不止", "不仅", "不但", "不光是", "不排除")
+
+# 元问题标记：用户是在问资料里怎么写的，不是在描述自身症状。
+META_QUESTION: tuple[str, ...] = (
+    "说明书", "是否提到", "有没有提到", "提到过", "副作用", "不良反应",
+    "禁忌", "适应症", "药理", "成分", "用法用量", "这个药", "这种药",
+)
+
+# 否定词的检测窗口：急症词起点前多少个字符。
+NEGATION_WINDOW = 3
+
+# 只命中症状词、既无求助主体也无急症语境时的等级（可调整档位）。
+BARE_SYMPTOM_LEVEL: EmergencyLevel = EmergencyLevel.WEAK
+
+
+# ==================== 对外接口 ====================
+
+
+def check_emergency(text: str) -> EmergencyHit:
+    """判定一段文本的紧急风险等级。
+
+    Args:
+        text: 用户文本（可以是本轮原始输入，也可以是补全上下文后的问题）。
+
+    Returns:
+        EmergencyHit：等级、命中的规则标识与命中词。level 为 STRONG 时调用方
+        必须直接返回紧急应答并终止流程，不得继续检索或生成。
+
+    Raises:
+        EmergencyRuleError: 词表不可用或 text 类型非法。调用方应保守降级为就医提示。
+    """
+    _validate_tables()
+    normalized = _normalize(text)
+    if not normalized:
+        return EmergencyHit(level=EmergencyLevel.NONE, rule_id="empty_input")
+
+    hit_terms = [term for term in _iter_terms() if term in normalized]
+    if not hit_terms:
+        return EmergencyHit(level=EmergencyLevel.NONE, rule_id="no_acute_term")
+
+    active, negated = _split_by_negation(normalized, hit_terms)
+    if not active:
+        return EmergencyHit(
+            level=EmergencyLevel.NONE,
+            rule_id="all_negated",
+            terms=tuple(negated),
+            hit_negated=True,
+        )
+
+    terms = tuple(active)
+    has_negated = bool(negated)
+
+    if _contains_any(normalized, FIRST_PERSON) or _contains_any(normalized, THIRD_PERSON_SUBJECTS):
+        return EmergencyHit(EmergencyLevel.STRONG, "help_subject", terms, has_negated)
+
+    if _contains_any(normalized, CURRENT_CONTEXT) or _contains_any(normalized, HELP_SEEKING):
+        return EmergencyHit(EmergencyLevel.STRONG, "acute_context", terms, has_negated)
+
+    if _contains_any(normalized, META_QUESTION):
+        return EmergencyHit(EmergencyLevel.WEAK, "meta_question", terms, has_negated)
+
+    return EmergencyHit(BARE_SYMPTOM_LEVEL, "bare_symptom", terms, has_negated)
+
+
+# ==================== 内部实现 ====================
+
+
+def _iter_terms():
+    for group in ACUTE_TERMS:
+        for term in group:
+            yield term
+
+
+def _validate_tables() -> None:
+    if not ACUTE_TERMS or not any(ACUTE_TERMS):
+        raise EmergencyRuleError("急症词表为空，紧急风险检查不可用")
+
+
+def _normalize(text: str) -> str:
+    if text is None:
+        return ""
+    if not isinstance(text, str):
+        raise EmergencyRuleError(f"紧急风险检查只接受字符串，收到 {type(text).__name__}")
+    # 去掉所有空白，避免"胸 痛"这类写法漏检，也让否定窗口更稳定。
+    return "".join(text.split())
+
+
+def _contains_any(text: str, words: tuple[str, ...]) -> bool:
+    return any(word in text for word in words)
+
+
+def _split_by_negation(text: str, terms: list[str]) -> tuple[list[str], list[str]]:
+    """按词逐个判断是否被否定。
+
+    逐个判断而不是整句判断，是为了正确处理
+    "我没有胸痛但现在突然喘不上气"这种部分否定的情况：
+    "胸痛"被否定丢弃，"喘不上气"仍然有效并触发 STRONG。
+    """
+    active: list[str] = []
+    negated: list[str] = []
+    for term in terms:
+        index = text.find(term)
+        window = text[max(0, index - NEGATION_WINDOW):index]
+        is_negated = any(ch in window for ch in NEGATION) and not any(
+            exc in window for exc in NEGATION_EXCEPTIONS
+        )
+        (negated if is_negated else active).append(term)
+    return active, negated

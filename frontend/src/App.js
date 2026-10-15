@@ -20,7 +20,7 @@ function App() {
     setChatList(prev => [...prev, { role: "ai", content: "" }]);
 
     // 使用 fetch 读取 SSE 流
-    fetch(`http://192.168.33.68:8000/chat/stream?question=${encodeURIComponent(message)}`)
+    fetch(`http://${ip}:8000/chat/stream?question=${encodeURIComponent(message)}`)
       .then(response => {
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
