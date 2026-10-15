@@ -99,8 +99,10 @@ bash
 docker-compose down
 六、常用命令速查
 操作	命令
-启动后端	uvicorn app.main:app --reload
-启动前端	npm run dev
+启动后端 	backend/
+ uvicorn app.rag.main:app --reload --port 8000
+启动前端  frontend/src
+	npm run start
 安装后端依赖	pip install -r requirements.txt
 安装前端依赖	npm install
 Docker 启动	docker-compose up -d
