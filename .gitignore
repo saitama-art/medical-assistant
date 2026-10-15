@@ -42,3 +42,9 @@ Thumbs.db
 logs/
 tmp/
 temp/
+
+# ---- 向量库（派生产物，可由 backend/data/ 重建，不入库）----
+# 原始 PDF 已纳入版本控制（backend/data/），索引属于构建产物：
+# 二进制、无法 review diff、每次重建都产生大体积变更。
+backend/chroma_db/
+chroma_db/
