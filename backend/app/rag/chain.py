@@ -60,18 +60,12 @@ def get_vector_store():
     return vector_store
 
 
-def get_rag_chain():
-    from langchain_chroma import Chroma
-    from langchain_core.prompts import ChatPromptTemplate
+# ==================== 医疗问答 Prompt（唯一定义处） ====================
+# 下面的 system 文案是生成环节的唯一事实约束（只用上下文作答 + 免责声明）。
+# 定义在模块级是为了让 rag/service.py 能复用同一份 Prompt，
+# 避免出现第二份副本之后两处措辞不同步。不要在别处重新写一遍。
 
-    # 这里必须显式调用，确保 llm 和 embeddings 不为 None
-    llm = get_llm()
-    embeddings = get_embedding()
-    vector_store = get_vector_store()
-    retriever = vector_store.as_retriever(search_kwargs={"k": 3})
-
-    medical_prompt = ChatPromptTemplate.from_messages([
-        ("system", """
+MEDICAL_SYSTEM_PROMPT = """
 你是医疗知识库问答助手，请严格依据提供的参考文档回答用户问题。
 1.只使用上下文给出的资料作答，不要编造没有的医学信息。
 2.如果上下文没有相关内容，直接告知：知识库暂无该问题相关资料，请咨询专业医务人员。
@@ -80,31 +74,68 @@ def get_rag_chain():
 
 参考上下文：
 {context}
-"""),
-        ("human", "{question}")
-    ])
+"""
 
-    def format_docs(docs):
-        return "\n\n".join([doc.page_content for doc in docs])
+MEDICAL_HUMAN_PROMPT = "{question}"
 
-    # 提取文档来源的函数
-    def extract_sources(docs):
-        sources = []
-        for doc in docs:
+_medical_prompt = None
+
+
+def get_medical_prompt():
+    """返回医疗问答 Prompt 模板（首次调用时构造并缓存）。
+
+    惰性构造是为了保持本模块「导入时不依赖 langchain」这一既有性质：
+    main.py 目前在 langchain_chroma 未安装时仍能启动，靠的正是这一性质。
+    """
+    global _medical_prompt
+    if _medical_prompt is None:
+        from langchain_core.prompts import ChatPromptTemplate
+
+        _medical_prompt = ChatPromptTemplate.from_messages([
+            ("system", MEDICAL_SYSTEM_PROMPT),
+            ("human", MEDICAL_HUMAN_PROMPT),
+        ])
+    return _medical_prompt
+
+
+def format_docs(docs):
+    return "\n\n".join([doc.page_content for doc in docs])
+
+
+def extract_sources(docs):
+    """从 Document.metadata 提取展示用的「文档名 - 第N页」字符串。
+
+    仅供 /chat/stream 使用（返回字符串列表）。主 Agent 请用 rag/service.py 的
+    extract_sources()：那里返回结构化 Source，且元数据缺 page 时不推测页码。
+    """
+    sources = []
+    for doc in docs:
+        try:
+            source_name = doc.metadata.get('source', '未知来源')
             try:
-                source_name = doc.metadata.get('source', '未知来源')
-                try:
-                    page = doc.metadata.get('page', 0) + 1
-                    full_source = f"{source_name} - 第{page}页"
-                except:
-                    full_source = source_name
+                page = doc.metadata.get('page', 0) + 1
+                full_source = f"{source_name} - 第{page}页"
+            except Exception:
+                full_source = source_name
 
-                if full_source not in sources:
-                    sources.append(full_source)
-            except Exception as e:
-                print(f"提取来源失败: {e}")
-                continue
-        return sources
+            if full_source not in sources:
+                sources.append(full_source)
+        except Exception as e:
+            print(f"提取来源失败: {e}")
+            continue
+    return sources
+
+
+def get_rag_chain():
+    from langchain_chroma import Chroma
+
+    # 这里必须显式调用，确保 llm 和 embeddings 不为 None
+    llm = get_llm()
+    embeddings = get_embedding()
+    vector_store = get_vector_store()
+    retriever = vector_store.as_retriever(search_kwargs={"k": 3})
+
+    medical_prompt = get_medical_prompt()
 
     # 自定义的函数来同时返回答案和来源
     def rag_with_sources(input_dict):
