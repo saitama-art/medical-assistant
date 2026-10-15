@@ -17,7 +17,12 @@ if _env_file is not None:
     load_dotenv(_env_file, override=True)
 
 
-def get_llm():
+def get_llm(timeout: float = 35):
+    """返回 LLM 客户端。timeout 为 httpx 原生超时（秒），真正生效、会中止连接。
+
+    默认值 35s 保持不变，不影响现有 /chat/stream；主 Agent 各节点按设计文档
+    5.6 的环节预算显式传入（分配到的环节预算 = 该次调用的超时值）。
+    """
     from langchain_openai import ChatOpenAI
     import httpx
     api_key = os.environ.get("DEEPSEEK_API_KEY")
@@ -26,7 +31,7 @@ def get_llm():
             "未找到 DEEPSEEK_API_KEY。请在项目根目录或 backend/ 下创建 .env 并写入："
             "DEEPSEEK_API_KEY=sk-xxxxxxxx"
         )
-    http_client = httpx.Client(trust_env=False, timeout=35)
+    http_client = httpx.Client(trust_env=False, timeout=timeout)
     llm = ChatOpenAI(
         api_key=api_key,
         base_url="https://api.deepseek.com/v1",
