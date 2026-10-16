@@ -146,10 +146,9 @@ def decide_route(
         return Route.CHITCHAT
     if category in (QuestionCategory.UNCLASSIFIABLE, None):
         return Route.UNCLASSIFIABLE
-    # 分类器判为 emergency 而规则未拦 strong 的防御性冗余（2.2 表只写了 strong 行，
-    # 分类结果 emergency 不应落到兜底话术）
-    if category is QuestionCategory.EMERGENCY:
-        return Route.EMERGENCY
+    # 2.2 表没有 category == emergency 这一行：完整紧急处理只由上面优先级 1 的
+    # emergency.level == strong 触发（N01/N03 已先行拦截）。分类器判 emergency 而
+    # 规则未判 strong（如裸症状「胸痛」判 weak）时，不升级为紧急，落入下方兜底。
     if category is QuestionCategory.TRIAGE:
         return Route.TRIAGE
     if category is QuestionCategory.KNOWLEDGE:
