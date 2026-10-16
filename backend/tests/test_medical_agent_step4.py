@@ -15,15 +15,24 @@ from unittest.mock import patch
 
 from app.medical_agent import orchestrator, respond, router, session
 from app.medical_agent.state import (
+    AgentState,
     ContextStatus,
     EmergencyLevel,
+    EvidenceJudgement,
     QuestionCategory,
     RetrievedChunk,
     RetrievalOutcome,
     RetrievalResult,
     Route,
+    Source,
+    SubagentResult,
+    SubagentStatus,
     TerminationReason,
+    ToolCallRecord,
+    ToolStatus,
+    TraceRecord,
 )
+from app.medical_agent.subagents import knowledge
 from app.rag import service
 
 
@@ -157,7 +166,7 @@ class TestSession(unittest.TestCase):
 
 
 def _run(state_holder, question, fake_llm, retrieval_result, side_effect=None):
-    """跑一遍 run_agent，LLM 与检索全部替换。"""
+    """跑一遍 run_agent，LLM 与检索全部替换（父与子 Agent 两侧的 LLM 出口都要 patch）。"""
     calls = {"retrieval": 0}
 
     def fake_retrieve(question, k=service.DEFAULT_TOP_K):
@@ -167,6 +176,7 @@ def _run(state_holder, question, fake_llm, retrieval_result, side_effect=None):
         return retrieval_result
 
     with patch.object(orchestrator, "get_llm", lambda timeout=35: fake_llm), \
+         patch.object(knowledge, "get_llm", lambda timeout=35: fake_llm), \
          patch.object(service, "retrieve_with_scores", fake_retrieve):
         state = orchestrator.run_agent(state_holder, question)
     return state, calls
@@ -327,6 +337,71 @@ class TestOrchestratorContext(unittest.TestCase):
         self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
         self.assertEqual(state.answer_text, respond.TRIAGE_GUIDANCE)
         self.assertEqual(calls["retrieval"], 0)
+
+
+class TestDelegation(unittest.TestCase):
+    """父 Agent ↔ 知识子 Agent 的委派契约（是否委派、传什么、怎么校验、怎么合并）。"""
+
+    def test_parent_validates_status_and_merges_records(self):
+        record = ToolCallRecord(
+            seq=1, tool="search_medical_kb", args_digest="len=10;sha1=abc",
+            status=ToolStatus.OK, latency_ms=5, budget_ms=5000, round=0,
+        )
+        trace = [TraceRecord(seq=1, node="N07", event="tool_call", detail={"status": "ok"})]
+        result = SubagentResult(
+            status=SubagentStatus.INSUFFICIENT,
+            evidence=EvidenceJudgement(reason="stage3_not_answerable"),
+            retrieval=RetrievalResult(),
+            tool_rounds=1, tool_calls=[record], trace=trace,
+        )
+        llm = FakeLLM(classify={"category": "knowledge", "confidence": 0.9})
+        with patch.object(orchestrator, "get_llm", lambda timeout=35: llm), \
+             patch.object(knowledge, "run") as mock_run:
+            mock_run.return_value = result
+            state = orchestrator.run_agent(_fresh_session(), "高血压的正常范围")
+
+        # 父校验：status → 终止原因 + 固定文案
+        self.assertIs(state.termination_reason, TerminationReason.INSUFFICIENT_EVIDENCE)
+        self.assertIn(respond.EVIDENCE_INSUFFICIENT, state.answer_text)
+        # 合并：轮数累计、工具记录与轨迹并入父状态（trace 连续性不断）
+        self.assertEqual(state.tool_rounds, 1)
+        self.assertEqual(len(state.tool_calls), 1)
+        self.assertEqual(state.tool_calls[0].seq, 1)
+        self.assertIn("N07", [t.node for t in state.trace])
+
+    def test_subagent_receives_only_question_and_deadline(self):
+        """上下文隔离：子 Agent 只拿到问题与 deadline，不拿会话历史。"""
+        llm = FakeLLM(classify={"category": "knowledge", "confidence": 0.9})
+        with patch.object(orchestrator, "get_llm", lambda timeout=35: llm), \
+             patch.object(knowledge, "run") as mock_run:
+            mock_run.return_value = SubagentResult(
+                status=SubagentStatus.OK, answer="答",
+                sources=[Source(document="d.pdf", page=1)], tool_rounds=1,
+            )
+            orchestrator.run_agent(_fresh_session(), "二甲双胍怎么吃")
+
+        mock_run.assert_called_once()
+        call = mock_run.call_args
+        self.assertEqual(call.args[0], "二甲双胍怎么吃")
+        self.assertIsInstance(call.kwargs["deadline"], float)
+
+    def test_launch_budget_blocks_delegation(self):
+        """启动预算不足：不调用子 Agent（防"假动作"），直接预算终止。
+
+        注：经完整 run_agent 走不到这里（N04 预算检查会先归 unclassifiable），
+        该守卫是防御纵深，故直接构造低剩余预算的状态测 _delegate_knowledge。
+        """
+        import time as _time
+
+        state = AgentState(
+            session_id=_fresh_session(), raw_question="q", resolved_question="q",
+        )
+        state.budget.deadline = _time.monotonic() + 1.0  # 剩余 ~1000ms < 3000
+        with patch.object(knowledge, "run") as mock_run:
+            out = orchestrator._delegate_knowledge(state, got_lock=False)
+
+        mock_run.assert_not_called()
+        self.assertIs(out.termination_reason, TerminationReason.BUDGET_EXHAUSTED)
 
 
 class TestTraceIntegrity(unittest.TestCase):

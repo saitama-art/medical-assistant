@@ -1,8 +1,17 @@
 """主 Agent 编排器：N00–N12 的唯一控制流（设计文档 1.1 / 2.1 / 2.2）。
 
-职责边界：本模块**唯一决定分支走向**，负责预算分配、轮数更新、trace 写入、
-终止原因落值；不实现检索/判定/生成本身（那些在 rag/service.py），不实现
-参数校验与拦截（tools.py），不提供文案常量（respond.py）。
+职责边界：本模块**唯一决定分支走向**，负责预算分配、trace 写入、终止原因落值、
+文案组装（N11）与会话写回（N12）；不实现检索/判定/生成本身（那些在
+``subagents/knowledge.py`` 与 ``rag/service.py``），不实现参数校验与拦截
+（``tools.py``），不提供文案常量（``respond.py``）。
+
+委派结构（2026-10-16 起）：KNOWLEDGE 路由的 N06–N10（检索→三段证据判定→生成）
+委派给知识子 Agent 执行，父 Agent 只负责：
+① 是否委派——由 N05 路由表写死，**不由模型决定**；
+② 启动前预算检查（低于 MIN_LAUNCH_BUDGET_MS 不启动，防假动作）；
+③ 校验 SubagentResult 并映射终止原因与固定文案；
+④ 合并子 Agent 的工具记录与轨迹（重排 seq，trace 连续性不断）。
+安全结构不委派：N01/N03 急症规则、N04/N05 分类路由、预算总账、N11/N12 永远在父 Agent。
 
 本阶段与设计的两处已知偏差（记录在案，非疏漏）：
 
@@ -24,14 +33,12 @@ from .state import (
     ContextStatus,
     EmergencyHit,
     EmergencyLevel,
-    EvidenceJudgement,
     QuestionCategory,
-    RetrievalOutcome,
     Route,
+    SubagentStatus,
     TerminationReason,
-    ToolStatus,
 )
-from ..rag import service
+from .subagents import knowledge
 from ..rag.chain import get_llm
 
 # ==================== 配置（设计文档 5.8，最终收敛 config.py） ====================
@@ -39,14 +46,7 @@ from ..rag.chain import get_llm
 REQUEST_DEADLINE = 45.0        # 整体硬上限（5.6 选项 A）
 BUDGET_FOLLOWUP_MS = 6000      # N02 上下文补全
 BUDGET_CLASSIFY_MS = 6000      # N04 意图识别
-BUDGET_JUDGE_MS = 8000         # N08 第 3 段模型判定
-BUDGET_GENERATE_MS = 12000     # N10 回答生成
-TOOL_BUDGET_MS = 5000          # N07 单次工具执行
-MAX_CONSECUTIVE_FAILURES = 2   # 工具连续失败达此值即终止（设计文档 4.1 第 9 条）
-_MAX_RETRIES = 1               # N09 回边最多触发 1 次（2.2）
-_K_STEP = 2                    # 重试时 k 的增量
-
-RETRIEVAL_TOOL = "search_medical_kb"
+# 知识路径各环节预算（检索/判定/生成/重试）已随委派移入 subagents/knowledge.py。
 
 _EMERGENCY_ROUTES = (Route.EMERGENCY,)
 
@@ -54,6 +54,21 @@ _EMERGENCY_ROUTES = (Route.EMERGENCY,)
 class AgentRequestError(ValueError):
     """N00 参数缺失。由接口层转 400，不进入编排（设计文档 2.1 N00）。消息只含
     机器可读标识，不含用户原文。"""
+
+
+# ==================== 子 Agent 返回 → 终止原因/文案映射（父侧唯一解释点） ====================
+
+_SUBAGENT_TERMINATION: dict[SubagentStatus, tuple[TerminationReason, str]] = {
+    SubagentStatus.OK: (TerminationReason.COMPLETED, ""),
+    SubagentStatus.INSUFFICIENT: (TerminationReason.INSUFFICIENT_EVIDENCE, respond.EVIDENCE_INSUFFICIENT),
+    SubagentStatus.EMPTY_RESULT: (TerminationReason.EMPTY_KNOWLEDGE_BASE, respond.EMPTY_RESULT),
+    SubagentStatus.RETRIEVAL_FAILED: (TerminationReason.RETRIEVAL_FAILED, respond.RETRIEVAL_ERROR),
+    SubagentStatus.GENERATION_FAILED: (TerminationReason.GENERATION_FAILED, respond.GENERATION_ERROR),
+    SubagentStatus.BUDGET_EXHAUSTED: (TerminationReason.BUDGET_EXHAUSTED, respond.BUDGET_EXHAUSTED_REPLY),
+    SubagentStatus.ARGUMENT_INVALID: (TerminationReason.ARGUMENT_INVALID, respond.INVALID_ARGS_REPLY),
+    SubagentStatus.REPEATED_CALL_BLOCKED: (TerminationReason.REPEATED_CALL_BLOCKED, respond.REPEATED_CALL_REPLY),
+    SubagentStatus.MAX_ROUNDS_REACHED: (TerminationReason.MAX_ROUNDS_REACHED, respond.ROUNDS_EXCEEDED_REPLY),
+}
 
 
 # ==================== 入口 ====================
@@ -175,125 +190,53 @@ def run_agent(session_id: str, question: str) -> AgentState:
         # 就医指引工具本阶段未注册（tools.py 注释）：直接给通用指引固定文案
         return _finish(state, got_lock, TerminationReason.COMPLETED,
                        respond.TRIAGE_GUIDANCE)
-    # Route.KNOWLEDGE → N06→N07→N08→N09（下方检索—判定—生成闭环）
-    return _run_knowledge(state, got_lock)
+    # Route.KNOWLEDGE → 委派知识子 Agent 执行 N06–N10（下方）
+    return _delegate_knowledge(state, got_lock)
 
 
-# ==================== 知识问答路径（N06–N10） ====================
+# ==================== 知识路径：委派子 Agent（N06–N10） ====================
 
 
-def _run_knowledge(state: AgentState, got_lock: bool) -> AgentState:
-    retries = 0
-    k = service.DEFAULT_TOP_K
+def _delegate_knowledge(state: AgentState, got_lock: bool) -> AgentState:
+    """KNOWLEDGE 路由的委派入口：启动预算检查 → 委派 → 合并产出 → 映射终止。
 
-    while True:
-        # ---- N06 参数校验 + N07 工具执行（校验在 tools.call_tool 内完成，
-        #      校验不通过时底层检索不会被调用） ----
-        node_budget = _node_budget(state, TOOL_BUDGET_MS)
-        invocation = tools.call_tool(
-            RETRIEVAL_TOOL,
-            {"question": state.resolved_question, "k": k},
-            state=state,
-            # node_budget 为 None 时传剩余量，由 tools 层归一成 BLOCKED_BUDGET
-            budget_ms=node_budget if node_budget is not None else state.budget.remaining_ms(),
-        )
-        # 全部调用记录（含被拦截/未执行）都写回，但只有实际执行才计轮数
-        state.tool_calls.append(invocation.record)
-        state.add_trace("N07", "tool_call", {
-            "tool": invocation.record.tool,
-            "status": invocation.record.status.value,
-            "round": invocation.record.round,
-            "detail": invocation.detail,
-        }, latency_ms=invocation.record.latency_ms,
-           node_budget_ms=invocation.record.budget_ms)
-
-        status = invocation.status
-        if status is ToolStatus.INVALID_ARGS:
-            return _finish(state, got_lock, TerminationReason.ARGUMENT_INVALID,
-                           respond.INVALID_ARGS_REPLY)
-        if status is ToolStatus.BLOCKED_REPEAT:
-            return _finish(state, got_lock, TerminationReason.REPEATED_CALL_BLOCKED,
-                           respond.REPEATED_CALL_REPLY)
-        if status is ToolStatus.BLOCKED_MAX_ROUNDS:
-            return _finish(state, got_lock, TerminationReason.MAX_ROUNDS_REACHED,
-                           respond.ROUNDS_EXCEEDED_REPLY)
-        if status is ToolStatus.BLOCKED_BUDGET:
-            return _finish(state, got_lock, TerminationReason.BUDGET_EXHAUSTED,
-                           respond.BUDGET_EXHAUSTED_REPLY)
-        if status in (ToolStatus.TIMEOUT, ToolStatus.RUNTIME_ERROR):
-            state.consecutive_failures += 1
-            if state.consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
-                return _finish(state, got_lock, TerminationReason.RETRIEVAL_FAILED,
-                               respond.RETRIEVAL_ERROR)
-            retries += 1
-            k = min(service.MAX_TOP_K, k + _K_STEP)
-            continue
-
-        # ToolStatus.OK：检索实际执行完成，计一轮
-        state.tool_rounds += 1
-        state.consecutive_failures = 0
-        state.retrieval = invocation.retrieval  # type: ignore[assignment]
-
-        # EMPTY_RESULT 是成功执行的"返回 0 条"，与检索失败措辞不同（FR-08）
-        if state.retrieval.outcome is RetrievalOutcome.EMPTY_RESULT:
-            return _finish(state, got_lock, TerminationReason.EMPTY_KNOWLEDGE_BASE,
-                           respond.EMPTY_RESULT)
-
-        # ---- N08 结果处理与证据判定（第 1+2 段纯计算，第 3 段条件调 LLM） ----
-        state.sources = service.extract_sources(state.retrieval.chunks)
-        node_budget = _node_budget(state, BUDGET_JUDGE_MS)
-        if node_budget is None:
-            # 预算不足不启动第 3 段：无判定能力，保守判不足（5.4 fail-safe 精神）
-            state.evidence = EvidenceJudgement(reason="judge_skipped_budget")
-            state.add_trace("N08", "budget", {"skipped": True})
-        else:
-            llm = get_llm(timeout=max(1.0, node_budget / 1000))
-            state.evidence = service.judge_evidence(
-                state.resolved_question, state.retrieval, llm=llm,
-            )
-            state.add_trace("N08", "judge", {
-                "sufficient": state.evidence.sufficient,
-                "stage1": state.evidence.stage1_gate1,
-                "stage2": state.evidence.stage2_quote_verified,
-                "stage3": state.evidence.stage3_answerable,
-                "reason": state.evidence.reason,
-            }, node_budget_ms=node_budget)
-
-        # ---- N09 继续或结束（唯一回边，守卫见设计文档 2.2） ----
-        if state.evidence.sufficient:
-            break
-        can_retry = (
-            state.evidence.stage1_gate1 is not False  # 第 1 段没过，重试无意义
-            and state.tool_rounds < tools.MAX_TOOL_ROUNDS
-            and state.budget.remaining_ms() >= tools.MIN_USABLE_BUDGET_MS + TOOL_BUDGET_MS
-            and retries < _MAX_RETRIES
-        )
-        state.add_trace("N09", "decision", {
-            "sufficient": False, "can_retry": can_retry, "tool_rounds": state.tool_rounds,
-        })
-        if not can_retry:
-            return _finish(state, got_lock, TerminationReason.INSUFFICIENT_EVIDENCE,
-                           respond.EVIDENCE_INSUFFICIENT)
-        retries += 1
-        k = min(service.MAX_TOP_K, k + _K_STEP)  # 改写后的 query：扩大候选集
-
-    # ---- N10 回答生成（只有证据充分才会到达这里） ----
-    node_budget = _node_budget(state, BUDGET_GENERATE_MS)
-    if node_budget is None:
+    父 Agent 不介入子 Agent 的内部循环（重试/判定/生成），只消费
+    SubagentResult 契约——这是"受控委派"与"模型自主循环"的分界。
+    """
+    launch_budget = _node_budget(state, knowledge.MIN_LAUNCH_BUDGET_MS)
+    if launch_budget is None:
+        # 剩余预算不足以启动一次有意义的检索：不启动子 Agent（防"假动作"）
         return _finish(state, got_lock, TerminationReason.BUDGET_EXHAUSTED,
                        respond.BUDGET_EXHAUSTED_REPLY)
-    try:
-        llm = get_llm(timeout=max(1.0, node_budget / 1000))
-        answer = service.generate_answer(
-            state.resolved_question, state.retrieval.chunks, llm=llm,
-        )
-    except service.RagServiceError as exc:
-        # 消息是机器可读短标识（如 generate_failed:TimeoutError），可入 trace，不给用户
-        state.add_trace("N10", "error", {"detail": str(exc)}, node_budget_ms=node_budget)
-        return _finish(state, got_lock, TerminationReason.GENERATION_FAILED,
-                       respond.GENERATION_ERROR)
-    state.answer_text = answer
-    return _finish(state, got_lock, TerminationReason.COMPLETED, answer)
+    state.add_trace("N06", "decision", {
+        "delegate": "knowledge_subagent",
+        "tool_whitelist": [knowledge.RETRIEVAL_TOOL],
+        "question_len": len(state.resolved_question),
+    }, node_budget_ms=launch_budget)
+
+    result = knowledge.run(state.resolved_question, deadline=state.budget.deadline)
+
+    # 合并子 Agent 产出：seq 重排后并入父状态，trace 连续性不断（T-15）
+    state.tool_rounds += result.tool_rounds
+    for record in result.tool_calls:
+        record.seq = len(state.tool_calls) + 1
+        state.tool_calls.append(record)
+    for trace in result.trace:
+        trace.seq = len(state.trace) + 1
+        state.trace.append(trace)
+    if result.evidence is not None:
+        state.evidence = result.evidence
+    if result.retrieval is not None:
+        state.retrieval = result.retrieval
+    if result.sources:
+        state.sources = result.sources
+
+    # 父侧唯一解释点：status → 终止原因 + 固定文案
+    reason, body = _SUBAGENT_TERMINATION[result.status]
+    if result.status is SubagentStatus.OK:
+        state.answer_text = result.answer
+        return _finish(state, got_lock, reason, result.answer)
+    return _finish(state, got_lock, reason, body)
 
 
 # ==================== 内部工具 ====================
@@ -301,7 +244,8 @@ def _run_knowledge(state: AgentState, got_lock: bool) -> AgentState:
 
 def _node_budget(state: AgentState, config_ms: int) -> int | None:
     """按 5.6 分配规则算本环节预算：min(配置预算, 剩余全局预算)；
-    低于 MIN_USABLE_BUDGET 时返回 None（该环节不得启动）。"""
+    低于 MIN_USABLE_BUDGET 时返回 None（该环节不得启动）。
+    与 subagents/knowledge.py 的同名辅助同规则（避免循环导入各存一份）。"""
     remaining = state.budget.remaining_ms()
     node = min(config_ms, remaining)
     if node < tools.MIN_USABLE_BUDGET_MS:
@@ -445,5 +389,4 @@ __all__ = [
     "run_agent",
     "display_sources",
     "REQUEST_DEADLINE",
-    "RETRIEVAL_TOOL",
 ]
