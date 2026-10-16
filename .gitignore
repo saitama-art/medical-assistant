@@ -48,3 +48,7 @@ temp/
 # 二进制、无法 review diff、每次重建都产生大体积变更。
 backend/chroma_db/
 chroma_db/
+
+# ---- 面试题答案库（个人求职材料，不属于项目源码）----
+docs/面试题答案库/
+

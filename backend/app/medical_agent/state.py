@@ -99,6 +99,23 @@ class TerminationReason(str, Enum):
     BUDGET_EXHAUSTED = "budget_exhausted"
 
 
+class SubagentStatus(str, Enum):
+    """子 Agent 结构化返回的状态。父 Agent 据此映射终止原因与用户文案，
+
+    不解释子 Agent 内部细节——status + detail（机器可读短标识）就是全部契约。
+    """
+
+    OK = "ok"                                # 证据充分且生成成功
+    INSUFFICIENT = "insufficient"            # 有片段但证据判定不足
+    EMPTY_RESULT = "empty_result"            # 检索成功返回 0 条
+    RETRIEVAL_FAILED = "retrieval_failed"    # 检索超时/异常且不可重试
+    GENERATION_FAILED = "generation_failed"  # 证据充分但生成失败
+    BUDGET_EXHAUSTED = "budget_exhausted"    # 环节预算不足未启动
+    ARGUMENT_INVALID = "argument_invalid"    # 参数校验不通过（未执行）
+    REPEATED_CALL_BLOCKED = "repeated_call_blocked"
+    MAX_ROUNDS_REACHED = "max_rounds_reached"
+
+
 # ==================== 记录结构 ====================
 
 
@@ -187,6 +204,25 @@ class TraceRecord:
     latency_ms: int | None = None
     budget_left_ms: int | None = None
     node_budget_ms: int | None = None
+
+
+@dataclass
+class SubagentResult:
+    """子 Agent 返回给父 Agent 的结构化结果（委派的唯一出口契约）。
+
+    父 Agent 合并 tool_calls / trace 时负责重排 seq（见 orchestrator）；
+    evidence / retrieval 为 None 表示该环节未产出（如参数被拦截）。
+    """
+
+    status: SubagentStatus
+    answer: str = ""
+    sources: list[Source] = field(default_factory=list)
+    evidence: EvidenceJudgement | None = None
+    retrieval: RetrievalResult | None = None
+    tool_rounds: int = 0
+    tool_calls: list[ToolCallRecord] = field(default_factory=list)
+    trace: list[TraceRecord] = field(default_factory=list)
+    detail: str = ""
 
 
 @dataclass
