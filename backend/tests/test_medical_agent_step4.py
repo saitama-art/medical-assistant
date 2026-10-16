@@ -13,7 +13,7 @@ import uuid
 import unittest
 from unittest.mock import patch
 
-from app.medical_agent import orchestrator, respond, router, session
+from app.medical_agent import orchestrator, respond, router, safety, session
 from app.medical_agent.state import (
     AgentState,
     ContextStatus,
@@ -127,6 +127,59 @@ class TestRouter(unittest.TestCase):
         self.assertEqual(conf, 0.0)
 
 
+class TestChestPainScenarios(unittest.TestCase):
+    """「胸痛」系列场景的路由正确性（回归：router.decide_route 曾有多余的
+    category==emergency → emergency 行，覆盖了安全规则对裸症状的 weak 判断）。
+
+    约定（设计文档 2.2）：完整紧急处理只由 emergency.level==strong 触发；
+    分类器判 emergency 而规则未判 strong 时，落入兜底 unclassifiable。
+    全部确定性，无网络、无 LLM。
+    """
+
+    def test_emergency_category_with_weak_level_falls_through(self):
+        # 裸症状：规则 weak，分类器判 emergency，不得升级为紧急
+        self.assertIs(
+            router.decide_route(QuestionCategory.EMERGENCY, EmergencyLevel.WEAK,
+                                ContextStatus.OK, "胸痛"), Route.UNCLASSIFIABLE)
+
+    def test_emergency_category_with_none_level_falls_through(self):
+        # 即使规则判 none，只要分类器判 emergency，也不得升级
+        self.assertIs(
+            router.decide_route(QuestionCategory.EMERGENCY, EmergencyLevel.NONE,
+                                ContextStatus.OK, "胸痛"), Route.UNCLASSIFIABLE)
+
+    def test_knowledge_with_weak_level_routes_knowledge(self):
+        # weak 不改变路由：知识类仍走 knowledge，风险提示由编排器另加
+        self.assertIs(
+            router.decide_route(QuestionCategory.KNOWLEDGE, EmergencyLevel.WEAK,
+                                ContextStatus.OK, "胸痛是什么原因引起的？"), Route.KNOWLEDGE)
+
+    def test_bare_symptom_chest_pain_is_weak(self):
+        hit = safety.check_emergency("胸痛")
+        self.assertIs(hit.level, EmergencyLevel.WEAK)
+        self.assertEqual(hit.rule_id, "bare_symptom")
+
+    def test_explicit_help_seeking_is_strong_emergency(self):
+        hit = safety.check_emergency("我现在胸痛、呼吸困难，怎么办？")
+        self.assertIs(hit.level, EmergencyLevel.STRONG)
+        self.assertIs(
+            router.decide_route(QuestionCategory.EMERGENCY, hit.level,
+                                ContextStatus.OK, "我现在胸痛、呼吸困难，怎么办？"),
+            Route.EMERGENCY)
+
+    def test_third_person_help_seeking_is_strong(self):
+        hit = safety.check_emergency("我朋友突然胸痛，还呼吸困难")
+        self.assertIs(hit.level, EmergencyLevel.STRONG)
+
+    def test_knowledge_query_chest_pain_cause_is_weak(self):
+        hit = safety.check_emergency("胸痛是什么原因引起的？")
+        self.assertIs(hit.level, EmergencyLevel.WEAK)
+        self.assertIs(
+            router.decide_route(QuestionCategory.KNOWLEDGE, hit.level,
+                                ContextStatus.OK, "胸痛是什么原因引起的？"),
+            Route.KNOWLEDGE)
+
+
 # ==================== session ====================
 
 
@@ -228,6 +281,16 @@ class TestOrchestratorEmergency(unittest.TestCase):
 
         self.assertIs(state.termination_reason, TerminationReason.EMERGENCY_HANDLED)
         self.assertEqual(state.emergency.level, EmergencyLevel.STRONG)
+
+    def test_bare_symptom_not_escalated_to_emergency(self):
+        """端到端：裸症状「胸痛」分类为 emergency 也不得升级为完整紧急；WEAK 风险提示保留。"""
+        llm = FakeLLM(classify={"category": "emergency", "confidence": 0.85})
+        state, calls = _run(_fresh_session(), "胸痛", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.UNCLASSIFIED)
+        self.assertIn(respond.RISK_NOTICE, state.answer_text)
+        self.assertNotIn(respond.EMERGENCY_ANSWER, state.answer_text)
+        self.assertEqual(calls["retrieval"], 0)
+        self.assertEqual(llm.calls, 1)  # 仅一次分类，未进入检索/判定/生成
 
 
 class TestOrchestratorChitchat(unittest.TestCase):
