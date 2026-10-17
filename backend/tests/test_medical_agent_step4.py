@@ -127,6 +127,91 @@ class TestRouter(unittest.TestCase):
         self.assertEqual(conf, 0.0)
 
 
+class TestT05IntentFailureModes(unittest.TestCase):
+    """T-05（意图识别异常，设计文档第六部分）：分类器异常 / 超时 / 非法枚举 /
+    置信不足 / 环节预算不足未启动 → 全部落 unclassifiable，**无一进入检索**，
+    回答为固定"无法处理 + 请补充说明"文案。②~⑤为确定性用例（①与②同走
+    classify 异常吞噬路径，router 层已有用例）；⑥语义模糊输入需真实 LLM，
+    在验收脚本中覆盖。
+
+    期望（设计文档）：六种情形全部落 unclassifiable、无一进入检索、
+    模糊输入不被强行归入某一类。
+    """
+
+    def _assert_unclassified_no_retrieval(self, state, calls):
+        self.assertIs(state.termination_reason, TerminationReason.UNCLASSIFIED)
+        self.assertEqual(calls["retrieval"], 0)
+        # 固定文案，不含来源段 / 免责声明 / 风险提示（无 weak 信号时）
+        self.assertEqual(state.answer_text.strip(), respond.UNCLASSIFIABLE_REPLY.strip())
+        # trace 里有 N04 决策记录（T-15 追踪完整性）
+        self.assertIn("N04", [t.node for t in state.trace])
+
+    def test_timeout_goes_unclassifiable(self):
+        """② 分类器超时（TimeoutError 与连接错误同走异常吞噬路径）。"""
+
+        class _TimeoutLLM:
+            def invoke(self, messages):
+                raise TimeoutError("classify llm timeout")
+
+        state, calls = _run(_fresh_session(), "二甲双胍怎么用", _TimeoutLLM(),
+                            RetrievalResult(outcome=RetrievalOutcome.SUFFICIENT, chunks=[_chunk("x")]))
+        self._assert_unclassified_no_retrieval(state, calls)
+
+    def test_illegal_enum_goes_unclassifiable(self):
+        """③ 模型输出非法枚举值：不得猜最接近的一类。"""
+        llm = FakeLLM(classify={"category": "banana", "confidence": 0.95})
+        state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm,
+                            RetrievalResult(outcome=RetrievalOutcome.SUFFICIENT, chunks=[_chunk("x")]))
+        self._assert_unclassified_no_retrieval(state, calls)
+
+    def test_low_confidence_goes_unclassifiable(self):
+        """④ confidence < CATEGORY_CONFIDENCE_MIN(0.6)：即使类别看似明确也归入 unclassifiable。"""
+        llm = FakeLLM(classify={"category": "knowledge", "confidence": 0.35})
+        state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm,
+                            RetrievalResult(outcome=RetrievalOutcome.SUFFICIENT, chunks=[_chunk("x")]))
+        self._assert_unclassified_no_retrieval(state, calls)
+
+    def test_non_numeric_confidence_goes_unclassifiable(self):
+        """④b confidence 缺失/非数值（如 "high"）：按 0.0 处理，同归 unclassifiable。"""
+        llm = FakeLLM(classify={"category": "knowledge", "confidence": "high"})
+        state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm,
+                            RetrievalResult(outcome=RetrievalOutcome.SUFFICIENT, chunks=[_chunk("x")]))
+        self._assert_unclassified_no_retrieval(state, calls)
+
+    def test_classify_skipped_when_node_budget_unusable(self):
+        """⑤ 环节预算不足未启动 N04：不调用 LLM（防假动作），直接 unclassifiable。"""
+        calls = {"retrieval": 0}
+
+        def fake_retrieve(question, k=service.DEFAULT_TOP_K):
+            calls["retrieval"] += 1
+            return RetrievalResult(outcome=RetrievalOutcome.SUFFICIENT, chunks=[_chunk("x")])
+
+        real_node_budget = orchestrator._node_budget
+
+        def fake_node_budget(state, node_ms):
+            # 只掐掉 N04 分类环节预算，其余环节保持真实分配
+            if node_ms == orchestrator.BUDGET_CLASSIFY_MS:
+                return None
+            return real_node_budget(state, node_ms)
+
+        llm = FakeLLM(raise_on_invoke=True)  # 走到 LLM 即失败
+        with patch.object(orchestrator, "_node_budget", fake_node_budget), \
+             patch.object(orchestrator, "get_llm", lambda timeout=35: llm), \
+             patch.object(knowledge, "get_llm", lambda timeout=35: llm), \
+             patch.object(service, "retrieve_with_scores", fake_retrieve):
+            state = orchestrator.run_agent(_fresh_session(), "二甲双胍怎么用")
+
+        self.assertEqual(llm.calls, 0)
+        self.assertEqual(calls["retrieval"], 0)
+        self.assertIs(state.termination_reason, TerminationReason.UNCLASSIFIED)
+        self.assertEqual(state.category, QuestionCategory.UNCLASSIFIABLE)
+        # N04 留有预算跳过记录（T-15 追踪完整性）
+        n04_budget_traces = [t for t in state.trace
+                             if t.node == "N04" and t.event == "budget"
+                             and t.detail.get("skipped")]
+        self.assertEqual(len(n04_budget_traces), 1)
+
+
 class TestChestPainScenarios(unittest.TestCase):
     """「胸痛」系列场景的路由正确性（回归：router.decide_route 曾有多余的
     category==emergency → emergency 行，覆盖了安全规则对裸症状的 weak 判断）。
