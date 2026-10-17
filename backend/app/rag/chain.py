@@ -1,5 +1,6 @@
 # rag/chain.py
 import os
+import threading
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -43,26 +44,73 @@ def get_llm(timeout: float = 35):
     return llm
 
 
+# embedding 与 vectorstore 的进程内单例（惰性构造，见 get_embedding 的说明）
+_embedding = None
+_embedding_lock = threading.Lock()
+_vector_store = None
+_vector_store_lock = threading.Lock()
+
+
 def get_embedding():
-    from langchain_huggingface import HuggingFaceEmbeddings
-    embeddings = HuggingFaceEmbeddings(
-        model_name="BAAI/bge-small-zh",
-        model_kwargs={"device": "cpu"},
-        encode_kwargs={"normalize_embeddings": True}
-    )
-    return embeddings
+    """返回**进程内共享**的 embedding 客户端（首次调用时构造，之后一律复用）。
+
+    为什么必须缓存（实测取证，2026-10-16）：
+    设计文档 5.6 规定「embedding 模型与 vectorstore 在**启动时预热**，避免首次
+    请求承担模型加载耗时（可达数十秒），这部分耗时**不计入请求预算**」，并以此
+    作为「检索不引入线程池、只靠异常捕获 + 整体预算」的前提。原实现每次调用都
+    新建 `HuggingFaceEmbeddings`（其构造函数即加载模型权重），导致：
+
+        启动预热带来的是一次性开销，请求路径完全不受益（预热对象被丢弃）；
+        实测 N07 单次检索 9.7~15.6s，而 N07 的配置预算是 5s（设计 5.6 预算表）；
+        实测整体请求 50.1s > `REQUEST_DEADLINE` 45s —— 门禁 G-3 不通过。
+
+    缓存为单例后模型只加载一次，且这次加载发生在启动预热阶段，N07 的真实成本
+    回落到「查一次向量库」，门禁 G-3 的前提（设计 5.6：p95 < 1s）才成立。
+
+    实现约束：
+    - **保持惰性构造**：本模块「导入时不依赖 langchain」这一性质不能破坏，
+      main.py 在缺 langchain_chroma 时仍要能启动（见 get_medical_prompt 的同类说明）。
+    - **加锁**：`/agent/chat` 是同步端点，FastAPI 在线程池中执行，多个首个请求
+      可能并发到达；双重检查避免重复加载。构造失败时不写缓存，下次调用重试。
+    """
+    global _embedding
+    if _embedding is None:
+        with _embedding_lock:
+            if _embedding is None:
+                from langchain_huggingface import HuggingFaceEmbeddings
+
+                embeddings = HuggingFaceEmbeddings(
+                    model_name="BAAI/bge-small-zh",
+                    model_kwargs={"device": "cpu"},
+                    encode_kwargs={"normalize_embeddings": True}
+                )
+                _embedding = embeddings
+    return _embedding
 
 
 # 单独的向量库获取函数，方便 main.py 上传时调用
 def get_vector_store():
-    from langchain_chroma import Chroma
-    embeddings = get_embedding()
+    """返回**进程内共享**的 vectorstore（首次调用时构造，之后一律复用）。
 
-    vector_store = Chroma(
-        persist_directory=r"F:\medical-assistant\backend\chroma_db",
-        embedding_function=embeddings
-    )
-    return vector_store
+    缓存理由同 get_embedding()：原实现每次调用都新建 Chroma + 新建 embedding
+    客户端，使设计 5.6 的启动预热对请求路径失效。
+
+    这一改动同时消除了 `/upload` 与 `/agent/chat` 之间的实例不一致：两者现在
+    通过**同一个** vectorstore 实例读写，上传的文档对后续问答立即可见，不再依赖
+    chromadb 内部 client 复用行为（main.py:108 的 /upload 也走本函数）。
+    """
+    global _vector_store
+    if _vector_store is None:
+        with _vector_store_lock:
+            if _vector_store is None:
+                from langchain_chroma import Chroma
+
+                vector_store = Chroma(
+                    persist_directory=r"F:\medical-assistant\backend\chroma_db",
+                    embedding_function=get_embedding()
+                )
+                _vector_store = vector_store
+    return _vector_store
 
 
 # ==================== 医疗问答 Prompt（唯一定义处） ====================
