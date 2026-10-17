@@ -1,0 +1,332 @@
+[
+  {
+    "key": "disease-hypertension",
+    "url": "https://www.msdmanuals.cn/home/heart-and-blood-vessel-disorders/high-blood-pressure/high-blood-pressure",
+    "status": 200,
+    "chars": 13080,
+    "ok": true,
+    "title": "高血压",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-coronary-artery-disease",
+    "url": "https://www.msdmanuals.cn/home/heart-and-blood-vessel-disorders/coronary-artery-disease/coronary-artery-disease",
+    "status": 404,
+    "ok": false,
+    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/heart-and-blood-vessel-disorders/coronary-artery-disease/coronary-artery-disease",
+    "title": "冠状动脉疾病（冠心病）",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-type-2-diabetes",
+    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/diabetes-mellitus-dm-and-disorders-of-blood-sugar-regulation/type-2-diabetes",
+    "status": 404,
+    "ok": false,
+    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/diabetes-mellitus-dm-and-disorders-of-blood-sugar-regulation/type-2-diabetes",
+    "title": "2型糖尿病",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-asthma",
+    "url": "https://www.msdmanuals.cn/home/lung-and-airway-disorders/asthma/asthma",
+    "status": 200,
+    "chars": 9951,
+    "ok": true,
+    "title": "哮喘",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-copd",
+    "url": "https://www.msdmanuals.cn/home/lung-and-airway-disorders/chronic-obstructive-pulmonary-disease-copd/chronic-obstructive-pulmonary-disease-copd",
+    "status": 200,
+    "chars": 8526,
+    "ok": true,
+    "title": "慢性阻塞性肺疾病（COPD）",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-gastritis",
+    "url": "https://www.msdmanuals.cn/home/digestive-disorders/gastritis-and-peptic-ulcer-disease/gastritis",
+    "status": 200,
+    "chars": 3333,
+    "ok": true,
+    "title": "胃炎",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-osteoporosis",
+    "url": "https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/bone-disorders/osteoporosis",
+    "status": 404,
+    "ok": false,
+    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/bone-disorders/osteoporosis",
+    "title": "骨质疏松症",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-iron-deficiency-anemia",
+    "url": "https://www.msdmanuals.cn/home/quick-facts-blood-disorders/anemia/iron-deficiency-anemia",
+    "status": 200,
+    "chars": 1279,
+    "ok": true,
+    "title": "缺铁性贫血",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-stroke",
+    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/stroke-cva/stroke-cva",
+    "status": 404,
+    "ok": false,
+    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/stroke-cva/stroke-cva",
+    "title": "脑卒中（中风）",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-high-cholesterol",
+    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/cholesterol-abnormalities/high-cholesterol",
+    "status": 404,
+    "ok": false,
+    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/cholesterol-abnormalities/high-cholesterol",
+    "title": "高胆固醇血症",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-migraine",
+    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/headaches/migraine-headaches",
+    "status": 404,
+    "ok": false,
+    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/headaches/migraine-headaches",
+    "title": "偏头痛",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-chest-pain",
+    "url": "https://www.msdmanuals.cn/home/heart-and-blood-vessel-disorders/symptoms-of-heart-and-blood-vessel-disorders/chest-pain",
+    "status": 200,
+    "chars": 8167,
+    "ok": true,
+    "title": "胸痛",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-shortness-of-breath",
+    "url": "https://www.msdmanuals.cn/home/lung-and-airway-disorders/symptoms-of-lung-disorders/shortness-of-breath",
+    "status": 200,
+    "chars": 7873,
+    "ok": true,
+    "title": "气短（呼吸困难）",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-palpitations",
+    "url": "https://www.msdmanuals.cn/home/heart-and-blood-vessel-disorders/symptoms-of-heart-and-blood-vessel-disorders/palpitations",
+    "status": 200,
+    "chars": 5113,
+    "ok": true,
+    "title": "心悸",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-fainting",
+    "url": "https://www.msdmanuals.cn/home/heart-and-blood-vessel-disorders/symptoms-of-heart-and-blood-vessel-disorders/fainting",
+    "status": 200,
+    "chars": 8621,
+    "ok": true,
+    "title": "晕厥（昏厥）",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-dizziness-vertigo",
+    "url": "https://www.msdmanuals.cn/home/ear-nose-and-throat-disorders/symptoms-of-ear-disorders/dizziness-and-vertigo",
+    "status": 200,
+    "chars": 8781,
+    "ok": true,
+    "title": "头晕和眩晕",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-chronic-abdominal-pain",
+    "url": "https://www.msdmanuals.cn/home/digestive-disorders/symptoms-of-digestive-disorders/chronic-abdominal-pain-and-recurring-abdominal-pain",
+    "status": 200,
+    "chars": 8645,
+    "ok": true,
+    "title": "慢性腹痛和反复发作性腹痛",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-diarrhea-adults",
+    "url": "https://www.msdmanuals.cn/home/digestive-disorders/symptoms-of-digestive-disorders/diarrhea-in-adults",
+    "status": 200,
+    "chars": 7480,
+    "ok": true,
+    "title": "成人腹泻",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-cough-adults",
+    "url": "https://www.msdmanuals.cn/home/lung-and-airway-disorders/symptoms-of-lung-disorders/cough-in-adults",
+    "status": 200,
+    "chars": 9212,
+    "ok": true,
+    "title": "成人咳嗽",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "test-common-medical-tests",
+    "url": "https://www.msdmanuals.cn/home/resources/common-medical-tests/common-medical-tests",
+    "status": 200,
+    "chars": 6891,
+    "ok": true,
+    "title": "常见的医疗检查（总览）",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "test-x-rays",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/common-imaging-tests/x-rays",
+    "status": 200,
+    "chars": 2169,
+    "ok": true,
+    "title": "X线检查",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "test-ct",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/common-imaging-tests/computed-tomography-ct",
+    "status": 200,
+    "chars": 2925,
+    "ok": true,
+    "title": "计算机断层扫描（CT）",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "test-mri",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/common-imaging-tests/magnetic-resonance-imaging-mri",
+    "status": 200,
+    "chars": 3234,
+    "ok": true,
+    "title": "磁共振成像（MRI）",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "test-ultrasound",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/common-imaging-tests/ultrasound",
+    "status": 200,
+    "chars": 2556,
+    "ok": true,
+    "title": "超声检查",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "test-ecg",
+    "url": "https://www.msdmanuals.cn/home/heart-and-blood-vessel-disorders/diagnosis-of-heart-and-blood-vessel-disorders/electrocardiography",
+    "status": 200,
+    "chars": 1752,
+    "ok": true,
+    "title": "心电图（ECG）",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "test-pft",
+    "url": "https://www.msdmanuals.cn/home/lung-and-airway-disorders/diagnosis-of-and-procedures-for-lung-disorders/pulmonary-function-testing-pft",
+    "status": 200,
+    "chars": 2198,
+    "ok": true,
+    "title": "肺功能检查",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "meds-drug-use-in-older-adults",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/considerations-for-older-adults/drugs-and-aging",
+    "status": 404,
+    "ok": false,
+    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/special-subjects/considerations-for-older-adults/drugs-and-aging",
+    "title": "药物与衰老（老年人用药）",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
+    "key": "meds-drug-use-during-pregnancy",
+    "url": "https://www.msdmanuals.cn/home/women-s-health-issues/drug-use-during-pregnancy/drug-use-during-pregnancy",
+    "status": 200,
+    "chars": 14156,
+    "ok": true,
+    "title": "孕期用药",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
+    "key": "meds-medications-in-children",
+    "url": "https://www.msdmanuals.cn/home/children-s-health-issues/medications-in-children/medications-in-children",
+    "status": 404,
+    "ok": false,
+    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/children-s-health-issues/medications-in-children/medications-in-children",
+    "title": "儿童用药",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
+    "key": "meds-drug-interactions",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/drugs/drug-interactions",
+    "status": 404,
+    "ok": false,
+    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/special-subjects/drugs/drug-interactions",
+    "title": "药物相互作用",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
+    "key": "drug-metformin-sr",
+    "url": "https://www.dayi.org.cn/drug/1157161.html",
+    "status": 200,
+    "chars": 11462,
+    "ok": true,
+    "title": "二甲双胍缓释片",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-rosuvastatin",
+    "url": "https://www.dayi.org.cn/drug/1152374.html",
+    "status": 200,
+    "chars": 9329,
+    "ok": true,
+    "title": "瑞舒伐他汀",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-mecobalamin-tab",
+    "url": "https://www.dayi.org.cn/drug/1144944.html",
+    "status": 200,
+    "chars": 1426,
+    "ok": true,
+    "title": "甲钴胺片",
+    "category": "药品说明书",
+    "site": "dayi"
+  }
+]
