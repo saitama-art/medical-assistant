@@ -54,7 +54,7 @@ EVIDENCE_JUDGE: str = "both"
 GROUNDING_CHECK: str = "off"
 
 # 检索条数。N06 的参数校验用 MIN_TOP_K / MAX_TOP_K 作为 k 的合法区间。
-DEFAULT_TOP_K = 3
+DEFAULT_TOP_K = 10
 MIN_TOP_K = 1
 MAX_TOP_K = 10
 
