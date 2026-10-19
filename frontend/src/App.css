@@ -27,6 +27,24 @@
   margin:8px 0;
   max-width:70%;
 }
+/* 后端 outcome 状态标签（用户话术仍在 answer 正文内，标签只做状态指示） */
+.outcome-badge{
+  display:inline-block;
+  font-size:12px;
+  padding:1px 8px;
+  border-radius:8px;
+  margin-bottom:6px;
+}
+.badge-emergency{
+  background:#fdecea;
+  color:#c0392b;
+  border:1px solid #e74c3c;
+}
+.badge-muted{
+  background:#e8e8e8;
+  color:#666;
+  border:1px solid #ccc;
+}
 .input-area{
   display:flex;
   gap:10px;
