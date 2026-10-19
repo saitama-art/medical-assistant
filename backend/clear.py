@@ -23,8 +23,8 @@ print(f"总共加载 {len(documents)} 页")
 
 # ========== 2. 切片 ==========
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500,
-    chunk_overlap=50,
+    chunk_size=800,
+    chunk_overlap=100,
     separators=["\n\n", "\n", "。", "！", "？", " ", ""],
 )
 chunks = text_splitter.split_documents(documents)

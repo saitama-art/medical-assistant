@@ -24,8 +24,8 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 from .chain import get_embedding  # 复用查询侧唯一 embedding 出口（无循环导入：chain 不依赖 ingest）
 
 # ==================== 当前实验参数 ====================
-CHUNK_SIZE = 500
-CHUNK_OVERLAP = 50
+CHUNK_SIZE = 800
+CHUNK_OVERLAP = 100
 
 # ========== 路径（相对本文件解析，落到 backend/chroma_db 与 backend/data） ==========
 # ingest.py 位于 backend/app/rag/：parents[0]=rag，[1]=app，[2]=backend

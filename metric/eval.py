@@ -7,8 +7,8 @@ from langchain_chroma import Chroma
 from store import search_with_rerank, search_with_rewrite
 
 # ==================== 当前实验参数 ====================
-CHUNK_SIZE = 500
-CHUNK_OVERLAP = 50
+CHUNK_SIZE = 800
+CHUNK_OVERLAP = 100
 K_LIST = [3]
 
 print("=" * 70)

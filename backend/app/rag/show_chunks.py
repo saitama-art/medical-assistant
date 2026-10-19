@@ -10,8 +10,8 @@ print(f"页数: {len(docs)}")
 
 # 切片
 splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500,
-    chunk_overlap=50,
+    chunk_size=800,
+    chunk_overlap=100,
     separators=["\n\n", "\n", "。", "！", "？", " ", ""],
 )
 chunks = splitter.split_documents(docs)
