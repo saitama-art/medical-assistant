@@ -1,12 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 import ReactMarkdown from 'react-markdown'
+
+// 后端 /agent/chat 的 outcome（TerminationReason）→ 前端展示标签。
+// 用户可见话术已由后端组装进 answer，这里只做状态指示，不再复述文案。
+const OUTCOME_META = {
+  emergency_handled: { text: '紧急提示', cls: 'badge-emergency' },
+  insufficient_evidence: { text: '证据不足', cls: 'badge-muted' },
+  unclassified: { text: '无法处理', cls: 'badge-muted' },
+  context_missing: { text: '请补充说明', cls: 'badge-muted' },
+  retrieval_failed: { text: '检索异常', cls: 'badge-muted' },
+  empty_knowledge_base: { text: '知识库无内容', cls: 'badge-muted' },
+  budget_exhausted: { text: '超时', cls: 'badge-muted' },
+  generation_failed: { text: '生成失败', cls: 'badge-muted' },
+};
+// 与后端 rag/service.py MAX_QUESTION_LEN 对齐（N06 校验口径，测试 T-07）
+const MAX_QUESTION_LEN = 500;
 
 function App() {
   const [message, setMessage] = useState("");
   const [chatList, setChatList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false); // 上传状态
+  const chatBoxRef = useRef(null); // 对话区自动滚动到底
   // 后端地址统一从配置读取（需求 3.4.5：不分别硬编码不同主机地址）；
   // 未配置时回退到本地默认值，行为与改动前一致。
   const API_BASE = process.env.REACT_APP_API_BASE || `http://127.0.0.1:8000`;
@@ -14,10 +30,23 @@ function App() {
   const [sessionId] = useState(() =>
     `sess-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
   );
+
+  // 新消息或加载状态变化时，滚动到对话区底部
+  useEffect(() => {
+    const el = chatBoxRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [chatList, loading]);
+
   // 发送消息 -> 调用后端 /agent/chat（主 Agent 编排链路，同步返回完整回答）
   const sendChat = () => {
     if (!message.trim() || loading) return; // 防止连点
     const question = message.trim();
+    if (question.length > MAX_QUESTION_LEN) {
+      setChatList(prev => [...prev,
+        { role: "ai", content: `问题过长（${MAX_QUESTION_LEN} 字以内），请精简后再发。`, outcome: "unclassified" },
+      ]);
+      return;
+    }
     setChatList(prev => [...prev, { role: "user", content: question }]);
     setMessage("");
     setLoading(true);
@@ -37,7 +66,7 @@ function App() {
         const content = data.answer || data.detail || "服务暂时不可用，请稍后重试。";
         setChatList(prev => {
           const next = [...prev];
-          next[next.length - 1] = { role: "ai", content };
+          next[next.length - 1] = { role: "ai", content, outcome: data.outcome || null };
           return next;
         });
         setLoading(false);
@@ -68,10 +97,20 @@ function App() {
         body: formData,
       });
       const data = await response.json();
-      alert(data.message || "上传成功");
+      // /upload 解析/入库失败时后端仍返回 HTTP 200，失败信息在 message 里
+      // （已记录的口径缝隙）：前端按措辞识别，避免把失败误报成成功。
+      const text = data.message || "上传成功";
+      const failed = !response.ok || text.includes("处理失败");
+      setChatList(prev => [...prev, {
+        role: "ai",
+        content: text,
+        outcome: failed ? "retrieval_failed" : null,
+      }]);
     } catch (error) {
       console.error("上传失败:", error);
-      alert("上传失败，请检查后端服务");
+      setChatList(prev => [...prev, {
+        role: "ai", content: "上传失败，请检查后端服务", outcome: "retrieval_failed",
+      }]);
     } finally {
       setUploading(false);
       e.target.value = ''; // 清空 input 的值，允许再次上传同一个文件
@@ -81,19 +120,27 @@ function App() {
   return (
     <div className="chat-container">
       <h2>医疗科普问答助手</h2>
-      <div className="chat-box">
-        {chatList.map((item, index) => (
-          <div key={index} className={item.role}>
-            {item.role === 'ai' ? (
-              // ✅ 使用 pre-wrap 保持原始换行，让 ReactMarkdown 去处理符号
-              <div className="markdown-body" style={{whiteSpace: 'pre-wrap', wordBreak: 'break-word'}}>
-                <ReactMarkdown>{item.content}</ReactMarkdown>
-              </div>
-            ) : (
-               <p>{item.content}</p>
-            )}
-          </div>
-        ))}
+      <div className="chat-box" ref={chatBoxRef}>
+        {chatList.length === 0 && (
+          <div className="ai"><p>您好，我是医疗科普问答助手。请描述您的健康问题，
+            我会依据知识库资料回答；紧急情况请立即拨打 120。</p></div>
+        )}
+        {chatList.map((item, index) => {
+          const meta = item.outcome ? OUTCOME_META[item.outcome] : null;
+          return (
+            <div key={index} className={item.role}>
+              {meta && <span className={`outcome-badge ${meta.cls}`}>{meta.text}</span>}
+              {item.role === 'ai' ? (
+                // ✅ 使用 pre-wrap 保持原始换行，让 ReactMarkdown 去处理符号
+                <div className="markdown-body" style={{whiteSpace: 'pre-wrap', wordBreak: 'break-word'}}>
+                  <ReactMarkdown>{item.content}</ReactMarkdown>
+                </div>
+              ) : (
+                 <p>{item.content}</p>
+              )}
+            </div>
+          );
+        })}
         {loading && <div className="ai"><p>正在回答...</p></div>}
       </div>
 
@@ -111,7 +158,8 @@ function App() {
         <input
           value={message}
           onChange={e => setMessage(e.target.value)}
-          placeholder="请输入您的问题..."
+          placeholder={`请输入您的问题...（${MAX_QUESTION_LEN} 字以内）`}
+          maxLength={MAX_QUESTION_LEN}
           onKeyDown={e => e.key === 'Enter' && sendChat()}
         />
         <button onClick={sendChat} disabled={loading}>发送</button>
