@@ -93,7 +93,10 @@ def run(question: str, *, deadline: float) -> SubagentResult:
             return _fail(work, SubagentStatus.BUDGET_EXHAUSTED, invocation.detail)
         if status in (ToolStatus.TIMEOUT, ToolStatus.RUNTIME_ERROR):
             work.consecutive_failures += 1
-            if work.consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+            # k 已达上限时「扩大候选集」的 retries 无意义（k+_K_STEP 被钳回同值，
+            # 同参数必被 tools 层 REPEAT 拦截），不再发第二次调用，直接判检索失败。
+            if (work.consecutive_failures >= MAX_CONSECUTIVE_FAILURES
+                    or k >= service.MAX_TOP_K):
                 return _fail(work, SubagentStatus.RETRIEVAL_FAILED, invocation.detail)
             retries += 1
             k = min(service.MAX_TOP_K, k + _K_STEP)
@@ -142,6 +145,7 @@ def run(question: str, *, deadline: float) -> SubagentResult:
             and work.tool_rounds < tools.MAX_TOOL_ROUNDS
             and work.budget.remaining_ms() >= tools.MIN_USABLE_BUDGET_MS + TOOL_BUDGET_MS
             and retries < _MAX_RETRIES
+            and k < service.MAX_TOP_K  # k 已达上限时重试只会同参数被 REPEAT 拦截
         )
         work.add_trace("N09", "decision", {
             "sufficient": False, "can_retry": can_retry, "tool_rounds": work.tool_rounds,

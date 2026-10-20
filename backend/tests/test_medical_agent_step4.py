@@ -422,7 +422,10 @@ class TestOrchestratorKnowledge(unittest.TestCase):
         self.assertIn("【参考来源】", state.answer_text)
         self.assertIn(respond.DISCLAIMER, state.answer_text)
 
-    def test_insufficient_evidence_retries_once_then_gives_up(self):
+    def test_insufficient_evidence_k_at_max_retries_immediately_gives_up(self):
+        """DEFAULT_TOP_K == MAX_TOP_K（=10，2026-10-19 配置）时，N09 的
+        「k 增大再判」回边无意义（k+_K_STEP 被钳回同值，必被 REPEAT 拦截），
+        守卫应直接不启动回边：1 轮检索 + 1 次判定后终止，不进入生成。"""
         chunks = [_chunk(" unrelated 片段，不含所问内容。")]
         retrieval = RetrievalResult(outcome=None, chunks=chunks, distance_metric="l2")
         llm = FakeLLM(
@@ -432,13 +435,31 @@ class TestOrchestratorKnowledge(unittest.TestCase):
         state, calls = _run(_fresh_session(), "血压的正常范围是多少", llm, retrieval)
 
         self.assertIs(state.termination_reason, TerminationReason.INSUFFICIENT_EVIDENCE)
-        # 回边恰好 1 次：检索执行 2 轮，之后终止，不进入生成
+        # k 已达上限：不触发回边，检索仅 1 轮
+        self.assertEqual(state.tool_rounds, 1)
+        self.assertEqual(calls["retrieval"], 1)
+        self.assertEqual(len(state.tool_calls), 1)
+        self.assertEqual(llm.calls, 2)  # 分类 1 + 判定 1，无生成调用
+        self.assertIn(respond.EVIDENCE_INSUFFICIENT, state.answer_text)
+        # 证据不足文案不得拼出来源（T-14① 精神：非完成路径不展示来源）
+        self.assertNotIn("【参考来源】", state.answer_text)
+
+    def test_insufficient_evidence_retries_once_when_k_can_grow(self):
+        """k 未达上限时（DEFAULT_TOP_K=3 口径），N09 回边恰好 1 次：检索 2 轮。"""
+        chunks = [_chunk(" unrelated 片段，不含所问内容。")]
+        retrieval = RetrievalResult(outcome=None, chunks=chunks, distance_metric="l2")
+        llm = FakeLLM(
+            classify={"category": "knowledge", "confidence": 0.95},
+            judge={"answerable": False, "supporting_quote": ""},
+        )
+        with patch.object(service, "DEFAULT_TOP_K", 3):
+            state, calls = _run(_fresh_session(), "血压的正常范围是多少", llm, retrieval)
+
+        self.assertIs(state.termination_reason, TerminationReason.INSUFFICIENT_EVIDENCE)
         self.assertEqual(state.tool_rounds, 2)
         self.assertEqual(calls["retrieval"], 2)
         self.assertEqual(len(state.tool_calls), 2)
         self.assertEqual(llm.calls, 3)  # 分类 1 + 判定 2，无生成调用
-        self.assertIn(respond.EVIDENCE_INSUFFICIENT, state.answer_text)
-        # 证据不足文案不得拼出来源（T-14① 精神：非完成路径不展示来源）
         self.assertNotIn("【参考来源】", state.answer_text)
 
     def test_empty_result_distinct_from_error(self):

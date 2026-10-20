@@ -66,4 +66,17 @@ DAYI_WANTED = [
     "缬沙坦", "左氧氟沙星", "蒙脱石散", "对乙酰氨基酚", "头孢克肟",
 ]
 
-ALL_MSD = MSD_DISEASES + MSD_SYMPTOMS + MSD_TESTS + MSD_MED_SAFETY
+# ---- 常见健康知识补缺（2026-10-19；URL 逐个 curl 验证 200 后收录）----
+MSD_COMMON_HEALTH = [
+    ("symptom-constipation", "/home/digestive-disorders/symptoms-of-digestive-disorders/constipation-in-adults", "成人便秘", "症状与就医指引"),
+    ("symptom-insomnia", "/home/brain-spinal-cord-and-nerve-disorders/sleep-disorders/insomnia-and-excessive-daytime-sleepiness-eds", "失眠", "症状与就医指引"),
+    ("symptom-fever-adults", "/home/infections/biology-of-infectious-disease/fever-in-adults", "成人发热", "症状与就医指引"),
+    ("symptom-low-back-pain", "/home/bone-joint-and-muscle-disorders/low-back-and-neck-pain/low-back-pain", "腰痛", "症状与就医指引"),
+    ("symptom-hives", "/home/skin-disorders/itching-and-dermatitis/hives", "荨麻疹（风团）", "症状与就医指引"),
+    ("disease-gout", "/home/bone-joint-and-muscle-disorders/gout-and-calcium-pyrophosphate-arthritis/gout", "痛风（高尿酸血症）", "疾病与健康知识"),
+    ("disease-h-pylori", "/home/digestive-disorders/gastritis-and-peptic-ulcer-disease/helicobacter-pylori-infection", "幽门螺杆菌感染", "疾病与健康知识"),
+    ("disease-hepatitis", "/home/liver-and-gallbladder-disorders/hepatitis/overview-of-hepatitis", "肝炎概述", "疾病与健康知识"),
+    ("disease-dyslipidemia", "/home/hormonal-and-metabolic-disorders/cholesterol-disorders/dyslipidemia", "血脂异常", "疾病与健康知识"),
+]
+
+ALL_MSD = MSD_DISEASES + MSD_SYMPTOMS + MSD_TESTS + MSD_MED_SAFETY + MSD_COMMON_HEALTH

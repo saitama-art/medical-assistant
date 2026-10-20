@@ -328,5 +328,95 @@
     "title": "甲钴胺片",
     "category": "药品说明书",
     "site": "dayi"
+  },
+  {
+    "key": "symptom-constipation",
+    "url": "https://www.msdmanuals.cn/home/digestive-disorders/symptoms-of-digestive-disorders/constipation-in-adults",
+    "status": 200,
+    "chars": 10345,
+    "ok": true,
+    "title": "成人便秘",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-insomnia",
+    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/sleep-disorders/insomnia-and-excessive-daytime-sleepiness-eds",
+    "status": 200,
+    "chars": 12787,
+    "ok": true,
+    "title": "失眠",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-fever-adults",
+    "url": "https://www.msdmanuals.cn/home/infections/biology-of-infectious-disease/fever-in-adults",
+    "status": 200,
+    "chars": 8721,
+    "ok": true,
+    "title": "成人发热",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-low-back-pain",
+    "url": "https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/low-back-and-neck-pain/low-back-pain",
+    "status": 200,
+    "chars": 12570,
+    "ok": true,
+    "title": "腰痛",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-hives",
+    "url": "https://www.msdmanuals.cn/home/skin-disorders/itching-and-dermatitis/hives",
+    "status": 200,
+    "chars": 8311,
+    "ok": true,
+    "title": "荨麻疹（风团）",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "disease-gout",
+    "url": "https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/gout-and-calcium-pyrophosphate-arthritis/gout",
+    "status": 200,
+    "chars": 8761,
+    "ok": true,
+    "title": "痛风（高尿酸血症）",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-h-pylori",
+    "url": "https://www.msdmanuals.cn/home/digestive-disorders/gastritis-and-peptic-ulcer-disease/helicobacter-pylori-infection",
+    "status": 200,
+    "chars": 1696,
+    "ok": true,
+    "title": "幽门螺杆菌感染",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-hepatitis",
+    "url": "https://www.msdmanuals.cn/home/liver-and-gallbladder-disorders/hepatitis/overview-of-hepatitis",
+    "status": 200,
+    "chars": 3518,
+    "ok": true,
+    "title": "肝炎概述",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-dyslipidemia",
+    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/cholesterol-disorders/dyslipidemia",
+    "status": 200,
+    "chars": 13613,
+    "ok": true,
+    "title": "血脂异常",
+    "category": "疾病与健康知识",
+    "site": "msd"
   }
 ]
