@@ -19,6 +19,12 @@ MSD_DISEASES = [
     ("disease-migraine", "/home/brain-spinal-cord-and-nerve-disorders/headaches/migraines", "偏头痛", "疾病与健康知识"),
     ("disease-hyperthyroidism", "/home/hormonal-and-metabolic-disorders/thyroid-gland-disorders/hyperthyroidism", "甲状腺功能亢进症", "疾病与健康知识"),
     ("disease-hypothyroidism", "/home/hormonal-and-metabolic-disorders/thyroid-gland-disorders/hypothyroidism", "甲状腺功能减退症", "疾病与健康知识"),
+    # ---- 2026-10-20 第三轮高频主题 ----
+    ("disease-osteoarthritis", "/home/bone-joint-and-muscle-disorders/joint-disorders/osteoarthritis-oa", "骨关节炎", "疾病与健康知识"),
+    ("disease-rheumatoid-arthritis", "/home/bone-joint-and-muscle-disorders/joint-disorders/rheumatoid-arthritis-ra", "类风湿性关节炎", "疾病与健康知识"),
+    ("disease-eczema", "/home/skin-disorders/itching-and-dermatitis/atopic-dermatitis-eczema", "特应性皮炎（湿疹）", "疾病与健康知识"),
+    ("disease-depression", "/home/mental-health-disorders/mood-disorders/depression", "抑郁症", "疾病与健康知识"),
+    ("disease-anxiety", "/home/mental-health-disorders/anxiety-and-trauma-and-stressor-related-disorders/generalized-anxiety-disorder", "广泛性焦虑障碍", "疾病与健康知识"),
 ]
 
 # ---- 症状与就医指引（默沙东大众版·症状）----
@@ -31,6 +37,10 @@ MSD_SYMPTOMS = [
     ("symptom-chronic-abdominal-pain", "/home/digestive-disorders/symptoms-of-digestive-disorders/chronic-abdominal-pain-and-recurring-abdominal-pain", "慢性腹痛和反复发作性腹痛", "症状与就医指引"),
     ("symptom-diarrhea-adults", "/home/digestive-disorders/symptoms-of-digestive-disorders/diarrhea-in-adults", "成人腹泻", "症状与就医指引"),
     ("symptom-cough-adults", "/home/lung-and-airway-disorders/symptoms-of-lung-disorders/cough-in-adults", "成人咳嗽", "症状与就医指引"),
+    # ---- 2026-10-20 第三轮高频症状 ----
+    ("symptom-nausea-vomiting", "/home/digestive-disorders/symptoms-of-digestive-disorders/nausea-and-vomiting-in-adults", "成人恶心和呕吐", "症状与就医指引"),
+    ("symptom-headache-overview", "/home/brain-spinal-cord-and-nerve-disorders/headaches/overview-of-headache", "头痛概述", "症状与就医指引"),
+    ("symptom-joint-pain", "/home/bone-joint-and-muscle-disorders/symptoms-of-musculoskeletal-disorders/joint-pain-many-joints", "关节疼痛（多关节）", "症状与就医指引"),
 ]
 
 # ---- 检查指标解读（默沙东大众版·常见医疗检查/影像/功能检查）----
@@ -69,12 +79,24 @@ DAYI_KNOWN = [
     ("drug-metformin-sr", "https://www.dayi.org.cn/drug/1157161.html", "二甲双胍缓释片"),
     ("drug-rosuvastatin", "https://www.dayi.org.cn/drug/1152374.html", "瑞舒伐他汀"),
     ("drug-mecobalamin-tab", "https://www.dayi.org.cn/drug/1144944.html", "甲钴胺片"),
+    # ---- 2026-10-20 第三轮：站点搜索接口解析到的常用药（列表分页只展示少量条目，
+    # 原 fetch 的列表解析找不到它们，并非平台无词条）----
+    ("drug-amoxicillin", "https://www.dayi.org.cn/drug/1151078.html", "阿莫西林"),
+    ("drug-omeprazole", "https://www.dayi.org.cn/drug/1158996.html", "奥美拉唑胶囊"),
+    ("drug-loratadine", "https://www.dayi.org.cn/drug/1151949.html", "氯雷他定"),
+    ("drug-atorvastatin", "https://www.dayi.org.cn/drug/1152372.html", "阿托伐他汀"),
+    ("drug-nifedipine", "https://www.dayi.org.cn/drug/1151977.html", "硝苯地平"),
+    ("drug-valsartan", "https://www.dayi.org.cn/drug/1151975.html", "缬沙坦"),
+    ("drug-levofloxacin", "https://www.dayi.org.cn/drug/1025034.html", "左氧氟沙星片"),
+    ("drug-montmorillonite", "https://www.dayi.org.cn/drug/1025700.html", "蒙脱石散"),
+    ("drug-paracetamol", "https://www.dayi.org.cn/drug/1142592.html", "对乙酰氨基酚片"),
+    ("drug-cefixime", "https://www.dayi.org.cn/drug/1151919.html", "头孢克肟"),
 ]
 
-# 计划内但详情页 id 待解析的常用药（fetch 阶段在平台列表/搜索中解析）
+# 计划内但详情页 id 待解析的常用药（fetch 阶段在平台列表/搜索中解析）。
+# 注：站点列表分页只展示少量条目，解析不到不代表无词条；2026-10-20 起已知药品
+# 直接收录进 DAYI_KNOWN（用 search?keyword= 接口逐个确认）。
 DAYI_WANTED = [
-    "阿莫西林", "奥美拉唑", "氯雷他定", "阿托伐他汀", "硝苯地平",
-    "缬沙坦", "左氧氟沙星", "蒙脱石散", "对乙酰氨基酚", "头孢克肟",
 ]
 
 # ---- 常见健康知识补缺（2026-10-19；URL 逐个 curl 验证 200 后收录）----
