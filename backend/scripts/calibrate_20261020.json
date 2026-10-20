@@ -1,0 +1,140 @@
+{
+  "hnsw_space": null,
+  "metric_probe": {
+    "l2_squared_computed_min": 0.244412,
+    "cosine_distance_computed_min": 0.122206
+  },
+  "relevant": [
+    {
+      "question": "盐酸二甲双胍片的适应症是什么？",
+      "top1_distance": 0.2444,
+      "top1_source": "国药准字H20184130_盐酸二甲双胍片.pdf"
+    },
+    {
+      "question": "盐酸二甲双胍片的用法用量是什么？",
+      "top1_distance": 0.2695,
+      "top1_source": "二甲双胍缓释片_中国医药信息查询平台.pdf"
+    },
+    {
+      "question": "阿莫西林主要用于治疗哪些感染？",
+      "top1_distance": 0.302,
+      "top1_source": "阿莫西林_中国医药信息查询平台.pdf"
+    },
+    {
+      "question": "高血压患者在生活方式上要注意什么？",
+      "top1_distance": 0.3349,
+      "top1_source": "高血压_默沙东诊疗手册.pdf"
+    },
+    {
+      "question": "血常规检查主要看哪些指标？",
+      "top1_distance": 0.3382,
+      "top1_source": "常见的医疗检查（总览）_默沙东诊疗手册.pdf"
+    },
+    {
+      "question": "布洛芬颗粒适用于哪些情况？",
+      "top1_distance": 0.2817,
+      "top1_source": "国药准字H20055226_布洛芬颗粒.pdf"
+    },
+    {
+      "question": "成人腹泻时应该怎么补水？",
+      "top1_distance": 0.3779,
+      "top1_source": "蒙脱石散_中国医药信息查询平台.pdf"
+    },
+    {
+      "question": "服用多种药物时需要注意什么？",
+      "top1_distance": 0.3219,
+      "top1_source": "影响药物反应的因素（年龄_特殊人群）_默沙东诊疗手册.pdf"
+    }
+  ],
+  "irrelevant": [
+    {
+      "question": "盐酸二甲双胍片多少钱一盒？",
+      "top1_distance": 0.2865,
+      "top1_source": "国药准字H20184130_盐酸二甲双胍片.pdf"
+    },
+    {
+      "question": "盐酸二甲双胍片可以医保报销吗？",
+      "top1_distance": 0.3226,
+      "top1_source": "国药准字H20184130_盐酸二甲双胍片.pdf"
+    },
+    {
+      "question": "药品开封后多久会失效？",
+      "top1_distance": 0.3836,
+      "top1_source": "影响药物反应的因素（年龄_特殊人群）_默沙东诊疗手册.pdf"
+    },
+    {
+      "question": "熬夜对身体有什么影响？",
+      "top1_distance": 0.4108,
+      "top1_source": "失眠_默沙东诊疗手册.pdf"
+    },
+    {
+      "question": "感冒了怎么办？",
+      "top1_distance": 0.4778,
+      "top1_source": "成人发热_默沙东诊疗手册.pdf"
+    },
+    {
+      "question": "我胸口疼要去哪个科？",
+      "top1_distance": 0.4723,
+      "top1_source": "胸痛_默沙东诊疗手册.pdf"
+    },
+    {
+      "question": "如何评价某药企的股票前景？",
+      "top1_distance": 0.4511,
+      "top1_source": "国药准字H20066383_马来酸依那普利片.pdf"
+    },
+    {
+      "question": "明天北京天气怎么样？",
+      "top1_distance": 0.6894,
+      "top1_source": "硝苯地平_中国医药信息查询平台.pdf"
+    }
+  ],
+  "latencies_ms": [
+    9.751199977472425,
+    9.37859999248758,
+    10.992399998940527,
+    10.238500020932406,
+    11.221499997191131,
+    11.044699989724904,
+    10.354000027291477,
+    10.432199982460588,
+    9.850899979937822,
+    10.658100014552474,
+    8.968500012997538,
+    9.854700008872896,
+    9.15040000109002,
+    9.515699988696724,
+    11.049899971112609,
+    9.669400053098798
+  ],
+  "stats": {
+    "latency_p50_ms": 10.2,
+    "latency_p95_ms": 11.2,
+    "latency_max_ms": 11.2,
+    "relevant_distances": [
+      0.2444,
+      0.2695,
+      0.2817,
+      0.302,
+      0.3219,
+      0.3349,
+      0.3382,
+      0.3779
+    ],
+    "relevant_min": 0.2444,
+    "relevant_max": 0.3779,
+    "relevant_median": 0.3219,
+    "irrelevant_distances": [
+      0.2865,
+      0.3226,
+      0.3836,
+      0.4108,
+      0.4511,
+      0.4723,
+      0.4778,
+      0.6894
+    ],
+    "irrelevant_min": 0.2865,
+    "irrelevant_max": 0.6894,
+    "irrelevant_median": 0.4511
+  }
+}
