@@ -26,10 +26,24 @@ function App() {
   // 后端地址统一从配置读取（需求 3.4.5：不分别硬编码不同主机地址）；
   // 未配置时回退到本地默认值，行为与改动前一致。
   const API_BASE = process.env.REACT_APP_API_BASE || `http://127.0.0.1:8000`;
-  // 会话标识：页面加载时生成一次，同一页面内的连续追问共享上下文（N02 多轮）。
-  const [sessionId] = useState(() =>
-    `sess-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
-  );
+  // 会话标识：localStorage 持久化（设计 C-6 确认项）。刷新/重开页面沿用同一会话，
+  // 多轮上下文（N02）不因页面关闭丢失；后端服务重启后会话存储清空，同一 session_id
+  // 按新会话处理并由后端给出无历史说明（现有 N02/降级逻辑，无需前端特判）。
+  const SESSION_KEY = "medical-assistant-session-id";
+  const [sessionId] = useState(() => {
+    let sid = null;
+    try {
+      sid = window.localStorage.getItem(SESSION_KEY);
+      if (!sid) {
+        sid = `sess-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+        window.localStorage.setItem(SESSION_KEY, sid);
+      }
+    } catch {
+      // localStorage 不可用（隐私模式等）时退化为每次加载新会话，行为同改动前
+      sid = `sess-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+    return sid;
+  });
 
   // 新消息或加载状态变化时，滚动到对话区底部
   useEffect(() => {
