@@ -136,7 +136,7 @@ class TestLateralityTerms(unittest.TestCase):
 
     def test_new_terms_stay_in_the_existing_group(self):
         """新增条目只能是既有第 6 组的补充，不得新增分组（2.3 表共 8 组）。"""
-        self.assertEqual(len(safety.ACUTE_TERMS), 8)
+        self.assertEqual(len(safety.ACUTE_TERMS), 9)  # 8+咽喉梗阻组（2026-10-20 T-03 真实验收补）
         stroke_group = safety.ACUTE_TERMS[5]
         for term in ("一侧手脚无力", "单侧肢体无力"):
             with self.subTest(term=term):
@@ -218,6 +218,54 @@ class TestNoRegressionOfExistingRules(unittest.TestCase):
             router.decide_route(QuestionCategory.EMERGENCY, EmergencyLevel.STRONG,
                                 ContextStatus.OK, "我胸痛"),
             Route.EMERGENCY)
+
+
+class TestT03LiveAcceptanceGaps(unittest.TestCase):
+    """2026-10-20 真实 LLM 验收实测暴露的 3 条漏拦（T-03-3/6/7），修复的确定性用例。
+
+    背景：DeepSeek 恢复后跑 `--only T-03`，8 条中 5 条规则/分类通过，3 条落
+    unclassified。根因全是规则侧、与 LLM 无关：
+    - 「伤口大出血，按压了还是止不住」：词表有「大出血」，但既无求助主体也无
+      急症语境词 → 裸症状 WEAK。「止不住」本身就是"失控持续中"的语境（同档
+      于「持续/加重」），现已补入 CURRENT_CONTEXT。
+    - 「喉咙发紧肿起来了，呼吸困难，喘不过气」：呼吸困难组双词命中但同属一组，
+      裸症状 WEAK。新增咽喉梗阻组（喉头水肿/喉咙发紧/…）独立计组，两组叠加触发
+      新增的多征象规则（≥2 组 → STRONG）。
+    - 「胸口压榨样疼痛，…」：词表「压榨样痛」不是「压榨样疼痛」的子串（疼字
+      插入），整条 no_acute_term。补「压榨样」变体。
+    刻意保持的边界：单组裸词仍 WEAK（「胸痛」不回退 2d7c9e6 约定）；「止不住」
+    只做语境词不做急症词（「咳嗽止不住」不得升级为紧急）。
+    """
+
+    def test_t03_3_bleeding_uncontrolled_is_strong(self):
+        hit = safety.check_emergency("伤口大出血，按压了还是止不住")
+        self.assertIs(hit.level, EmergencyLevel.STRONG)
+        self.assertIn(hit.rule_id, ("acute_context", "multiple_groups"))
+
+    def test_t03_6_throat_swelling_plus_dyspnea_is_strong(self):
+        hit = safety.check_emergency("喉咙发紧肿起来了，呼吸困难，喘不过气")
+        self.assertIs(hit.level, EmergencyLevel.STRONG)
+        self.assertEqual(hit.rule_id, "multiple_groups")
+
+    def test_t03_7_crushing_chest_pain_is_strong(self):
+        hit = safety.check_emergency("胸口压榨样疼痛，大汗淋漓，持续不缓解")
+        self.assertIs(hit.level, EmergencyLevel.STRONG)
+
+    def test_single_bare_symptom_stays_weak(self):
+        # 回退守卫：单组裸词不因为本次补词而升级
+        for q in ("胸痛", "头疼得厉害", "呼吸困难"):
+            self.assertIs(safety.check_emergency(q).level, EmergencyLevel.WEAK, q)
+
+    def test_止不住_is_context_only_not_acute_term(self):
+        # 「止不住」不是急症词：没有急症词命中时不得升级（咳嗽止不住≠急症）
+        self.assertIs(
+            safety.check_emergency("咳嗽止不住怎么办").rule_id, "no_acute_term")
+        self.assertIs(
+            safety.check_emergency("拉肚子一直止不住").rule_id, "no_acute_term")
+        # 但出血词 + 止不住语境 → STRONG
+        self.assertIs(
+            safety.check_emergency("止不住血的伤口怎么处理").level,
+            EmergencyLevel.STRONG)
 
 
 if __name__ == "__main__":

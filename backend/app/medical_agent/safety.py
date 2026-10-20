@@ -37,9 +37,9 @@ class EmergencyRuleError(RuntimeError):
 # ==================== 词表 ====================
 # 说明：词表为模块级常量。若后续需要纳入配置管理，整体搬移即可，规则逻辑不变。
 
-# 急症词：每组是同一含义的不同表述，命中组内任一即算命中该组。共 8 组。
+# 急症词：每组是同一含义的不同表述，命中组内任一即算命中该组。共 9 组。
 ACUTE_TERMS: tuple[tuple[str, ...], ...] = (
-    ("胸痛", "胸口疼", "胸口痛", "心口疼", "心口痛", "胸闷痛", "胸骨后疼", "压榨样痛"),
+    ("胸痛", "胸口疼", "胸口痛", "心口疼", "心口痛", "胸闷痛", "胸骨后疼", "压榨样痛", "压榨样"),
     ("呼吸困难", "喘不上气", "喘不过气", "窒息", "呼吸急促", "气促", "憋气"),
     ("意识障碍", "意识不清", "昏迷", "抽搐", "晕厥", "昏倒", "叫不醒"),
     ("大出血", "大量出血", "呕血", "咯血", "吐血", "便血", "血便", "止不住血"),
@@ -56,6 +56,10 @@ ACUTE_TERMS: tuple[tuple[str, ...], ...] = (
     ),
     ("误服", "吃错药", "吃多了药", "过量服药"),
     ("高热惊厥",),
+    # 咽喉梗阻组（2026-10-20 真实验收补）：与「呼吸困难」组分开计组——两组同时
+    # 命中会触发叠加征象规则（multiple_groups → STRONG）。实测漏拦案例：
+    # 「喉咙发紧肿起来了，呼吸困难，喘不过气」只有语境词在表内时只有单组命中。
+    ("喉头水肿", "喉咙发紧", "喉咙肿", "咽喉肿痛", "异物卡喉"),
 )
 
 # 第一人称：说话人自己正在出现症状。
@@ -76,6 +80,9 @@ THIRD_PERSON_SUBJECTS: tuple[str, ...] = (
 CURRENT_CONTEXT: tuple[str, ...] = (
     "现在", "此刻", "这会儿", "刚刚", "刚才", "突然", "一直", "正在",
     "目前", "眼下", "越来越", "加重", "持续", "急诊", "马上", "立刻",
+    # 2026-10-20 真实验收补：出血控制不住的表述本身就是急症语境（按压不止仍出血），
+    # 与「持续/加重」同档。只对已命中急症词的句子升级，裸句不受影响。
+    "止不住", "按压不止",
 )
 
 # 求助语：没有主语也能表明是真实求助，而不是在问资料。
@@ -156,6 +163,21 @@ def check_emergency(text: str) -> EmergencyHit:
 
     if _contains_any(normalized, META_QUESTION):
         return EmergencyHit(EmergencyLevel.WEAK, "meta_question", terms, has_negated)
+
+    # 叠加征象规则（2026-10-20 真实验收补）：单个裸症状词保持 WEAK（2.2 路由表约定），
+    # 但**两个及以上不同急症组同时命中**时，即使没有求助主体/语境词也按 STRONG 处理。
+    # 依据：多组征象并存本身就是急症语境（胸痛+大汗、呼吸困难+喉头肿），且符合
+    # 「宁可误拦、不可漏拦」（需求 9.3.5）。实测漏拦案例：
+    # 「喉咙发紧肿起来了，呼吸困难，喘不过气」「胸口压榨样疼痛，大汗淋漓，持续不缓解」。
+    # 刻意不放宽单组裸词——「胸痛」单独出现仍走 WEAK + 风险提示，不回退 2d7c9e6 约定。
+    active_groups = sum(
+        1 for group in ACUTE_TERMS
+        if any(term in normalized for term in group)
+        # 该组至少要有一个未被否定的命中词，与 active 语义一致
+        and any(term in active for term in group)
+    )
+    if active_groups >= 2:
+        return EmergencyHit(EmergencyLevel.STRONG, "multiple_groups", terms, has_negated)
 
     return EmergencyHit(BARE_SYMPTOM_LEVEL, "bare_symptom", terms, has_negated)
 
