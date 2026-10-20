@@ -132,52 +132,72 @@ function App() {
   };
 
   return (
-    <div className="chat-container">
-      <h2>医疗科普问答助手</h2>
-      <div className="chat-box" ref={chatBoxRef}>
-        {chatList.length === 0 && (
-          <div className="ai"><p>您好，我是医疗科普问答助手。请描述您的健康问题，
-            我会依据知识库资料回答；紧急情况请立即拨打 120。</p></div>
-        )}
-        {chatList.map((item, index) => {
-          const meta = item.outcome ? OUTCOME_META[item.outcome] : null;
-          return (
-            <div key={index} className={item.role}>
-              {meta && <span className={`outcome-badge ${meta.cls}`}>{meta.text}</span>}
-              {item.role === 'ai' ? (
-                // ✅ 使用 pre-wrap 保持原始换行，让 ReactMarkdown 去处理符号
-                <div className="markdown-body" style={{whiteSpace: 'pre-wrap', wordBreak: 'break-word'}}>
-                  <ReactMarkdown>{item.content}</ReactMarkdown>
-                </div>
-              ) : (
-                 <p>{item.content}</p>
-              )}
+    <div className="app-shell">
+      <header className="app-header">
+        <div className="app-header-inner">
+          <h1>医疗科普问答助手</h1>
+          <p>基于知识库证据回答 · 紧急情况请立即拨打 <strong>120</strong></p>
+        </div>
+      </header>
+
+      <main className="chat-container">
+        <div className="chat-box" ref={chatBoxRef}>
+          {chatList.length === 0 && (
+            <div className="welcome">
+              <div className="welcome-icon">🩺</div>
+              <p>您好，我是医疗科普问答助手</p>
+              <p className="welcome-sub">请描述您的健康问题，我会依据知识库资料回答；
+                也可以问我药品用法、检查指标、疾病科普等内容。</p>
             </div>
-          );
-        })}
-        {loading && <div className="ai"><p>正在回答...</p></div>}
-      </div>
+          )}
+          {chatList.map((item, index) => {
+            const meta = item.outcome ? OUTCOME_META[item.outcome] : null;
+            return (
+              <div key={index} className={`msg-row ${item.role}`}>
+                <div className={`bubble ${item.role}`}>
+                  {meta && <span className={`outcome-badge ${meta.cls}`}>{meta.text}</span>}
+                  {item.role === 'ai' ? (
+                    <div className="markdown-body">
+                      <ReactMarkdown>{item.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p>{item.content}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {loading && (
+            <div className="msg-row ai">
+              <div className="bubble ai loading">
+                <span className="dot" /><span className="dot" /><span className="dot" />
+              </div>
+            </div>
+          )}
+        </div>
 
-      <div className="input-area">
-        <label className="upload-btn" style={{cursor: 'pointer', color: 'blue', marginRight: '10px'}}>
-          {uploading ? '上传中...' : '上传PDF'}
+        <div className="input-area">
+          <label className="upload-btn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>{uploading ? '上传中' : '上传PDF'}</span>
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={handleFileUpload}
+              style={{display: 'none'}}
+            />
+          </label>
+
           <input
-            type="file"
-            accept=".pdf"
-            onChange={handleFileUpload}
-            style={{display: 'none'}}
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            placeholder={`请输入您的问题...（${MAX_QUESTION_LEN} 字以内）`}
+            maxLength={MAX_QUESTION_LEN}
+            onKeyDown={e => e.key === 'Enter' && sendChat()}
           />
-        </label>
-
-        <input
-          value={message}
-          onChange={e => setMessage(e.target.value)}
-          placeholder={`请输入您的问题...（${MAX_QUESTION_LEN} 字以内）`}
-          maxLength={MAX_QUESTION_LEN}
-          onKeyDown={e => e.key === 'Enter' && sendChat()}
-        />
-        <button onClick={sendChat} disabled={loading}>发送</button>
-      </div>
+          <button onClick={sendChat} disabled={loading}>发送</button>
+        </div>
+      </main>
     </div>
   );
 }
