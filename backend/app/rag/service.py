@@ -42,10 +42,15 @@ class RagServiceError(RuntimeError):
 # 距离粗筛阈值。**G-1 门禁：Step 0b 校准完成前必须保持 None**，
 # 此时第 1 段不参与判定（仅记录 top1_distance 供观测），
 # 不允许为了"先跑通流程"填一个拍脑袋的数值（设计文档 5.4）。
+# Step 0b 已完成（2026-10-20《阈值校准报告》）：实证刻度 L2 平方，
+# 两类分布 0.244~0.378 / 0.286~0.689 重叠不可分——结论是**维持 None 不启用**，
+# 第 1 段语义下任何阈值都会双向误判；若库/embedding 变更需重跑 scripts/calibrate_threshold.py。
 EVIDENCE_THRESHOLD: float | None = None
 
 # 阈值对应的距离度量（cosine / l2）。与 collection 的 hnsw:space 不符时第 1 段自动禁用。
-EVIDENCE_THRESHOLD_METRIC: str | None = None
+# 实证值：l2（平方 L2）。当前 collection 元数据未声明 hnsw:space（None），
+# 若未来填阈值，启用标记将为 enabled_metric_unverified，见 _resolve_gate1。
+EVIDENCE_THRESHOLD_METRIC: str | None = "l2"
 
 # threshold / llm / both
 EVIDENCE_JUDGE: str = "both"
