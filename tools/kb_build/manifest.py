@@ -25,6 +25,12 @@ MSD_DISEASES = [
     ("disease-eczema", "/home/skin-disorders/itching-and-dermatitis/atopic-dermatitis-eczema", "特应性皮炎（湿疹）", "疾病与健康知识"),
     ("disease-depression", "/home/mental-health-disorders/mood-disorders/depression", "抑郁症", "疾病与健康知识"),
     ("disease-anxiety", "/home/mental-health-disorders/anxiety-and-trauma-and-stressor-related-disorders/generalized-anxiety-disorder", "广泛性焦虑障碍", "疾病与健康知识"),
+    # ---- 2026-10-20 第四轮：真实验收暴露的裸词拒答缺口 ----
+    # 「低血糖」裸词百科式提问曾判证据不足（片段只有药品语境内容）；该栏目独立页
+    # 经验证存在（栏目索引 /home/hormonal-and-metabolic-disorders/diabetes-mellitus-
+    # and-low-blood-sugar-hypoglycemia 下的 hypoglycemia 子页）。
+    # 儿童/老年人用药无独立页（大众版栏目结构如此，既有"影响药物反应的因素"条目内覆盖）。
+    ("disease-hypoglycemia", "/home/hormonal-and-metabolic-disorders/diabetes-mellitus-and-low-blood-sugar-hypoglycemia/hypoglycemia", "低血糖", "疾病与健康知识"),
 ]
 
 # ---- 症状与就医指引（默沙东大众版·症状）----
