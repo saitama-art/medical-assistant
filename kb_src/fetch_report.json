@@ -130,6 +130,56 @@
     "site": "msd"
   },
   {
+    "key": "disease-osteoarthritis",
+    "url": "https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/joint-disorders/osteoarthritis-oa",
+    "status": 200,
+    "chars": 7923,
+    "ok": true,
+    "title": "骨关节炎",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-rheumatoid-arthritis",
+    "url": "https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/joint-disorders/rheumatoid-arthritis-ra",
+    "status": 200,
+    "chars": 16665,
+    "ok": true,
+    "title": "类风湿性关节炎",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-eczema",
+    "url": "https://www.msdmanuals.cn/home/skin-disorders/itching-and-dermatitis/atopic-dermatitis-eczema",
+    "status": 200,
+    "chars": 6823,
+    "ok": true,
+    "title": "特应性皮炎（湿疹）",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-depression",
+    "url": "https://www.msdmanuals.cn/home/mental-health-disorders/mood-disorders/depression",
+    "status": 200,
+    "chars": 10102,
+    "ok": true,
+    "title": "抑郁症",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-anxiety",
+    "url": "https://www.msdmanuals.cn/home/mental-health-disorders/anxiety-and-trauma-and-stressor-related-disorders/generalized-anxiety-disorder",
+    "status": 200,
+    "chars": 1669,
+    "ok": true,
+    "title": "广泛性焦虑障碍",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
     "key": "symptom-chest-pain",
     "url": "https://www.msdmanuals.cn/home/heart-and-blood-vessel-disorders/symptoms-of-heart-and-blood-vessel-disorders/chest-pain",
     "status": 200,
@@ -206,6 +256,36 @@
     "chars": 9212,
     "ok": true,
     "title": "成人咳嗽",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-nausea-vomiting",
+    "url": "https://www.msdmanuals.cn/home/digestive-disorders/symptoms-of-digestive-disorders/nausea-and-vomiting-in-adults",
+    "status": 200,
+    "chars": 7197,
+    "ok": true,
+    "title": "成人恶心和呕吐",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-headache-overview",
+    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/headaches/overview-of-headache",
+    "status": 200,
+    "chars": 11476,
+    "ok": true,
+    "title": "头痛概述",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "symptom-joint-pain",
+    "url": "https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/symptoms-of-musculoskeletal-disorders/joint-pain-many-joints",
+    "status": 200,
+    "chars": 7399,
+    "ok": true,
+    "title": "关节疼痛（多关节）",
     "category": "症状与就医指引",
     "site": "msd"
   },
@@ -496,6 +576,106 @@
     "chars": 1426,
     "ok": true,
     "title": "甲钴胺片",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-amoxicillin",
+    "url": "https://www.dayi.org.cn/drug/1151078.html",
+    "status": 200,
+    "chars": 3983,
+    "ok": true,
+    "title": "阿莫西林",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-omeprazole",
+    "url": "https://www.dayi.org.cn/drug/1158996.html",
+    "status": 200,
+    "chars": 1324,
+    "ok": true,
+    "title": "奥美拉唑胶囊",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-loratadine",
+    "url": "https://www.dayi.org.cn/drug/1151949.html",
+    "status": 200,
+    "chars": 5297,
+    "ok": true,
+    "title": "氯雷他定",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-atorvastatin",
+    "url": "https://www.dayi.org.cn/drug/1152372.html",
+    "status": 200,
+    "chars": 12904,
+    "ok": true,
+    "title": "阿托伐他汀",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-nifedipine",
+    "url": "https://www.dayi.org.cn/drug/1151977.html",
+    "status": 200,
+    "chars": 10555,
+    "ok": true,
+    "title": "硝苯地平",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-valsartan",
+    "url": "https://www.dayi.org.cn/drug/1151975.html",
+    "status": 200,
+    "chars": 4604,
+    "ok": true,
+    "title": "缬沙坦",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-levofloxacin",
+    "url": "https://www.dayi.org.cn/drug/1025034.html",
+    "status": 200,
+    "chars": 6460,
+    "ok": true,
+    "title": "左氧氟沙星片",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-montmorillonite",
+    "url": "https://www.dayi.org.cn/drug/1025700.html",
+    "status": 200,
+    "chars": 920,
+    "ok": true,
+    "title": "蒙脱石散",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-paracetamol",
+    "url": "https://www.dayi.org.cn/drug/1142592.html",
+    "status": 200,
+    "chars": 1744,
+    "ok": true,
+    "title": "对乙酰氨基酚片",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-cefixime",
+    "url": "https://www.dayi.org.cn/drug/1151919.html",
+    "status": 200,
+    "chars": 5042,
+    "ok": true,
+    "title": "头孢克肟",
     "category": "药品说明书",
     "site": "dayi"
   }
