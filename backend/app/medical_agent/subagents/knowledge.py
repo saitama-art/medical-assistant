@@ -28,12 +28,16 @@ from ..state import (
 )
 from ...rag import service
 from ...rag.chain import get_llm
+from .. import config as _cfg
 
-# ==================== 配置（设计文档 5.8，随子 Agent 收敛；最终进 config.py） ====================
+# ==================== 配置 ====================
+# 预算类常量的唯一事实来源已收敛至 config.py；此处导入以保持既有引用点不变。
+# MAX_CONSECUTIVE_FAILURES / _MAX_RETRIES / _K_STEP 是子 Agent 内部策略，
+# 单一出处即本模块，不收进 config.py。
 
-TOOL_BUDGET_MS = 5000          # 单次检索
-BUDGET_JUDGE_MS = 8000         # 第 3 段模型判定
-BUDGET_GENERATE_MS = 12000     # 回答生成
+TOOL_BUDGET_MS = _cfg.TOOL_BUDGET_MS
+BUDGET_JUDGE_MS = _cfg.BUDGET_JUDGE_MS
+BUDGET_GENERATE_MS = _cfg.BUDGET_GENERATE_MS
 MAX_CONSECUTIVE_FAILURES = 2   # 检索连续失败达此值即终止
 _MAX_RETRIES = 1               # 证据不足回边最多触发 1 次
 _K_STEP = 2                    # 重试时 k 的增量（改写手段：扩大候选集）
@@ -42,7 +46,9 @@ RETRIEVAL_TOOL = "search_medical_kb"
 
 # 父 Agent 启动委派的最低剩余预算（min(配置, 剩余) < 此值时不启动子 Agent，
 # 避免"启动了但必然预算失败"的假动作）。后续环节预算不足由内部守卫各自降级。
-MIN_LAUNCH_BUDGET_MS = tools.MIN_USABLE_BUDGET_MS + TOOL_BUDGET_MS  # 8000
+MIN_LAUNCH_BUDGET_MS = _cfg.MIN_LAUNCH_BUDGET_MS  # 8000
+
+_node_budget = _cfg.node_budget
 
 
 def run(question: str, *, deadline: float) -> SubagentResult:
@@ -198,23 +204,7 @@ def _fail(work: AgentState, status: SubagentStatus, detail: str) -> SubagentResu
         trace=work.trace,
         detail=detail,
     )
-
-
-def _node_budget(work: AgentState, config_ms: int) -> int | None:
-    """min(配置预算, 剩余全局预算)；低于 MIN_USABLE_BUDGET 返回 None（不启动该环节）。
-
-    与 orchestrator._node_budget 同一条分配规则；因 orchestrator 导入本模块
-    （本模块不能再导入 orchestrator），暂时各存一份，收敛 config.py 时一并收掉。
-    """
-    remaining = work.budget.remaining_ms()
-    node = min(config_ms, remaining)
-    if node < tools.MIN_USABLE_BUDGET_MS:
-        return None
-    work.budget.node_budget_ms = node
-    return node
-
-
-__all__ = [
+    __all__ = [
     "TOOL_BUDGET_MS",
     "BUDGET_JUDGE_MS",
     "BUDGET_GENERATE_MS",

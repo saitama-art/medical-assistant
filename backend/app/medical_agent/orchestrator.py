@@ -40,13 +40,16 @@ from .state import (
 )
 from .subagents import knowledge
 from ..rag.chain import get_llm
+from . import config as _cfg
 
-# ==================== 配置（设计文档 5.8，最终收敛 config.py） ====================
+# ==================== 配置 ====================
+# 预算常量的唯一事实来源已收敛至 config.py；这里导入以保持
+# orchestrator.XXX 引用点（含测试）不变。知识子 Agent 环节预算同处 config.py。
 
-REQUEST_DEADLINE = 45.0        # 整体硬上限（5.6 选项 A）
-BUDGET_FOLLOWUP_MS = 6000      # N02 上下文补全
-BUDGET_CLASSIFY_MS = 6000      # N04 意图识别
-# 知识路径各环节预算（检索/判定/生成/重试）已随委派移入 subagents/knowledge.py。
+REQUEST_DEADLINE = _cfg.REQUEST_DEADLINE
+BUDGET_FOLLOWUP_MS = _cfg.BUDGET_FOLLOWUP_MS
+BUDGET_CLASSIFY_MS = _cfg.BUDGET_CLASSIFY_MS
+_node_budget = _cfg.node_budget
 
 _EMERGENCY_ROUTES = (Route.EMERGENCY,)
 
@@ -240,18 +243,6 @@ def _delegate_knowledge(state: AgentState, got_lock: bool) -> AgentState:
 
 
 # ==================== 内部工具 ====================
-
-
-def _node_budget(state: AgentState, config_ms: int) -> int | None:
-    """按 5.6 分配规则算本环节预算：min(配置预算, 剩余全局预算)；
-    低于 MIN_USABLE_BUDGET 时返回 None（该环节不得启动）。
-    与 subagents/knowledge.py 的同名辅助同规则（避免循环导入各存一份）。"""
-    remaining = state.budget.remaining_ms()
-    node = min(config_ms, remaining)
-    if node < tools.MIN_USABLE_BUDGET_MS:
-        return None
-    state.budget.node_budget_ms = node
-    return node
 
 
 def _merge_hits(first: EmergencyHit, second: EmergencyHit) -> EmergencyHit:
