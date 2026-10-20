@@ -116,6 +116,13 @@ MSD_COMMON_HEALTH = [
     ("disease-h-pylori", "/home/digestive-disorders/gastritis-and-peptic-ulcer-disease/helicobacter-pylori-infection", "幽门螺杆菌感染", "疾病与健康知识"),
     ("disease-hepatitis", "/home/liver-and-gallbladder-disorders/hepatitis/overview-of-hepatitis", "肝炎概述", "疾病与健康知识"),
     ("disease-dyslipidemia", "/home/hormonal-and-metabolic-disorders/cholesterol-disorders/dyslipidemia", "血脂异常", "疾病与健康知识"),
+    # ---- 2026-10-20 第五轮：高频日常健康问题（URL 逐个 curl 验证 200）----
+    ("health-common-cold", "/home/infections/respiratory-virus-infections/common-cold", "普通感冒", "疾病与健康知识"),
+    ("health-rhinitis", "/home/ear-nose-and-throat-disorders/nose-and-sinus-disorders/rhinitis", "鼻炎", "疾病与健康知识"),
+    ("health-acne", "/home/skin-disorders/acne-and-related-disorders/acne", "痤疮（青春痘）", "疾病与健康知识"),
+    ("health-hair-loss", "/home/skin-disorders/hair-disorders/alopecia-hair-loss", "脱发", "疾病与健康知识"),
+    ("health-menstrual-cramps", "/home/women-s-health-issues/menstrual-disorders-and-abnormal-uterine-bleeding/menstrual-cramps", "痛经", "疾病与健康知识"),
+    ("health-neck-pain", "/home/bone-joint-and-muscle-disorders/low-back-and-neck-pain/neck-pain", "颈痛", "症状与就医指引"),
 ]
 
 ALL_MSD = MSD_DISEASES + MSD_SYMPTOMS + MSD_TESTS + MSD_MED_SAFETY + MSD_COMMON_HEALTH
