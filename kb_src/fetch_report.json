@@ -180,6 +180,16 @@
     "site": "msd"
   },
   {
+    "key": "disease-hypoglycemia",
+    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/diabetes-mellitus-and-low-blood-sugar-hypoglycemia/hypoglycemia",
+    "status": 200,
+    "chars": 4362,
+    "ok": true,
+    "title": "低血糖",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
     "key": "symptom-chest-pain",
     "url": "https://www.msdmanuals.cn/home/heart-and-blood-vessel-disorders/symptoms-of-heart-and-blood-vessel-disorders/chest-pain",
     "status": 200,
