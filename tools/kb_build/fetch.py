@@ -26,7 +26,9 @@ ROOT = Path(__file__).resolve().parents[2]
 KB_SRC = ROOT / "kb_src"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                          "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"}
-MIN_TEXT_LEN = 800  # 正文过短视为抽取异常
+MIN_TEXT_LEN = 250  # 正文过短视为抽取异常。2026-10-20 由 800 下调：实测 MSD 部分
+# 主题页（如"肾功能测定"）正文本身仅约 300 字，800 的门槛把真实短页误判为
+# 抽取失败；250 仍能拦住抽取异常（异常时正文接近 0）。
 
 
 def extract_msd(soup: BeautifulSoup) -> str:

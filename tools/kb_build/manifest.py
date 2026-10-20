@@ -7,16 +7,18 @@
 # ---- 疾病与健康知识（默沙东诊疗手册·大众版，病人教育资料）----
 MSD_DISEASES = [
     ("disease-hypertension", "/home/heart-and-blood-vessel-disorders/high-blood-pressure/high-blood-pressure", "高血压", "疾病与健康知识"),
-    ("disease-coronary-artery-disease", "/home/heart-and-blood-vessel-disorders/coronary-artery-disease/coronary-artery-disease", "冠状动脉疾病（冠心病）", "疾病与健康知识"),
-    ("disease-type-2-diabetes", "/home/hormonal-and-metabolic-disorders/diabetes-mellitus-dm-and-disorders-of-blood-sugar-regulation/type-2-diabetes", "2型糖尿病", "疾病与健康知识"),
+    ("disease-coronary-artery-disease", "/home/heart-and-blood-vessel-disorders/coronary-artery-disease/overview-of-coronary-artery-disease-cad", "冠状动脉疾病（冠心病）", "疾病与健康知识"),
+    ("disease-type-2-diabetes", "/home/hormonal-and-metabolic-disorders/diabetes-mellitus-and-low-blood-sugar-hypoglycemia/type-2-diabetes-mellitus", "2型糖尿病", "疾病与健康知识"),
     ("disease-asthma", "/home/lung-and-airway-disorders/asthma/asthma", "哮喘", "疾病与健康知识"),
     ("disease-copd", "/home/lung-and-airway-disorders/chronic-obstructive-pulmonary-disease-copd/chronic-obstructive-pulmonary-disease-copd", "慢性阻塞性肺疾病（COPD）", "疾病与健康知识"),
     ("disease-gastritis", "/home/digestive-disorders/gastritis-and-peptic-ulcer-disease/gastritis", "胃炎", "疾病与健康知识"),
-    ("disease-osteoporosis", "/home/bone-joint-and-muscle-disorders/bone-disorders/osteoporosis", "骨质疏松症", "疾病与健康知识"),
+    ("disease-osteoporosis", "/home/bone-joint-and-muscle-disorders/osteoporosis/osteoporosis", "骨质疏松症", "疾病与健康知识"),
     ("disease-iron-deficiency-anemia", "/home/quick-facts-blood-disorders/anemia/iron-deficiency-anemia", "缺铁性贫血", "疾病与健康知识"),
-    ("disease-stroke", "/home/brain-spinal-cord-and-nerve-disorders/stroke-cva/stroke-cva", "脑卒中（中风）", "疾病与健康知识"),
-    ("disease-high-cholesterol", "/home/hormonal-and-metabolic-disorders/cholesterol-abnormalities/high-cholesterol", "高胆固醇血症", "疾病与健康知识"),
-    ("disease-migraine", "/home/brain-spinal-cord-and-nerve-disorders/headaches/migraine-headaches", "偏头痛", "疾病与健康知识"),
+    ("disease-stroke", "/home/brain-spinal-cord-and-nerve-disorders/stroke/overview-of-stroke", "脑卒中（中风）", "疾病与健康知识"),
+    ("disease-high-cholesterol", "/home/hormonal-and-metabolic-disorders/cholesterol-disorders/overview-of-cholesterol-and-lipid-disorders", "胆固醇及脂代谢紊乱", "疾病与健康知识"),
+    ("disease-migraine", "/home/brain-spinal-cord-and-nerve-disorders/headaches/migraines", "偏头痛", "疾病与健康知识"),
+    ("disease-hyperthyroidism", "/home/hormonal-and-metabolic-disorders/thyroid-gland-disorders/hyperthyroidism", "甲状腺功能亢进症", "疾病与健康知识"),
+    ("disease-hypothyroidism", "/home/hormonal-and-metabolic-disorders/thyroid-gland-disorders/hypothyroidism", "甲状腺功能减退症", "疾病与健康知识"),
 ]
 
 # ---- 症状与就医指引（默沙东大众版·症状）----
@@ -40,14 +42,23 @@ MSD_TESTS = [
     ("test-ultrasound", "/home/special-subjects/common-imaging-tests/ultrasound", "超声检查", "检查指标解读"),
     ("test-ecg", "/home/heart-and-blood-vessel-disorders/diagnosis-of-heart-and-blood-vessel-disorders/electrocardiography", "心电图（ECG）", "检查指标解读"),
     ("test-pft", "/home/lung-and-airway-disorders/diagnosis-of-and-procedures-for-lung-disorders/pulmonary-function-testing-pft", "肺功能检查", "检查指标解读"),
+    # ---- 实验室检查（2026-10-20 补：血液/肝/肾功能化验指标解读）----
+    ("test-blood-lab", "/home/blood-disorders/symptoms-and-diagnosis-of-blood-disorders/laboratory-tests-for-blood-disorders", "血液疾病的实验室检查（血常规等）", "检查指标解读"),
+    ("test-liver-blood", "/home/liver-and-gallbladder-disorders/diagnosis-of-liver-gallbladder-and-biliary-disorders/liver-blood-tests", "肝脏血液检测", "检查指标解读"),
+    ("test-kidney-function", "/home/kidney-disorders/diagnosis-of-kidney-disorders/kidney-function-tests", "肾功能测定", "检查指标解读"),
+    ("test-thyroid-overview", "/home/hormonal-and-metabolic-disorders/thyroid-gland-disorders/overview-of-the-thyroid-gland", "甲状腺概述（甲功检查）", "检查指标解读"),
 ]
 
 # ---- 用药安全与特殊人群（默沙东大众版）----
 MSD_MED_SAFETY = [
-    ("meds-drug-use-in-older-adults", "/home/special-subjects/considerations-for-older-adults/drugs-and-aging", "药物与衰老（老年人用药）", "用药安全与特殊人群"),
+    ("meds-response-overview", "/home/drugs/factors-affecting-response-to-medications/overview-of-response-to-medications", "影响药物反应的因素（年龄/特殊人群）", "用药安全与特殊人群"),
     ("meds-drug-use-during-pregnancy", "/home/women-s-health-issues/drug-use-during-pregnancy/drug-use-during-pregnancy", "孕期用药", "用药安全与特殊人群"),
-    ("meds-medications-in-children", "/home/children-s-health-issues/medications-in-children/medications-in-children", "儿童用药", "用药安全与特殊人群"),
-    ("meds-drug-interactions", "/home/special-subjects/drugs/drug-interactions", "药物相互作用", "用药安全与特殊人群"),
+    # 注：大众版无独立"儿童用药/老年人用药/药物相互作用"旧路径，改收 /home/drugs 栏目的
+    # 对应主题（相互作用/不良反应/用药错误/依从性），特殊人群内容在相应条目内覆盖。
+    ("meds-drug-interactions", "/home/drugs/factors-affecting-response-to-medications/drug-interactions", "药物相互作用", "用药安全与特殊人群"),
+    ("meds-adverse-reactions", "/home/drugs/overview-of-medications/adverse-drug-reactions", "药物不良反应", "用药安全与特殊人群"),
+    ("meds-medication-errors", "/home/drugs/overview-of-medications/medication-errors", "用药错误", "用药安全与特殊人群"),
+    ("meds-adherence", "/home/drugs/factors-affecting-response-to-medications/adherence-to-medication", "服药依从性", "用药安全与特殊人群"),
 ]
 
 MSD_BASE = "https://www.msdmanuals.cn"

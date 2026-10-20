@@ -8,6 +8,8 @@ DATA_DIR = r"/data"
 docs = PyPDFLoader(os.path.join(DATA_DIR, "国药准字H20193006_来那度胺胶囊.pdf")).load()
 print(f"页数: {len(docs)}")
 
+
+
 # 切片
 splitter = RecursiveCharacterTextSplitter(
     chunk_size=800,
