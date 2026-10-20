@@ -11,20 +11,20 @@
   },
   {
     "key": "disease-coronary-artery-disease",
-    "url": "https://www.msdmanuals.cn/home/heart-and-blood-vessel-disorders/coronary-artery-disease/coronary-artery-disease",
-    "status": 404,
-    "ok": false,
-    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/heart-and-blood-vessel-disorders/coronary-artery-disease/coronary-artery-disease",
+    "url": "https://www.msdmanuals.cn/home/heart-and-blood-vessel-disorders/coronary-artery-disease/overview-of-coronary-artery-disease-cad",
+    "status": 200,
+    "chars": 9812,
+    "ok": true,
     "title": "冠状动脉疾病（冠心病）",
     "category": "疾病与健康知识",
     "site": "msd"
   },
   {
     "key": "disease-type-2-diabetes",
-    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/diabetes-mellitus-dm-and-disorders-of-blood-sugar-regulation/type-2-diabetes",
-    "status": 404,
-    "ok": false,
-    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/diabetes-mellitus-dm-and-disorders-of-blood-sugar-regulation/type-2-diabetes",
+    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/diabetes-mellitus-and-low-blood-sugar-hypoglycemia/type-2-diabetes-mellitus",
+    "status": 200,
+    "chars": 7837,
+    "ok": true,
     "title": "2型糖尿病",
     "category": "疾病与健康知识",
     "site": "msd"
@@ -61,10 +61,10 @@
   },
   {
     "key": "disease-osteoporosis",
-    "url": "https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/bone-disorders/osteoporosis",
-    "status": 404,
-    "ok": false,
-    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/bone-disorders/osteoporosis",
+    "url": "https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/osteoporosis/osteoporosis",
+    "status": 200,
+    "chars": 9190,
+    "ok": true,
     "title": "骨质疏松症",
     "category": "疾病与健康知识",
     "site": "msd"
@@ -81,31 +81,51 @@
   },
   {
     "key": "disease-stroke",
-    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/stroke-cva/stroke-cva",
-    "status": 404,
-    "ok": false,
-    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/stroke-cva/stroke-cva",
+    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/stroke/overview-of-stroke",
+    "status": 200,
+    "chars": 12553,
+    "ok": true,
     "title": "脑卒中（中风）",
     "category": "疾病与健康知识",
     "site": "msd"
   },
   {
     "key": "disease-high-cholesterol",
-    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/cholesterol-abnormalities/high-cholesterol",
-    "status": 404,
-    "ok": false,
-    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/cholesterol-abnormalities/high-cholesterol",
-    "title": "高胆固醇血症",
+    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/cholesterol-disorders/overview-of-cholesterol-and-lipid-disorders",
+    "status": 200,
+    "chars": 1936,
+    "ok": true,
+    "title": "胆固醇及脂代谢紊乱",
     "category": "疾病与健康知识",
     "site": "msd"
   },
   {
     "key": "disease-migraine",
-    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/headaches/migraine-headaches",
-    "status": 404,
-    "ok": false,
-    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/headaches/migraine-headaches",
+    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/headaches/migraines",
+    "status": 200,
+    "chars": 8530,
+    "ok": true,
     "title": "偏头痛",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-hyperthyroidism",
+    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/thyroid-gland-disorders/hyperthyroidism",
+    "status": 200,
+    "chars": 7721,
+    "ok": true,
+    "title": "甲状腺功能亢进症",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "disease-hypothyroidism",
+    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/thyroid-gland-disorders/hypothyroidism",
+    "status": 200,
+    "chars": 3443,
+    "ok": true,
+    "title": "甲状腺功能减退症",
     "category": "疾病与健康知识",
     "site": "msd"
   },
@@ -260,12 +280,52 @@
     "site": "msd"
   },
   {
-    "key": "meds-drug-use-in-older-adults",
-    "url": "https://www.msdmanuals.cn/home/special-subjects/considerations-for-older-adults/drugs-and-aging",
-    "status": 404,
-    "ok": false,
-    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/special-subjects/considerations-for-older-adults/drugs-and-aging",
-    "title": "药物与衰老（老年人用药）",
+    "key": "test-blood-lab",
+    "url": "https://www.msdmanuals.cn/home/blood-disorders/symptoms-and-diagnosis-of-blood-disorders/laboratory-tests-for-blood-disorders",
+    "status": 200,
+    "chars": 3539,
+    "ok": true,
+    "title": "血液疾病的实验室检查（血常规等）",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "test-liver-blood",
+    "url": "https://www.msdmanuals.cn/home/liver-and-gallbladder-disorders/diagnosis-of-liver-gallbladder-and-biliary-disorders/liver-blood-tests",
+    "status": 200,
+    "chars": 1038,
+    "ok": true,
+    "title": "肝脏血液检测",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "test-kidney-function",
+    "url": "https://www.msdmanuals.cn/home/kidney-disorders/diagnosis-of-kidney-disorders/kidney-function-tests",
+    "status": 200,
+    "chars": 275,
+    "ok": true,
+    "title": "肾功能测定",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "test-thyroid-overview",
+    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/thyroid-gland-disorders/overview-of-the-thyroid-gland",
+    "status": 200,
+    "chars": 2997,
+    "ok": true,
+    "title": "甲状腺概述（甲功检查）",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "meds-response-overview",
+    "url": "https://www.msdmanuals.cn/home/drugs/factors-affecting-response-to-medications/overview-of-response-to-medications",
+    "status": 200,
+    "chars": 724,
+    "ok": true,
+    "title": "影响药物反应的因素（年龄/特殊人群）",
     "category": "用药安全与特殊人群",
     "site": "msd"
   },
@@ -280,54 +340,44 @@
     "site": "msd"
   },
   {
-    "key": "meds-medications-in-children",
-    "url": "https://www.msdmanuals.cn/home/children-s-health-issues/medications-in-children/medications-in-children",
-    "status": 404,
-    "ok": false,
-    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/children-s-health-issues/medications-in-children/medications-in-children",
-    "title": "儿童用药",
-    "category": "用药安全与特殊人群",
-    "site": "msd"
-  },
-  {
     "key": "meds-drug-interactions",
-    "url": "https://www.msdmanuals.cn/home/special-subjects/drugs/drug-interactions",
-    "status": 404,
-    "ok": false,
-    "error": "404 Client Error: Not Found for url: https://www.msdmanuals.cn/home/special-subjects/drugs/drug-interactions",
+    "url": "https://www.msdmanuals.cn/home/drugs/factors-affecting-response-to-medications/drug-interactions",
+    "status": 200,
+    "chars": 4941,
+    "ok": true,
     "title": "药物相互作用",
     "category": "用药安全与特殊人群",
     "site": "msd"
   },
   {
-    "key": "drug-metformin-sr",
-    "url": "https://www.dayi.org.cn/drug/1157161.html",
+    "key": "meds-adverse-reactions",
+    "url": "https://www.msdmanuals.cn/home/drugs/overview-of-medications/adverse-drug-reactions",
     "status": 200,
-    "chars": 11462,
+    "chars": 3213,
     "ok": true,
-    "title": "二甲双胍缓释片",
-    "category": "药品说明书",
-    "site": "dayi"
+    "title": "药物不良反应",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
   },
   {
-    "key": "drug-rosuvastatin",
-    "url": "https://www.dayi.org.cn/drug/1152374.html",
+    "key": "meds-medication-errors",
+    "url": "https://www.msdmanuals.cn/home/drugs/overview-of-medications/medication-errors",
     "status": 200,
-    "chars": 9329,
+    "chars": 1736,
     "ok": true,
-    "title": "瑞舒伐他汀",
-    "category": "药品说明书",
-    "site": "dayi"
+    "title": "用药错误",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
   },
   {
-    "key": "drug-mecobalamin-tab",
-    "url": "https://www.dayi.org.cn/drug/1144944.html",
+    "key": "meds-adherence",
+    "url": "https://www.msdmanuals.cn/home/drugs/factors-affecting-response-to-medications/adherence-to-medication",
     "status": 200,
-    "chars": 1426,
+    "chars": 3147,
     "ok": true,
-    "title": "甲钴胺片",
-    "category": "药品说明书",
-    "site": "dayi"
+    "title": "服药依从性",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
   },
   {
     "key": "symptom-constipation",
@@ -418,5 +468,35 @@
     "title": "血脂异常",
     "category": "疾病与健康知识",
     "site": "msd"
+  },
+  {
+    "key": "drug-metformin-sr",
+    "url": "https://www.dayi.org.cn/drug/1157161.html",
+    "status": 200,
+    "chars": 11462,
+    "ok": true,
+    "title": "二甲双胍缓释片",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-rosuvastatin",
+    "url": "https://www.dayi.org.cn/drug/1152374.html",
+    "status": 200,
+    "chars": 9329,
+    "ok": true,
+    "title": "瑞舒伐他汀",
+    "category": "药品说明书",
+    "site": "dayi"
+  },
+  {
+    "key": "drug-mecobalamin-tab",
+    "url": "https://www.dayi.org.cn/drug/1144944.html",
+    "status": 200,
+    "chars": 1426,
+    "ok": true,
+    "title": "甲钴胺片",
+    "category": "药品说明书",
+    "site": "dayi"
   }
 ]
