@@ -70,7 +70,7 @@ class TestEmergencyStrong(unittest.TestCase):
             "我误服了药",
             "孩子高热惊厥",
         ]
-        self.assertEqual(len(safety.ACUTE_TERMS), 8)
+        self.assertEqual(len(safety.ACUTE_TERMS), 9)  # 8+咽喉梗阻组（2026-10-20 T-03 真实验收补）
         for text in cases:
             with self.subTest(text=text):
                 self.assertIs(check_emergency(text).level, EmergencyLevel.STRONG)
