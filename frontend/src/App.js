@@ -42,6 +42,15 @@ const SUGGESTIONS = [
   '血常规检查主要看哪些指标？',
 ];
 
+// 思考阶段提示：按已等待时长切换（主 Agent 链路：分类→检索→证据判定→生成）。
+// 阶段切换是前端按经验时长的呈现，不代表后端真实节点状态。
+function thinkingStage(ms) {
+  if (ms < 1500) return '理解问题';
+  if (ms < 5000) return '检索知识库';
+  if (ms < 9000) return '判定证据';
+  return '生成回答';
+}
+
 function App() {
   const [conversations, setConversations] = useState(() => {
     const list = loadConversations();
@@ -52,13 +61,26 @@ function App() {
   });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [thinkingMs, setThinkingMs] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const chatBoxRef = useRef(null);
+  const thinkStartRef = useRef(0);
   // 流式输出：全量文本放 ref，可见前缀放 state，切换会话时取消
   const streamRef = useRef(null);
 
   const API_BASE = process.env.REACT_APP_API_BASE || `http://127.0.0.1:8000`;
+
+  // 思考计时：等待后端响应期间每 100ms 刷新耗时
+  useEffect(() => {
+    if (!loading) return undefined;
+    thinkStartRef.current = Date.now();
+    setThinkingMs(0);
+    const timer = setInterval(() => {
+      setThinkingMs(Date.now() - thinkStartRef.current);
+    }, 100);
+    return () => clearInterval(timer);
+  }, [loading]);
 
   // activeId 失效（首次进入或记录了已删除的会话）时回退到列表首条
   useEffect(() => {
@@ -318,6 +340,9 @@ function App() {
               <div className="msg-row ai">
                 <div className="bubble ai loading">
                   <span className="dot" /><span className="dot" /><span className="dot" />
+                  <span className="thinking-label">
+                    思考中 · {thinkingStage(thinkingMs)}（{(thinkingMs / 1000).toFixed(1)}s）
+                  </span>
                 </div>
               </div>
             )}
