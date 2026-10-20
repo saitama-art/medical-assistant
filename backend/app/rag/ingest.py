@@ -16,12 +16,12 @@ import shutil
 from pathlib import Path
 
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
 from .chain import get_embedding  # 复用查询侧唯一 embedding 出口（无循环导入：chain 不依赖 ingest）
+from .chapter_split import split_documents  # FR-01：说明书按【章节】边界切，其余维持递归切分
 
 # ==================== 当前实验参数 ====================
 CHUNK_SIZE = 800
@@ -52,12 +52,9 @@ def main() -> None:
     print(f"总共加载 {len(documents)} 页")
 
     # ========== 2. 切片 ==========
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE,
-        chunk_overlap=CHUNK_OVERLAP,
-        separators=["\n\n", "\n", "。", "！", "？", " ", ""],
-    )
-    chunks = splitter.split_documents(documents)
+    # FR-01：含【章节】标记的说明书按章节边界切（章节标题保留为 chunk 前缀，
+    # 小章节合并、大章节细切）；无标记文档维持原 RecursiveCharacterTextSplitter。
+    chunks = split_documents(documents, CHUNK_SIZE, CHUNK_OVERLAP)
     print(f"切成 {len(chunks)} 个 chunk")
 
     # ========== 3. embedding（与查询侧同一配置） ==========
