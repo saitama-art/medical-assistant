@@ -584,5 +584,36 @@ class TestTraceIntegrity(unittest.TestCase):
         self.assertEqual(state.trace[-1].detail["termination"], "completed")
 
 
+class TestSourceAggregation(unittest.TestCase):
+    """来源展示聚合：按文档分组、页码去重升序、页数/文档数双上限（2026-10-20 用户反馈）。"""
+
+    def _src(self, doc, page):
+        from types import SimpleNamespace
+        return SimpleNamespace(document=doc, page=page)
+
+    def test_same_doc_pages_merged(self):
+        srcs = [self._src(r"F:\data\失眠_默沙东诊疗手册.pdf", p) for p in (2, 7, 12, 1, 7)]
+        out = orchestrator._format_sources(srcs)
+        self.assertEqual(out, ["失眠_默沙东诊疗手册.pdf - 第1、2、7页等"])
+
+    def test_pages_capped_with_etc(self):
+        srcs = [self._src("A.pdf", p) for p in range(1, 10)]
+        out = orchestrator._format_sources(srcs)
+        self.assertEqual(out, ["A.pdf - 第1、2、3页等"])
+
+    def test_docs_capped_with_etc(self):
+        srcs = [self._src(f"D{i}.pdf", 1) for i in range(1, 6)]
+        out = orchestrator._format_sources(srcs)
+        self.assertEqual(out, ["D1.pdf - 第1页", "D2.pdf - 第1页", "D3.pdf - 第1页", "等"])
+
+    def test_doc_without_page_shows_name_only(self):
+        out = orchestrator._format_sources([self._src("B.pdf", None)])
+        self.assertEqual(out, ["B.pdf"])
+
+    def test_empty_document_skipped(self):
+        out = orchestrator._format_sources([self._src("", 1), self._src("C.pdf", 3)])
+        self.assertEqual(out, ["C.pdf - 第3页"])
+
+
 if __name__ == "__main__":
     unittest.main()
