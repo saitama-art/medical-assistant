@@ -306,28 +306,51 @@ def _resolve_reference(state: AgentState, node_budget_ms: int) -> str | None:
         return None
 
 
-def _format_source(source) -> str:
-    """来源展示格式：文档名（剥掉盘符与目录，只留 basename）+ 可选页码。
+# 来源展示上限：同一文档的页码最多列 3 个、文档最多列 3 个（其余以「等」示意）。
+# 背景：检索 k=10 的每个 chunk 都产出来源，同一文档常连续出现 7~9 条页码，
+# 用户可读性差（2026-10-20 实测反馈）。
+_SOURCE_MAX_PAGES_PER_DOC = 3
+_SOURCE_MAX_DOCS = 3
 
-    extract_sources 已保证 document 非空；basename 后若仍为空则跳过该条，
-    宁可不显示也不编造（设计文档 4.1「不伪造来源」）。
+
+def _format_sources(sources) -> list[str]:
+    """把来源列表聚合成用户可读的展示串：按文档分组、页码升序去重、超限截断。
+
+    返回每个文档一条（"文档 - 第2、7、12页"），保持检索相关度带来的首次出现顺序。
     """
-    name = os.path.basename(source.document) if source.document else ""
-    if not name:
-        return ""
-    if source.page:
-        return f"{name} - 第{source.page}页"
-    return name
+    by_doc: dict[str, list[int]] = {}
+    no_page: list[str] = []
+    for s in sources:
+        name = os.path.basename(s.document) if s.document else ""
+        if not name:
+            continue
+        if s.page:
+            pages = by_doc.setdefault(name, [])
+            if s.page not in pages:
+                pages.append(s.page)
+        elif name not in no_page:
+            no_page.append(name)
+
+    out: list[str] = []
+    for name, pages in by_doc.items():
+        pages.sort()
+        if len(pages) > _SOURCE_MAX_PAGES_PER_DOC:
+            page_txt = "、".join(str(p) for p in pages[:_SOURCE_MAX_PAGES_PER_DOC]) + "页等"
+        else:
+            page_txt = "、".join(str(p) for p in pages) + "页"
+        out.append(f"{name} - 第{page_txt}")
+    for name in no_page:
+        out.append(name)
+
+    if len(out) > _SOURCE_MAX_DOCS:
+        out = out[:_SOURCE_MAX_DOCS]
+        out.append("等")
+    return out
 
 
 def display_sources(state: AgentState) -> list[dict]:
-    """接口层序列化用：只含展示所需的文档名与页码，不含原始路径。"""
-    result = []
-    for source in state.sources:
-        text = _format_source(source)
-        if text:
-            result.append({"document": text, "page": source.page})
-    return result
+    """接口层序列化用：聚合后的展示串，不含原始路径。"""
+    return [{"document": t, "page": None} for t in _format_sources(state.sources)]
 
 
 def _assemble(state: AgentState, body: str) -> str:
@@ -342,7 +365,7 @@ def _assemble(state: AgentState, body: str) -> str:
         parts.append(respond.NO_HISTORY_NOTICE)
     parts.append(body)
     if state.termination_reason is TerminationReason.COMPLETED and state.sources:
-        sources_text = "；".join(t for t in (_format_source(s) for s in state.sources) if t)
+        sources_text = "；".join(_format_sources(state.sources))
         if sources_text:
             parts.append(respond.SOURCE_HEADER.lstrip("\n") + sources_text)
     # 免责声明只跟在"含医学内容"的路径后：知识问答完成、紧急应答；
