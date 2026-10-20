@@ -100,6 +100,46 @@ class TestChapterSplit(unittest.TestCase):
         for c in chunks:
             self.assertNotIn("【注意事项】\n【注意事项】", c)
 
+    def test_dayi_toc_suppressed_and_sections_kept(self):
+        # 平台词条形态：标题独占行（无【】），目录区（连续标题行）不算章节
+        text = (
+            "二甲双胍缓释片\n知识类别：药品说明书\n资料来源：逐字转载\n"
+            "适应症\n规格\n用法用量\n不良反应\n注意事项\n"  # 目录区
+            "适应症\n本品用于单用饮食和运动治疗不能获良好控制的2型糖尿病患者。\n"
+            "规格\n500mg\n"
+            "用法用量\n口服，随餐服用，从小剂量开始。\n"
+            "不良反应\n常见恶心、腹泻。\n"
+            "注意事项\n肾功能不全者慎用。\n"
+        )
+        chunks = split_chapter_document([text], "X片", CHUNK_SIZE, OVERLAP)
+        self.assertIsNotNone(chunks)
+        joined = "\n".join(chunks)
+        # 目录区不产生独立 chunk；真实章节标题保留（不加【】）
+        self.assertIn("适应症\n本品用于", joined)
+        self.assertIn("用法用量\n口服，随餐服用", joined)
+        self.assertNotIn("【", joined)
+        # 文档标题前缀贯穿
+        self.assertTrue(all(c.startswith("文档：X片") for c in chunks))
+        # 目录行不单独成 chunk
+        self.assertFalse(any(c.strip() == "适应症\n规格\n用法用量\n不良反应\n注意事项"
+                             for c in chunks))
+
+    def test_dayi_oversized_section_prefixed(self):
+        big = "用法用量\n" + "口服，一次0.25g，一日三次。" * 60
+        text = ("X片\n知识类别：药品说明书\n"
+                "适应症\n用于2型糖尿病。\n" + big + "\n不良反应\n常见恶心。\n")
+        chunks = split_chapter_document([text], "X片", CHUNK_SIZE, OVERLAP)
+        self.assertIsNotNone(chunks)
+        dose = [c for c in chunks if "一次0.25g" in c]
+        self.assertGreater(len(dose), 1)
+        self.assertTrue(all(c.startswith("文档：X片\n用法用量") for c in dose))
+
+    def test_msd_doc_still_fallback(self):
+        # 回归：默沙东文档（无【】、无白名单独占行）维持原回退切分
+        text = ("高血压是指动脉内的压力持续偏高。可由多种因素引起，"
+                "包括遗传、肥胖和缺乏运动。症状通常不明显。")
+        self.assertIsNone(split_chapter_document([text * 30], "MSD", CHUNK_SIZE, OVERLAP))
+
     def test_fallback_for_non_leaflet(self):        # 无【】标记的文档走原递归切分，行数与原 splitter 一致
         docs = [Document(page_content="高血压是指动脉压力持续偏高。" * 100,
                           metadata={"source": "data/高血压.pdf"})]
