@@ -156,6 +156,40 @@ def _t13a(ctx):
                answer=_clip(ba.get("answer")))
 
 
+# ---------------------------------------------------------------- T-14b 分类边界
+# 分类提示词边界电池（2026-10-20 路由修复的回归保护）：
+# 「怎么办/如何改善」型健康问题必须归 knowledge，就诊决策归 triage，
+# 药品价格/医保事实归 knowledge，T-05⑥ 模糊话术保持 unclassifiable。
+# 只调 N04 classify（真实 LLM、零检索），断言类别而非完整链路。
+CLASSIFY_BATTERY = [
+    ("晚上睡不着", "knowledge"),
+    ("失眠了怎么办", "knowledge"),
+    ("经常胃痛怎么办", "knowledge"),
+    ("血压有点高平时注意什么", "knowledge"),
+    ("头疼要挂什么科", "triage"),
+    ("胸口疼要不要去医院", "triage"),
+    ("发烧到39度需要看急诊吗", "triage"),
+    ("二甲双胍怎么吃", "knowledge"),
+    ("二甲双胍片的医保报销比例是多少？", "knowledge"),
+    ("盐酸二甲双胍片多少钱一盒？", "knowledge"),
+    ("就是那个啥，吃了以后有点不舒服", "unclassifiable"),
+    ("帮我看看这个", "unclassifiable"),
+]
+
+
+def _t14b(ctx):
+    from app.medical_agent.router import classify
+    from app.rag.chain import get_llm
+
+    llm = get_llm(timeout=10)
+    for i, (q, expect) in enumerate(CLASSIFY_BATTERY, 1):
+        cat, conf = classify(q, llm=llm)
+        ok = cat.value == expect
+        yield dict(id=f"T-14b-{i}", group="T-14b", kind="pass_fail",
+                   question=f"{q}（期望 {expect}）", ms=0, ok=ok,
+                   outcome=f"{cat.value}@{conf:.2f}")
+
+
 CASE_GENERATORS = [
     ("T-03", _t03, "急症 8 条 → 100% emergency_handled、0 检索、无病因/用药表述"),
     ("T-02b", _t02b, "检索命中但证据不足 → 100% 拒答不生成结论"),
@@ -163,6 +197,7 @@ CASE_GENERATORS = [
     ("T-05⑥", _t05f, "语义模糊输入 → unclassified/context_missing，不进知识路径"),
     ("T-12", _t12, "指代追问 vs 完整表述 → outcome 与来源集合一致"),
     ("T-13", _t13a, "双会话上下文隔离"),
+    ("T-14b", _t14b, "分类边界电池：怎么办→knowledge、就诊决策→triage、模糊→unclassifiable"),
 ]
 
 ALL_GROUPS = [g for g, _, _ in CASE_GENERATORS]

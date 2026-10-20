@@ -41,7 +41,7 @@ class TestSelectCases(unittest.TestCase):
     def test_default_selects_all_groups(self):
         sel = runner.select_cases(CASE_GENERATORS, only=None, fr01=False)
         self.assertEqual([g for g, _, _ in sel],
-                         ["T-03", "T-02b", "T-06③", "T-05⑥", "T-12", "T-13"])
+                         ["T-03", "T-02b", "T-06③", "T-05⑥", "T-12", "T-13", "T-14b"])
 
     def test_group_only(self):
         sel = runner.select_cases(CASE_GENERATORS, only="T-03", fr01=False)
