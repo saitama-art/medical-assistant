@@ -174,6 +174,8 @@ CLASSIFY_BATTERY = [
     ("盐酸二甲双胍片多少钱一盒？", "knowledge"),
     ("就是那个啥，吃了以后有点不舒服", "unclassifiable"),
     ("帮我看看这个", "unclassifiable"),
+    ("疼", "triage"),
+    ("我有点头晕 要吃什么药", "triage"),
 ]
 
 
