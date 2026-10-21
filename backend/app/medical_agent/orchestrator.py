@@ -28,6 +28,7 @@ import time
 import uuid
 
 from . import respond, router, safety, session, tools
+from . import calculator
 from .state import (
     AgentState,
     ContextStatus,
@@ -148,6 +149,33 @@ def run_agent(session_id: str, question: str) -> AgentState:
     if state.emergency.level is EmergencyLevel.STRONG:
         return _finish(state, got_lock, TerminationReason.EMERGENCY_HANDLED,
                        respond.EMERGENCY_ANSWER)
+
+    # ---- N04a 健康计算规则短路（确定性任务：0 LLM、0 工具）----
+    # 急症判定（N01/N03）已先行，计算意图绝不绕过安全规则。
+    calc_plan = calculator.detect(state.resolved_question)
+    if calc_plan is not None:
+        state.add_trace("N04a", "decision",
+                        {"status": calc_plan.status, "kind": calc_plan.kind})
+        if calc_plan.status == "missing":
+            return _finish(state, got_lock, TerminationReason.COMPLETED,
+                           respond.CALC_NEED_HEIGHT_WEIGHT
+                           if calc_plan.kind == "bmi" else respond.CALC_NEED_HEIGHT)
+        calc_text, ok = _run_calc(calc_plan)
+        if not ok:
+            # 参数异常（如身高 300cm）：给追问文案，不返回虚假计算结果
+            return _finish(state, got_lock, TerminationReason.COMPLETED,
+                           respond.CALC_NEED_HEIGHT_WEIGHT
+                           if calc_plan.kind == "bmi" else respond.CALC_NEED_HEIGHT)
+        if calc_plan.remaining and calc_plan.kind in ("bmi", "standard_weight"):
+            # 组合问法：先完成确定性计算，剩余医学解释交知识子 Agent 检索
+            state.resolved_question = calc_plan.remaining
+            state.category = QuestionCategory.KNOWLEDGE
+            state = _delegate_knowledge(state, got_lock)
+            if state.answer_text:
+                state.answer_text = calc_text + "\n\n---\n\n" + state.answer_text
+            return state
+        return _finish(state, got_lock, TerminationReason.COMPLETED,
+                       calc_text + "\n\n" + respond.DISCLAIMER)
 
     # ---- N04 意图识别 ----
     node_budget = _node_budget(state, BUDGET_CLASSIFY_MS)
@@ -346,6 +374,46 @@ def _format_sources(sources) -> list[str]:
         out = out[:_SOURCE_MAX_DOCS]
         out.append("等")
     return out
+
+
+def _run_calc(plan) -> tuple[str, bool]:
+    """执行计算工具并组装用户可读文案。ok=False 表示参数异常，由调用方给追问文案。"""
+    try:
+        if plan.kind == "bmi":
+            r = calculator.calc_bmi(**plan.args)
+            if r.error:
+                return "", False
+            h_m = round(r.extra["height_cm"] / 100, 2)
+            return (
+                "计算结果\n\n"
+                f"- 公式：{r.formula}\n"
+                f"- 代入：{r.extra['weight_kg']}kg ÷ ({h_m}m)²\n"
+                f"- BMI = **{r.value}** {r.unit}\n"
+                f"- 按中国成人参考分类（WS/T 428）：**{r.extra['label']}**\n\n"
+                "注意：BMI 只是体重与身高的比值指标，不能直接等同于身体健康程度，"
+                "也不能区分肌肉与脂肪的比例。"
+            ), True
+        if plan.kind == "standard_weight":
+            r = calculator.calc_standard_weight(**plan.args)
+            if r.error:
+                return "", False
+            low, high = r.extra["range"]
+            return (
+                "计算结果\n\n"
+                f"- 公式：{r.formula}\n"
+                f"- 代入：{r.extra['height_cm']}cm - 105\n"
+                f"- 标准体重参考值 ≈ **{r.value}kg**（粗略参考区间 {low}~{high}kg）\n\n"
+                "注意：该结果只是粗略估算，个体差异较大，不能替代个体化医学评估。"
+            ), True
+        if plan.kind == "convert":
+            r = calculator.convert_unit(**plan.args)
+            if r.error:
+                return "", False
+            v, fu = r.extra["from"]
+            return f"换算结果：**{v} {fu} = {r.value} {r.unit}**", True
+    except Exception:
+        pass
+    return "", False
 
 
 def display_sources(state: AgentState) -> list[dict]:
