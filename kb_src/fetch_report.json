@@ -560,6 +560,106 @@
     "site": "msd"
   },
   {
+    "key": "health-common-cold",
+    "url": "https://www.msdmanuals.cn/home/infections/respiratory-virus-infections/common-cold",
+    "status": 200,
+    "chars": 4007,
+    "ok": true,
+    "title": "普通感冒",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "health-rhinitis",
+    "url": "https://www.msdmanuals.cn/home/ear-nose-and-throat-disorders/nose-and-sinus-disorders/rhinitis",
+    "status": 200,
+    "chars": 2731,
+    "ok": true,
+    "title": "鼻炎",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "health-acne",
+    "url": "https://www.msdmanuals.cn/home/skin-disorders/acne-and-related-disorders/acne",
+    "status": 200,
+    "chars": 8327,
+    "ok": true,
+    "title": "痤疮（青春痘）",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "health-hair-loss",
+    "url": "https://www.msdmanuals.cn/home/skin-disorders/hair-disorders/alopecia-hair-loss",
+    "status": 200,
+    "chars": 10305,
+    "ok": true,
+    "title": "脱发",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "health-menstrual-cramps",
+    "url": "https://www.msdmanuals.cn/home/women-s-health-issues/menstrual-disorders-and-abnormal-uterine-bleeding/menstrual-cramps",
+    "status": 200,
+    "chars": 6714,
+    "ok": true,
+    "title": "痛经",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "health-neck-pain",
+    "url": "https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/low-back-and-neck-pain/neck-pain",
+    "status": 200,
+    "chars": 6284,
+    "ok": true,
+    "title": "颈痛",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "health-hemorrhoids",
+    "url": "https://www.msdmanuals.cn/home/digestive-disorders/anal-and-rectal-disorders/hemorrhoids",
+    "status": 200,
+    "chars": 2160,
+    "ok": true,
+    "title": "痔疮",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "health-anal-fissure",
+    "url": "https://www.msdmanuals.cn/home/digestive-disorders/anal-and-rectal-disorders/anal-fissure",
+    "status": 200,
+    "chars": 833,
+    "ok": true,
+    "title": "肛裂",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "health-anal-itching",
+    "url": "https://www.msdmanuals.cn/home/digestive-disorders/anal-and-rectal-disorders/anal-itching",
+    "status": 200,
+    "chars": 3753,
+    "ok": true,
+    "title": "肛门瘙痒",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "health-bursitis",
+    "url": "https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/muscle-bursa-and-tendon-disorders/bursitis",
+    "status": 200,
+    "chars": 1888,
+    "ok": true,
+    "title": "滑囊炎（关节肿痛）",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
     "key": "drug-metformin-sr",
     "url": "https://www.dayi.org.cn/drug/1157161.html",
     "status": 200,

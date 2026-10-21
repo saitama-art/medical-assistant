@@ -58,3 +58,6 @@ docs/医疗健康智能助手——Agent 工程自述参考答案 V1.1.*
 
 # ---- 验收运行产物（每次运行覆盖生成，不入库）----
 backend/acceptance_results/
+
+# ---- 用户上传的 PDF（运行期产物，不入库）----
+backend/uploads/

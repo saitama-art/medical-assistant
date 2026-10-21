@@ -44,6 +44,14 @@ const SUGGESTIONS = [
   '血常规检查主要看哪些指标？',
 ];
 
+// 风险提示文本是 answer 的前缀：横幅已单独渲染时，从正文剥掉避免重复展示。
+function stripRiskNotice(content, riskNotice) {
+  if (riskNotice && content && content.startsWith(riskNotice)) {
+    return content.slice(riskNotice.length).trimStart();
+  }
+  return content;
+}
+
 function App() {
   const [conversations, setConversations] = useState(() => {
     const list = loadConversations();
@@ -158,7 +166,11 @@ function App() {
           const msgs = [...c.messages];
           const last = msgs[msgs.length - 1];
           if (last && last.role === 'ai') {
-            msgs[msgs.length - 1] = { ...last, outcome: data.outcome || null };
+            msgs[msgs.length - 1] = {
+              ...last,
+              outcome: data.outcome || null,
+              riskNotice: data.risk_notice || null,
+            };
           }
           return { ...c, messages: msgs };
         });
@@ -296,8 +308,14 @@ function App() {
                     {meta && <span className={`outcome-badge ${meta.cls}`}>{meta.text}</span>}
                     {item.role === 'ai' ? (
                       <>
+                        {item.riskNotice && (
+                          <div className="risk-banner">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <span>{item.riskNotice.replace(/^提示：/, '')}</span>
+                          </div>
+                        )}
                         <div className="markdown-body">
-                          <ReactMarkdown>{item.content}</ReactMarkdown>
+                          <ReactMarkdown>{stripRiskNotice(item.content, item.riskNotice)}</ReactMarkdown>
                         </div>
                         {item.content && (
                           <div className="msg-actions">

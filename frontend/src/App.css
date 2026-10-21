@@ -250,6 +250,23 @@ body {
   background: #fffbfb;
 }
 
+/* WEAK 急症风险提示横幅（后端 risk_notice 字段，前端单独渲染） */
+.risk-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #9a3412;
+}
+
+.risk-banner svg { flex-shrink: 0; margin-top: 2px; color: #ea580c; }
+
 /* ---------- 消息操作条 ---------- */
 .msg-actions {
   display: flex;

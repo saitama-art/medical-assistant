@@ -123,6 +123,11 @@ MSD_COMMON_HEALTH = [
     ("health-hair-loss", "/home/skin-disorders/hair-disorders/alopecia-hair-loss", "脱发", "疾病与健康知识"),
     ("health-menstrual-cramps", "/home/women-s-health-issues/menstrual-disorders-and-abnormal-uterine-bleeding/menstrual-cramps", "痛经", "疾病与健康知识"),
     ("health-neck-pain", "/home/bone-joint-and-muscle-disorders/low-back-and-neck-pain/neck-pain", "颈痛", "症状与就医指引"),
+    # ---- 2026-10-21 第六轮：肛肠与关节滑囊高频问题（URL 逐个 curl 验证 200）----
+    ("health-hemorrhoids", "/home/digestive-disorders/anal-and-rectal-disorders/hemorrhoids", "痔疮", "疾病与健康知识"),
+    ("health-anal-fissure", "/home/digestive-disorders/anal-and-rectal-disorders/anal-fissure", "肛裂", "疾病与健康知识"),
+    ("health-anal-itching", "/home/digestive-disorders/anal-and-rectal-disorders/anal-itching", "肛门瘙痒", "症状与就医指引"),
+    ("health-bursitis", "/home/bone-joint-and-muscle-disorders/muscle-bursa-and-tendon-disorders/bursitis", "滑囊炎（关节肿痛）", "疾病与健康知识"),
 ]
 
 ALL_MSD = MSD_DISEASES + MSD_SYMPTOMS + MSD_TESTS + MSD_MED_SAFETY + MSD_COMMON_HEALTH
