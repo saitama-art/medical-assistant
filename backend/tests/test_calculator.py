@@ -81,6 +81,26 @@ class TestCalcDetect(unittest.TestCase):
         p = calculator.detect("我身高170，体重65公斤，BMI是多少？有什么危害")
         self.assertEqual(p.remaining, "有什么危害")
 
+    def test_bare_numbers_fallback(self):
+        # 口语裸数字：第一个数=身高、带「斤」的数=体重（用户实测 badcase）
+        p = calculator.detect("帮我计算我的bmi 178 170斤")
+        self.assertEqual((p.status, p.kind), ("ready", "bmi"))
+        self.assertEqual(p.args, {"height_cm": 178.0, "weight_kg": 85.0})
+
+    def test_bare_numbers_out_of_order(self):
+        p = calculator.detect("bmi 170斤 178")
+        self.assertEqual(p.args, {"height_cm": 178.0, "weight_kg": 85.0})
+
+    def test_bare_numbers_too_many_not_guessed(self):
+        # 数字过多有歧义：不猜，交回追问
+        p = calculator.detect("bmi 178 170 25")
+        self.assertEqual(p.status, "missing")
+
+    def test_bare_numbers_not_confused_with_bmi_value(self):
+        # 「BMI 24」的 24 不在身高区间，不得被当成身高
+        p = calculator.detect("我BMI 24正常吗")
+        self.assertEqual(p.status, "missing")
+
     def test_non_calc_returns_none(self):
         for q in ("二甲双胍怎么吃", "高血压注意什么", "我有点头晕", "晚上睡不着怎么办"):
             self.assertIsNone(calculator.detect(q), q)

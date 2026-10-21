@@ -187,6 +187,39 @@ def _parse_weight(text: str) -> float | None:
     return None
 
 
+# BMI 意图下的裸数字兜底：「帮我算下bmi 178 170斤」——中文口语惯例
+# 第一个数=身高(cm)、第二个数=体重（带「斤」按市斤）。
+# 健壮性约束（全部满足才采纳，否则交回追问，不猜参数）：
+#   1. 仅在 BMI 强意图（关键字命中）且关键字解析失败时启用；
+#   2. 裸数字不超过 2 个——数字一多就有歧义，宁可追问；
+#   3. 身高只认 120~230、体重只认 30~200 且两区间不相交，「BMI 24」这类
+#      指标值不会误入身高/体重区间；
+#   4. 带「斤」的数固定按市斤换算为体重，支持「170斤 178」乱序。
+def _parse_bare_numbers(text: str, height: float | None, weight: float | None,
+                        ) -> tuple[float | None, float | None]:
+    pairs = [(float(m.group(1)), bool(m.group(2)))
+             for m in re.finditer(r"(\d+(?:\.\d+)?)\s*(斤)?", text)]
+    if len(pairs) > 2:
+        return height, weight  # 数字过多有歧义，不猜
+
+    jin = [v for v, is_jin in pairs if is_jin]
+    bare = [v for v, is_jin in pairs if not is_jin]
+    if height is None:
+        for v in list(bare):
+            if 120 <= v <= 230 and v != weight:
+                height = v
+                bare.remove(v)
+                break
+    if weight is None and jin:
+        weight = jin[0] * 0.5
+    if weight is None and bare:
+        v = bare[0]
+        # 不得与已由关键字解析出的身高同值（「身高170」的 170 不是体重）
+        if 30 <= v <= 200 and v != height:
+            weight = v
+    return height, weight
+
+
 def _split_remaining(text: str) -> str:
     """从组合问法中拆出知识问题（命中关键词时），否则为空串。"""
     m = _KW_REMAINS.search(text)
@@ -206,6 +239,9 @@ def detect(text: str) -> CalcPlan | None:
     if _BMI_RE.search(text):
         height = _parse_height(text)
         weight = _parse_weight(text)
+        if height is None or weight is None:
+            # 兜底：口语裸数字（「bmi 178 170斤」），只在合理区间内采纳
+            height, weight = _parse_bare_numbers(text, height, weight)
         missing = tuple(k for k, v in (("身高", height), ("体重", weight)) if v is None)
         if missing:
             return CalcPlan("missing", "bmi", missing=missing)
