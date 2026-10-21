@@ -8,9 +8,11 @@
   RETRIEVAL_MISS（根本没检索到期望文档）；其余 outcome 原样记录。
 
 用法（backend/ 下，ai_agent 环境）：
-    python -m acceptance.coverage              # 检索级，零 LLM
-    python -m acceptance.coverage --chat       # 追加真实链路（消耗 LLM 额度）
-    python -m acceptance.coverage --out x.json
+    python -m acceptance.coverage --group p0     # P0 饮食营养（检索级，零 LLM）
+    python -m acceptance.coverage --group p1a    # P1 运动睡眠生活习惯（检索级）
+    python -m acceptance.coverage --group p1b    # P1 常见症状与疾病（检索级）
+    python -m acceptance.coverage --group p1a --chat   # 追加真实链路（消耗 LLM 额度）
+    python -m acceptance.coverage --group p0 --out x.json
 """
 
 from __future__ import annotations
@@ -66,6 +68,94 @@ COVERAGE_CASES = [
          expect_docs=["营养需求"]),
 ]
 
+# ---- P1A 运动、睡眠与生活习惯（任务清单第三节 P1 1~15）----
+COVERAGE_P1A = [
+    dict(id="P1A-01", question="普通成年人每周运动多少时间比较合适？", topic="运动",
+         expect_docs=["锻炼概述"]),
+    dict(id="P1A-02", question="初学者如何制定运动计划？", topic="运动",
+         expect_docs=["开始锻炼计划"]),
+    dict(id="P1A-03", question="减肥应该以有氧运动还是力量训练为主？", topic="运动",
+         expect_docs=["选择合适的运动", "锻炼概述"]),
+    dict(id="P1A-04", question="久坐人群怎样安排日常活动？", topic="运动",
+         expect_docs=["锻炼概述", "锻炼的益处"]),
+    dict(id="P1A-05", question="运动后肌肉酸痛正常吗？", topic="运动",
+         expect_docs=["肌肉骨骼疼痛"]),
+    dict(id="P1A-06", question="运动时出现胸闷、胸痛或头晕应该怎么办？", topic="运动",
+         expect_docs=["安全进行锻炼"]),
+    dict(id="P1A-07", question="成年人每天需要睡几个小时？", topic="睡眠",
+         expect_docs=["睡眠概述"]),
+    dict(id="P1A-08", question="入睡困难有哪些常见原因？", topic="睡眠",
+         expect_docs=["失眠"]),
+    dict(id="P1A-09", question="夜间容易醒来是什么原因？", topic="睡眠",
+         expect_docs=["失眠"]),
+    dict(id="P1A-10", question="长期熬夜可能产生哪些影响？", topic="睡眠",
+         expect_docs=["昼夜节律失调性睡眠障碍", "睡眠概述"]),
+    dict(id="P1A-11", question="打鼾严重是否需要就医？", topic="睡眠",
+         expect_docs=["打鼾"]),
+    dict(id="P1A-12", question="每天喝咖啡多少比较合适？", topic="饮食",
+         expect_docs=[], note="待补充来源：MSD 大众版无咖啡因/咖啡量词条"),
+    dict(id="P1A-13", question="长时间使用电脑，如何保护眼睛？", topic="用眼",
+         expect_docs=[], note="待补充来源：MSD 大众版无眼疲劳/护眼词条"),
+    dict(id="P1A-14", question="经常久坐，怎样减少健康风险？", topic="运动",
+         expect_docs=["锻炼概述", "锻炼的益处"]),
+    dict(id="P1A-15", question="吸烟和饮酒有哪些主要健康风险？", topic="生活方式",
+         expect_docs=["吸烟和其他烟草使用", "酒精使用"]),
+]
+
+# ---- P1B 常见症状与疾病科普（任务清单第三节 P1 1~22）----
+COVERAGE_P1B = [
+    dict(id="P1B-01", question="经常头痛是什么原因？", topic="症状",
+         expect_docs=["头痛概述"]),
+    dict(id="P1B-02", question="反复头晕可能与哪些因素有关？", topic="症状",
+         expect_docs=["头晕和眩晕"]),
+    dict(id="P1B-03", question="经常疲劳、乏力可能是什么原因？", topic="症状",
+         expect_docs=["疲劳"]),
+    dict(id="P1B-04", question="咳嗽持续不愈，什么时候需要就医？", topic="症状",
+         expect_docs=["成人咳嗽"]),
+    dict(id="P1B-05", question="反复腹痛应该注意什么？", topic="症状",
+         expect_docs=["慢性腹痛和反复发作性腹痛"]),
+    dict(id="P1B-06", question="经常腹胀、消化不良怎么办？", topic="症状",
+         expect_docs=["消化不良", "胃肠气胀（腹胀）"]),
+    dict(id="P1B-07", question="便秘有哪些常见原因，如何改善？", topic="症状",
+         expect_docs=["成人便秘"]),
+    dict(id="P1B-08", question="腹泻时如何补充水分？", topic="症状",
+         expect_docs=["成人腹泻"]),
+    dict(id="P1B-09", question="反复出现皮疹或瘙痒，应该如何处理？", topic="症状",
+         expect_docs=["瘙痒", "荨麻疹（风团）"]),
+    dict(id="P1B-10", question="心悸可能有哪些原因？", topic="症状",
+         expect_docs=["心悸"]),
+    dict(id="P1B-11", question="反复低热或发热应该注意什么？", topic="症状",
+         expect_docs=["成人发热"]),
+    dict(id="P1B-12", question="感冒和流感有什么区别？", topic="疾病",
+         expect_docs=["流行性感冒（流感）", "普通感冒"]),
+    dict(id="P1B-13", question="病毒感染和细菌感染有什么区别？", topic="疾病",
+         expect_docs=["抗生素概述"]),
+    dict(id="P1B-14", question="抗生素对病毒感染有效吗？", topic="用药",
+         expect_docs=["抗生素概述"]),
+    dict(id="P1B-15", question="什么是高血压？有哪些常见危险因素？", topic="疾病",
+         expect_docs=["高血压"]),
+    dict(id="P1B-16", question="什么是糖尿病？常见类型有哪些？", topic="疾病",
+         expect_docs=["糖尿病概述", "2型糖尿病"]),
+    dict(id="P1B-17", question="什么是高血脂？血脂异常有什么风险？", topic="疾病",
+         expect_docs=["血脂异常", "胆固醇及脂代谢紊乱"]),
+    dict(id="P1B-18", question="什么是高尿酸血症和痛风？", topic="疾病",
+         expect_docs=["痛风（高尿酸血症）"]),
+    dict(id="P1B-19", question="脂肪肝有哪些常见原因？", topic="疾病",
+         expect_docs=["脂肪性肝病"]),
+    dict(id="P1B-20", question="慢性肾病有哪些常见危险因素？", topic="疾病",
+         expect_docs=["慢性肾病"]),
+    dict(id="P1B-21", question="骨质疏松有哪些常见风险因素？", topic="疾病",
+         expect_docs=["骨质疏松症"]),
+    dict(id="P1B-22", question="胃食管反流病有哪些常见表现？", topic="疾病",
+         expect_docs=["胃食管反流病"]),
+]
+
+CASE_GROUPS = {
+    "p0": ("COVERAGE-P0", COVERAGE_CASES),
+    "p1a": ("COVERAGE-P1A", COVERAGE_P1A),
+    "p1b": ("COVERAGE-P1B", COVERAGE_P1B),
+}
+
 # ---- 失败原因分类（纯函数，可单测） ----
 
 
@@ -100,7 +190,7 @@ def _hit_rank(top: list[dict], expect_docs: list[str]) -> int | None:
     return None
 
 
-def run_coverage(do_chat: bool, client_factory=None) -> dict:
+def run_coverage(do_chat: bool, group: str = "p0", client_factory=None) -> dict:
     from .runner import ClientCtx, _safe_record
 
     if client_factory is None:
@@ -110,8 +200,9 @@ def run_coverage(do_chat: bool, client_factory=None) -> dict:
     else:
         client = client_factory()
 
+    group_name, cases = CASE_GROUPS[group]
     records = []
-    for case in COVERAGE_CASES:
+    for case in cases:
         rec = dict(case)
         t0 = time.monotonic()
         diag = client.retrieve(case["question"])
@@ -134,16 +225,18 @@ def run_coverage(do_chat: bool, client_factory=None) -> dict:
     summary = {}
     for r in records:
         summary[r["verdict"]] = summary.get(r["verdict"], 0) + 1
-    return dict(group="COVERAGE-P0", generated_at=datetime.now().isoformat(timespec="seconds"),
+    return dict(group=group_name, generated_at=datetime.now().isoformat(timespec="seconds"),
                 chat=do_chat, summary=summary, records=records)
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="python -m acceptance.coverage",
-                                 description="P0 饮食营养覆盖测试集（诊断用，不计通过/失败）")
+                                 description="知识覆盖测试集（诊断用，不计通过/失败）")
+    ap.add_argument("--group", choices=["p0", "p1a", "p1b"], default="p0",
+                    help="测试集分组（默认 p0；P1 两组为 p1a 运动睡眠 / p1b 症状疾病）")
     ap.add_argument("--chat", action="store_true",
                     help="追加真实 LLM 链路判定（默认只跑零 LLM 检索级）")
-    ap.add_argument("--out", help="JSON 报告路径（默认 acceptance_results/coverage_<ts>.json）")
+    ap.add_argument("--out", help="JSON 报告路径（默认 acceptance_results/coverage_<组>_<ts>.json）")
     args = ap.parse_args(argv)
 
     out = args.out
@@ -151,9 +244,9 @@ def main(argv=None):
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         d = Path("acceptance_results")
         d.mkdir(exist_ok=True)
-        out = str(d / f"coverage_{ts}.json")
+        out = str(d / f"coverage_{args.group}_{ts}.json")
 
-    report = run_coverage(do_chat=args.chat)
+    report = run_coverage(do_chat=args.chat, group=args.group)
     Path(out).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\n分类汇总：{report['summary']}")
     print(f"报告：{out}")

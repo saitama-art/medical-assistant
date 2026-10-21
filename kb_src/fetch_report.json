@@ -780,6 +780,186 @@
     "site": "msd"
   },
   {
+    "key": "p1-sleep-overview",
+    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/sleep-disorders/overview-of-sleep",
+    "status": 200,
+    "chars": 3296,
+    "ok": true,
+    "title": "睡眠概述",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "p1-snoring",
+    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/sleep-disorders/snoring",
+    "status": 200,
+    "chars": 4829,
+    "ok": true,
+    "title": "打鼾",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "p1-circadian-rhythm",
+    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/sleep-disorders/circadian-rhythm-sleep-disorders",
+    "status": 200,
+    "chars": 5088,
+    "ok": true,
+    "title": "昼夜节律失调性睡眠障碍",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "p1-fatigue",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/nonspecific-symptoms/fatigue",
+    "status": 200,
+    "chars": 6783,
+    "ok": true,
+    "title": "疲劳",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "p1-alcohol-use",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/illicit-drugs-and-intoxicants/alcohol-use",
+    "status": 200,
+    "chars": 10848,
+    "ok": true,
+    "title": "酒精使用",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "p1-smoking",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/tobacco-use/smoking-and-other-tobacco-use",
+    "status": 200,
+    "chars": 3947,
+    "ok": true,
+    "title": "吸烟和其他烟草使用",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "p1-smoking-cessation",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/tobacco-use/smoking-cessation",
+    "status": 200,
+    "chars": 6263,
+    "ok": true,
+    "title": "戒烟",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "p1-musculoskeletal-pain",
+    "url": "https://www.msdmanuals.cn/home/bone-joint-and-muscle-disorders/symptoms-of-musculoskeletal-disorders/musculoskeletal-pain",
+    "status": 200,
+    "chars": 2663,
+    "ok": true,
+    "title": "肌肉骨骼疼痛",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "p1-choosing-exercise",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/exercise-and-fitness/choosing-the-right-exercise",
+    "status": 200,
+    "chars": 3833,
+    "ok": true,
+    "title": "选择合适的运动",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "p1-exercise-benefits",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/exercise-and-fitness/benefits-of-exercise",
+    "status": 200,
+    "chars": 1146,
+    "ok": true,
+    "title": "锻炼的益处",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "p1-indigestion",
+    "url": "https://www.msdmanuals.cn/home/digestive-disorders/symptoms-of-digestive-disorders/indigestion",
+    "status": 200,
+    "chars": 4278,
+    "ok": true,
+    "title": "消化不良",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "p1-gas",
+    "url": "https://www.msdmanuals.cn/home/digestive-disorders/symptoms-of-digestive-disorders/gas",
+    "status": 200,
+    "chars": 5512,
+    "ok": true,
+    "title": "胃肠气胀（腹胀）",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "p1-influenza",
+    "url": "https://www.msdmanuals.cn/home/infections/respiratory-virus-infections/influenza-flu",
+    "status": 200,
+    "chars": 4242,
+    "ok": true,
+    "title": "流行性感冒（流感）",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "p1-antibiotics-overview",
+    "url": "https://www.msdmanuals.cn/home/infections/antibiotics/overview-of-antibiotics",
+    "status": 200,
+    "chars": 5195,
+    "ok": true,
+    "title": "抗生素概述",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
+    "key": "p1-steatotic-liver",
+    "url": "https://www.msdmanuals.cn/home/liver-and-gallbladder-disorders/manifestations-of-liver-disease/steatotic-liver-disease",
+    "status": 200,
+    "chars": 2570,
+    "ok": true,
+    "title": "脂肪性肝病",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "p1-gerd",
+    "url": "https://www.msdmanuals.cn/home/digestive-disorders/esophageal-and-swallowing-disorders/gastroesophageal-reflux-disease-gerd",
+    "status": 200,
+    "chars": 3390,
+    "ok": true,
+    "title": "胃食管反流病",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "p1-diabetes-overview",
+    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/diabetes-mellitus-and-low-blood-sugar-hypoglycemia/overview-of-diabetes-mellitus",
+    "status": 200,
+    "chars": 5796,
+    "ok": true,
+    "title": "糖尿病概述",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "p1-itching",
+    "url": "https://www.msdmanuals.cn/home/skin-disorders/itching-and-dermatitis/itching",
+    "status": 200,
+    "chars": 6813,
+    "ok": true,
+    "title": "瘙痒",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
     "key": "drug-metformin-sr",
     "url": "https://www.dayi.org.cn/drug/1157161.html",
     "status": 200,
