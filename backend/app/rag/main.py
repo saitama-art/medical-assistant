@@ -58,6 +58,9 @@ def agent_chat(req: AgentChatRequest):
         "sources": orchestrator.display_sources(state),
         "category": state.category.value if state.category else None,
         "outcome": state.termination_reason.value if state.termination_reason else None,
+        # WEAK 急症风险提示原文（emergency_handled 时为空，其文案已在 answer 内）。
+        # 前端用它渲染安全提醒横幅；answer 内的文字保持不变（向后兼容）。
+        "risk_notice": state.risk_notice or None,
     }
 
 # 配置 CORS
@@ -92,16 +95,15 @@ async def upload_pdf(file: UploadFile = File(...)):
     # 2. 加载并处理 PDF（核心步骤）
     try:
         from langchain_community.document_loaders import PyPDFLoader
-        from langchain_text_splitters import RecursiveCharacterTextSplitter
+        from .chapter_split import split_documents  # 与离线建库同一套章节切分
 
         # 读取 PDF
         loader = PyPDFLoader(file_path)
         documents = loader.load()
         print(f"成功读取 PDF，共 {len(documents)} 页。")
 
-        # 切分文档
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
-        docs = text_splitter.split_documents(documents)
+        # 切分文档：与 ingest 相同的章节切分（800/100），上传文档与建库文档口径一致
+        docs = split_documents(documents, chunk_size=800, chunk_overlap=100)
         print(f"切分完成，共 {len(docs)} 个片段。")
 
         # 写入向量库
