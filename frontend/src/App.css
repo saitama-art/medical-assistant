@@ -373,6 +373,7 @@ body {
 
 .input-area textarea {
   flex: 1;
+  min-width: 0;            /* flex 子项默认 min-width:auto 会拒绝收缩，导致窄屏溢出 */
   border: none;
   outline: none;
   resize: none;
@@ -382,10 +383,20 @@ body {
   background: transparent;
   color: var(--text);
   font-family: inherit;
+  height: 41px;            /* 固定单行起步；内容多时由 JS 按 scrollHeight 撑高 */
+  min-height: 41px;
   max-height: 140px;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
-.input-area textarea::placeholder { color: #9ca3af; }
+/* 占位提示强制单行：过长时省略号截断，不再换行溢出到发送按钮下方 */
+.input-area textarea::placeholder {
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .input-area button {
   padding: 10px 26px;

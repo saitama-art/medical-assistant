@@ -65,10 +65,33 @@ function App() {
   const [uploading, setUploading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const chatBoxRef = useRef(null);
+  const inputRef = useRef(null);
+  // 窄屏（与 App.css 断点一致）用短占位提示，避免长提示被截断出半个括号
+  const [narrowScreen, setNarrowScreen] = useState(
+    () => window.matchMedia('(max-width: 760px)').matches);
   // 流式输出：全量文本放 ref，可见前缀放 state，切换会话时取消
   const streamRef = useRef(null);
 
   const API_BASE = process.env.REACT_APP_API_BASE || `http://127.0.0.1:8000`;
+
+  // 输入框高度随内容自适应（参考 ChatGPT）：单行起步，最多约 5 行，超出滚动
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+  }, [message]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 760px)');
+    const onChange = e => setNarrowScreen(e.matches);
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else mq.addListener(onChange); // 旧浏览器兜底
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
+      else mq.removeListener(onChange);
+    };
+  }, []);
 
   // activeId 失效（首次进入或记录了已删除的会话）时回退到列表首条
   useEffect(() => {
@@ -357,9 +380,12 @@ function App() {
             </label>
 
             <textarea
+              ref={inputRef}
               value={message}
               onChange={e => setMessage(e.target.value)}
-              placeholder={`请输入您的问题...（Enter 发送，Shift+Enter 换行，${MAX_QUESTION_LEN} 字以内）`}
+              placeholder={narrowScreen
+                ? '请输入您的问题...'
+                : `请输入您的问题...（Enter 发送，Shift+Enter 换行，${MAX_QUESTION_LEN} 字以内）`}
               maxLength={MAX_QUESTION_LEN}
               rows={1}
               onKeyDown={onInputKeyDown}
