@@ -130,4 +130,27 @@ MSD_COMMON_HEALTH = [
     ("health-bursitis", "/home/bone-joint-and-muscle-disorders/muscle-bursa-and-tendon-disorders/bursitis", "滑囊炎（关节肿痛）", "疾病与健康知识"),
 ]
 
-ALL_MSD = MSD_DISEASES + MSD_SYMPTOMS + MSD_TESTS + MSD_MED_SAFETY + MSD_COMMON_HEALTH
+# ---- 饮食营养与体重管理（2026-10-21 第七轮 P0：覆盖「我想减肥，饮食如何安排」类
+# 证据不足缺口；URL 逐个 curl 验证 200）。栏目定位说明：
+# - 「肥胖」词条内含治疗/饮食/改变饮食习惯各节，是减重问题的核心依据；
+# - 营养概述子栏目（卡路里/三大营养素/营养需求/维生素矿物质）覆盖能量估算、
+#   膳食结构、蛋白质与微量营养素问题；
+# - 锻炼三篇服务"运动为主还是力量为主/初学者计划/运动安全"（与 P1 运动主题共享）；
+# - 慢性肾病覆盖特殊人群饮食（低蛋白/限盐）；膳食补充剂概述覆盖保健品/高蛋白边界。----
+MSD_NUTRITION = [
+    ("nutrition-obesity", "/home/hormonal-and-metabolic-disorders/obesity-and-the-metabolic-syndrome/obesity", "肥胖", "疾病与健康知识"),
+    ("nutrition-metabolic-syndrome", "/home/hormonal-and-metabolic-disorders/obesity-and-the-metabolic-syndrome/metabolic-syndrome", "代谢综合征", "疾病与健康知识"),
+    ("nutrition-overview", "/home/disorders-of-nutrition/overview-of-nutrition/overview-of-nutrition", "营养概述", "疾病与健康知识"),
+    ("nutrition-calories", "/home/disorders-of-nutrition/overview-of-nutrition/calories", "卡路里", "疾病与健康知识"),
+    ("nutrition-macros", "/home/disorders-of-nutrition/overview-of-nutrition/carbohydrates-proteins-and-fats", "碳水化合物、蛋白质和脂肪", "疾病与健康知识"),
+    ("nutrition-requirements", "/home/disorders-of-nutrition/overview-of-nutrition/nutritional-requirements", "营养需求", "疾病与健康知识"),
+    ("nutrition-vitamins-minerals", "/home/disorders-of-nutrition/overview-of-nutrition/vitamins-and-minerals", "维生素和矿物质", "疾病与健康知识"),
+    ("nutrition-exercise-overview", "/home/special-subjects/exercise-and-fitness/overview-of-exercise", "锻炼概述", "疾病与健康知识"),
+    ("nutrition-exercise-starting", "/home/special-subjects/exercise-and-fitness/starting-an-exercise-program", "开始锻炼计划", "疾病与健康知识"),
+    ("nutrition-exercise-safety", "/home/special-subjects/exercise-and-fitness/exercising-safely", "安全进行锻炼", "疾病与健康知识"),
+    ("nutrition-chronic-kidney-disease", "/home/kidney-disorders/kidney-failure/chronic-kidney-disease", "慢性肾病", "疾病与健康知识"),
+    ("nutrition-supplements-overview", "/home/special-subjects/dietary-supplements-and-vitamins/overview-of-dietary-supplements", "膳食补充剂概述", "用药安全与特殊人群"),
+]
+
+ALL_MSD = (MSD_DISEASES + MSD_SYMPTOMS + MSD_TESTS + MSD_MED_SAFETY
+           + MSD_COMMON_HEALTH + MSD_NUTRITION)

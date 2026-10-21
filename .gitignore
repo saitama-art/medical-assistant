@@ -44,10 +44,13 @@ tmp/
 temp/
 
 # ---- 向量库（派生产物，可由 backend/data/ 重建，不入库）----
-# 原始 PDF 已纳入版本控制（backend/data/），索引属于构建产物：
-# 二进制、无法 review diff、每次重建都产生大体积变更。
+# 索引属于构建产物：二进制、无法 review diff、每次重建都产生大体积变更。
 backend/chroma_db/
 chroma_db/
+
+# ---- 知识库 PDF（2026-10-21 起：本地生成文件不入库，由 kb_build 流水线
+# 从 kb_src/ 原始抓取重建；历史已入库的 PDF 已从索引移除、本地保留）----
+backend/data/
 
 # ---- 面试题答案库（个人求职材料，不属于项目源码）----
 docs/面试题答案库/

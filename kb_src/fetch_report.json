@@ -660,6 +660,126 @@
     "site": "msd"
   },
   {
+    "key": "nutrition-obesity",
+    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/obesity-and-the-metabolic-syndrome/obesity",
+    "status": 200,
+    "chars": 12256,
+    "ok": true,
+    "title": "肥胖",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "nutrition-metabolic-syndrome",
+    "url": "https://www.msdmanuals.cn/home/hormonal-and-metabolic-disorders/obesity-and-the-metabolic-syndrome/metabolic-syndrome",
+    "status": 200,
+    "chars": 2133,
+    "ok": true,
+    "title": "代谢综合征",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "nutrition-overview",
+    "url": "https://www.msdmanuals.cn/home/disorders-of-nutrition/overview-of-nutrition/overview-of-nutrition",
+    "status": 200,
+    "chars": 8220,
+    "ok": true,
+    "title": "营养概述",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "nutrition-calories",
+    "url": "https://www.msdmanuals.cn/home/disorders-of-nutrition/overview-of-nutrition/calories",
+    "status": 200,
+    "chars": 2741,
+    "ok": true,
+    "title": "卡路里",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "nutrition-macros",
+    "url": "https://www.msdmanuals.cn/home/disorders-of-nutrition/overview-of-nutrition/carbohydrates-proteins-and-fats",
+    "status": 200,
+    "chars": 6055,
+    "ok": true,
+    "title": "碳水化合物、蛋白质和脂肪",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "nutrition-requirements",
+    "url": "https://www.msdmanuals.cn/home/disorders-of-nutrition/overview-of-nutrition/nutritional-requirements",
+    "status": 200,
+    "chars": 654,
+    "ok": true,
+    "title": "营养需求",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "nutrition-vitamins-minerals",
+    "url": "https://www.msdmanuals.cn/home/disorders-of-nutrition/overview-of-nutrition/vitamins-and-minerals",
+    "status": 200,
+    "chars": 1001,
+    "ok": true,
+    "title": "维生素和矿物质",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "nutrition-exercise-overview",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/exercise-and-fitness/overview-of-exercise",
+    "status": 200,
+    "chars": 1385,
+    "ok": true,
+    "title": "锻炼概述",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "nutrition-exercise-starting",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/exercise-and-fitness/starting-an-exercise-program",
+    "status": 200,
+    "chars": 8795,
+    "ok": true,
+    "title": "开始锻炼计划",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "nutrition-exercise-safety",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/exercise-and-fitness/exercising-safely",
+    "status": 200,
+    "chars": 1680,
+    "ok": true,
+    "title": "安全进行锻炼",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "nutrition-chronic-kidney-disease",
+    "url": "https://www.msdmanuals.cn/home/kidney-disorders/kidney-failure/chronic-kidney-disease",
+    "status": 200,
+    "chars": 4845,
+    "ok": true,
+    "title": "慢性肾病",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "nutrition-supplements-overview",
+    "url": "https://www.msdmanuals.cn/home/special-subjects/dietary-supplements-and-vitamins/overview-of-dietary-supplements",
+    "status": 200,
+    "chars": 2910,
+    "ok": true,
+    "title": "膳食补充剂概述",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
     "key": "drug-metformin-sr",
     "url": "https://www.dayi.org.cn/drug/1157161.html",
     "status": 200,
