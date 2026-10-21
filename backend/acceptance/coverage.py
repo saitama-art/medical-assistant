@@ -156,6 +156,123 @@ CASE_GROUPS = {
     "p1b": ("COVERAGE-P1B", COVERAGE_P1B),
 }
 
+# ---- PA P0 就医指引与紧急风险（任务清单第三节 P0 12 题）----
+# 注：紧急类问题优先由安全规则拦截（emergency_handled），此处验证兜底证据覆盖。
+COVERAGE_PA = [
+    dict(id="PA-01", question="出现持续性头痛应该挂什么科？", topic="就医指引",
+         expect_docs=["头痛概述"]),
+    dict(id="PA-02", question="腹痛、胸闷、咳嗽等症状通常如何选择就诊科室？", topic="就医指引",
+         expect_docs=["慢性腹痛和反复发作性腹痛", "胸痛"]),
+    dict(id="PA-03", question="看医生前应该准备哪些信息？", topic="就医指引",
+         expect_docs=[], note="待补充来源：MSD 大众版无就诊准备词条"),
+    dict(id="PA-04", question="如何记录家庭血压和血糖？", topic="就医指引",
+         expect_docs=["高血压", "2型糖尿病"]),
+    dict(id="PA-05", question="体检发现异常后应该如何安排复查？", topic="就医指引",
+         expect_docs=["常见的医疗检查（总览）"]),
+    dict(id="PA-06", question="什么时候应该去急诊，而不是继续居家观察？", topic="紧急风险",
+         expect_docs=["急救的步骤"]),
+    dict(id="PA-07", question="突发胸痛、呼吸困难应该怎么办？", topic="紧急风险",
+         expect_docs=["急救的步骤", "胸痛"]),
+    dict(id="PA-08", question="突发口角歪斜、肢体无力、言语不清应该怎么办？", topic="紧急风险",
+         expect_docs=["脑卒中（中风）"]),
+    dict(id="PA-09", question="严重过敏反应有哪些危险表现？", topic="紧急风险",
+         expect_docs=["速发严重过敏反应"]),
+    dict(id="PA-10", question="意识不清或抽搐时应该怎么办？", topic="紧急风险",
+         expect_docs=["癫痫（抽搐）"]),
+    dict(id="PA-11", question="大量出血时应该怎样处理？", topic="紧急风险",
+         expect_docs=["内出血"]),
+    dict(id="PA-12", question="出现严重脱水表现时应该怎么办？", topic="紧急风险",
+         expect_docs=["成人腹泻", "成人恶心和呕吐"]),
+]
+
+# ---- P1C P1 检查指标与体检报告解释（任务清单第三节 P1 17 题；无新增文档，验证据覆盖）----
+COVERAGE_P1C = [
+    dict(id="P1C-01", question="白细胞偏高是什么原因？", topic="检查指标",
+         expect_docs=["血液疾病的实验室检查（血常规等）"]),
+    dict(id="P1C-02", question="血红蛋白偏低意味着什么？", topic="检查指标",
+         expect_docs=["缺铁性贫血", "血液疾病的实验室检查（血常规等）"]),
+    dict(id="P1C-03", question="血小板偏高需要关注什么？", topic="检查指标",
+         expect_docs=["血液疾病的实验室检查（血常规等）"]),
+    dict(id="P1C-04", question="空腹血糖偏高怎么办？", topic="检查指标",
+         expect_docs=["糖尿病概述", "2型糖尿病"]),
+    dict(id="P1C-05", question="糖化血红蛋白反映什么？", topic="检查指标",
+         expect_docs=["2型糖尿病", "糖尿病概述"]),
+    dict(id="P1C-06", question="总胆固醇、LDL、HDL、甘油三酯分别代表什么？", topic="检查指标",
+         expect_docs=["血脂异常", "胆固醇及脂代谢紊乱"]),
+    dict(id="P1C-07", question="ALT、AST 偏高可能有哪些原因？", topic="检查指标",
+         expect_docs=["肝脏血液检测"]),
+    dict(id="P1C-08", question="肌酐偏高意味着什么？", topic="检查指标",
+         expect_docs=["肾功能测定"]),
+    dict(id="P1C-09", question="eGFR 代表什么？", topic="检查指标",
+         expect_docs=["肾功能测定"]),
+    dict(id="P1C-10", question="尿蛋白阳性、尿潜血阳性应该怎样理解？", topic="检查指标",
+         expect_docs=["肾功能测定"], note="MSD 大众版无尿常规词条，以肾功能测定兜底"),
+    dict(id="P1C-11", question="尿酸偏高是否一定是痛风？", topic="检查指标",
+         expect_docs=["痛风（高尿酸血症）"]),
+    dict(id="P1C-12", question="TSH 偏高或偏低可能意味着什么？", topic="检查指标",
+         expect_docs=["甲状腺概述（甲功检查）"]),
+    dict(id="P1C-13", question="CRP、ESR 升高代表什么？", topic="检查指标",
+         expect_docs=["血液疾病的实验室检查（血常规等）"],
+         note="无独立炎症指标词条，以血液实验室检查兜底"),
+    dict(id="P1C-14", question="BMI 如何计算？腰围和 BMI 有什么区别？", topic="检查指标",
+         expect_docs=["肥胖", "代谢综合征"]),
+    dict(id="P1C-15", question="家庭血压应该如何正确测量？", topic="检查指标",
+         expect_docs=["高血压"]),
+    dict(id="P1C-16", question="一次血压偏高能否确诊高血压？", topic="检查指标",
+         expect_docs=["高血压"]),
+    dict(id="P1C-17", question="多项体检指标同时异常应该怎样看？", topic="检查指标",
+         expect_docs=["常见的医疗检查（总览）"]),
+]
+
+# ---- P2A 用药安全（任务清单第三节 P2 1~9）----
+COVERAGE_P2A = [
+    dict(id="P2A-01", question="服药前应该阅读说明书中的哪些信息？", topic="用药安全",
+         expect_docs=["药物安全性和有效性概述"]),
+    dict(id="P2A-02", question="漏服一次药物应该怎么办？", topic="用药安全",
+         expect_docs=["药物安全性和有效性概述", "服药依从性"]),
+    dict(id="P2A-03", question="忘记服药后能否加倍补服？", topic="用药安全",
+         expect_docs=["用药错误"]),
+    dict(id="P2A-04", question="不同药物能否一起服用？", topic="用药安全",
+         expect_docs=["药物相互作用"]),
+    dict(id="P2A-05", question="服药后出现皮疹、呼吸困难等反应应该怎么办？", topic="用药安全",
+         expect_docs=["药物不良反应", "药物安全性和有效性概述"]),
+    dict(id="P2A-06", question="抗生素为什么不能随意使用？", topic="用药安全",
+         expect_docs=["抗生素概述"]),
+    dict(id="P2A-07", question="保健品会不会与处方药发生相互作用？", topic="用药安全",
+         expect_docs=["膳食补充剂概述", "药物相互作用"]),
+    dict(id="P2A-08", question="长期服药能否自行停药？", topic="用药安全",
+         expect_docs=["服药依从性", "药物安全性和有效性概述"]),
+    dict(id="P2A-09", question="孕妇、老年人和肝肾功能异常者用药需要注意什么？", topic="用药安全",
+         expect_docs=["影响药物反应的因素（年龄/特殊人群）", "孕期用药"]),
+]
+
+# ---- P2B 特殊人群（任务清单第三节 P2 1~8）----
+COVERAGE_P2B = [
+    dict(id="P2B-01", question="儿童发热时，家长应该观察哪些表现？", topic="特殊人群",
+         expect_docs=["婴儿和儿童发热"]),
+    dict(id="P2B-02", question="老年人如何预防跌倒？", topic="特殊人群",
+         expect_docs=["老年人跌倒"]),
+    dict(id="P2B-03", question="老年人出现突然意识或行为变化需要注意什么？", topic="特殊人群",
+         expect_docs=[], note="待补充来源：无老年人急性意识变化专门词条"),
+    dict(id="P2B-04", question="孕期常见不适有哪些一般处理原则？", topic="特殊人群",
+         expect_docs=["孕期用药"], note="孕期非药物不适无专门词条，以孕期用药兜底"),
+    dict(id="P2B-05", question="产后恢复有哪些基本注意事项？", topic="特殊人群",
+         expect_docs=[], note="待补充来源：MSD 大众版无产后恢复词条"),
+    dict(id="P2B-06", question="更年期常见症状有哪些？", topic="特殊人群",
+         expect_docs=["更年期"]),
+    dict(id="P2B-07", question="慢性病患者如何进行家庭监测？", topic="特殊人群",
+         expect_docs=["高血压", "2型糖尿病"]),
+    dict(id="P2B-08", question="多种慢性病并存时，为什么需要综合评估？", topic="特殊人群",
+         expect_docs=[], note="待补充来源：无多重用药/共病综合评估词条"),
+]
+
+CASE_GROUPS.update({
+    "pa": ("COVERAGE-PA", COVERAGE_PA),
+    "p1c": ("COVERAGE-P1C", COVERAGE_P1C),
+    "p2a": ("COVERAGE-P2A", COVERAGE_P2A),
+    "p2b": ("COVERAGE-P2B", COVERAGE_P2B),
+})
+
 # ---- 失败原因分类（纯函数，可单测） ----
 
 
@@ -232,8 +349,10 @@ def run_coverage(do_chat: bool, group: str = "p0", client_factory=None) -> dict:
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="python -m acceptance.coverage",
                                  description="知识覆盖测试集（诊断用，不计通过/失败）")
-    ap.add_argument("--group", choices=["p0", "p1a", "p1b"], default="p0",
-                    help="测试集分组（默认 p0；P1 两组为 p1a 运动睡眠 / p1b 症状疾病）")
+    ap.add_argument("--group", choices=["p0", "p1a", "p1b", "pa", "p1c", "p2a", "p2b"],
+                    default="p0",
+                    help="测试集分组（p0 饮食营养 / p1a 运动睡眠 / p1b 症状疾病 / "
+                         "pa 就医指引 / p1c 检查指标 / p2a 用药安全 / p2b 特殊人群）")
     ap.add_argument("--chat", action="store_true",
                     help="追加真实 LLM 链路判定（默认只跑零 LLM 检索级）")
     ap.add_argument("--out", help="JSON 报告路径（默认 acceptance_results/coverage_<组>_<ts>.json）")

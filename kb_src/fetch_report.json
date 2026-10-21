@@ -960,6 +960,86 @@
     "site": "msd"
   },
   {
+    "key": "p0-first-aid-steps",
+    "url": "https://www.msdmanuals.cn/home/injuries-and-poisoning/first-aid/steps-in-emergency-first-aid",
+    "status": 200,
+    "chars": 1890,
+    "ok": true,
+    "title": "急救的步骤",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "p0-internal-bleeding",
+    "url": "https://www.msdmanuals.cn/home/injuries-and-poisoning/first-aid/internal-bleeding",
+    "status": 200,
+    "chars": 479,
+    "ok": true,
+    "title": "内出血",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "p0-anaphylaxis",
+    "url": "https://www.msdmanuals.cn/home/immune-disorders/allergic-reactions-and-other-hypersensitivity-disorders/anaphylactic-reactions",
+    "status": 200,
+    "chars": 2528,
+    "ok": true,
+    "title": "速发严重过敏反应",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "p2-seizures",
+    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/seizure-disorders/seizure-disorders",
+    "status": 200,
+    "chars": 20696,
+    "ok": true,
+    "title": "癫痫（抽搐）",
+    "category": "症状与就医指引",
+    "site": "msd"
+  },
+  {
+    "key": "p2-med-safety-overview",
+    "url": "https://www.msdmanuals.cn/home/drugs/overview-of-medications/overview-of-medication-safety-and-effectiveness",
+    "status": 200,
+    "chars": 2238,
+    "ok": true,
+    "title": "药物安全性和有效性概述",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
+    "key": "p2-children-fever",
+    "url": "https://www.msdmanuals.cn/home/children-s-health-issues/symptoms-in-infants-and-children/fever-in-infants-and-children",
+    "status": 200,
+    "chars": 10766,
+    "ok": true,
+    "title": "婴儿和儿童发热",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
+    "key": "p2-falls-older",
+    "url": "https://www.msdmanuals.cn/home/older-people-s-health-issues/falls-in-older-adults/falls-in-older-adults",
+    "status": 200,
+    "chars": 7191,
+    "ok": true,
+    "title": "老年人跌倒",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
+    "key": "p2-menopause",
+    "url": "https://www.msdmanuals.cn/home/women-s-health-issues/menopause/menopause",
+    "status": 200,
+    "chars": 15358,
+    "ok": true,
+    "title": "更年期",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
     "key": "drug-metformin-sr",
     "url": "https://www.dayi.org.cn/drug/1157161.html",
     "status": 200,
