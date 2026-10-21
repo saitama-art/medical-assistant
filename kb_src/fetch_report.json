@@ -1130,6 +1130,26 @@
     "site": "msd"
   },
   {
+    "key": "ext-delirium",
+    "url": "https://www.msdmanuals.cn/home/brain-spinal-cord-and-nerve-disorders/delirium-and-dementia/delirium",
+    "status": 200,
+    "chars": 10729,
+    "ok": true,
+    "title": "谵妄（急性意识模糊）",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "ext-postpartum-care",
+    "url": "https://www.msdmanuals.cn/home/women-s-health-issues/postpartum-care/overview-of-postpartum-care",
+    "status": 200,
+    "chars": 12296,
+    "ok": true,
+    "title": "产后护理概述",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
     "key": "drug-metformin-sr",
     "url": "https://www.dayi.org.cn/drug/1157161.html",
     "status": 200,
