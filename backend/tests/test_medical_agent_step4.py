@@ -42,15 +42,18 @@ class _FakeMessage:
 
 
 class FakeLLM:
-    """按 Prompt 角色分发的假 LLM：分类 / 判定 / 生成各返回固定内容。
+    """按 Prompt 角色分发的假 LLM：分类 / 判定 / 改写 / 生成各返回固定内容。
 
-    用法：FakeLLM(classify={...}, judge={...}, answer="...")，
+    用法：FakeLLM(classify={...}, judge={...}, resolve="...", answer="...")，
     或 raise_on_invoke=True 用于断言"该路径根本不应调用 LLM"。
+    resolve 缺省时改写 prompt 也走 answer（兼容旧用法）。
     """
 
-    def __init__(self, *, classify=None, judge=None, answer="生成回答正文。", raise_on_invoke=False):
+    def __init__(self, *, classify=None, judge=None, resolve=None,
+                 answer="生成回答正文。", raise_on_invoke=False):
         self.classify = classify
         self.judge = judge
+        self.resolve = resolve
         self.answer = answer
         self.raise_on_invoke = raise_on_invoke
         self.calls = 0
@@ -70,6 +73,8 @@ class FakeLLM:
             return _FakeMessage(json.dumps(self.classify, ensure_ascii=False))
         if "证据充分性判定器" in system:
             return _FakeMessage(json.dumps(self.judge, ensure_ascii=False))
+        if "对话上下文整理器" in system and self.resolve is not None:
+            return _FakeMessage(self.resolve)
         return _FakeMessage(self.answer)
 
 

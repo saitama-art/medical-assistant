@@ -8,9 +8,10 @@
 - 组合问法（计算+解释）→ 先计算后知识检索
 """
 
+import json
 import unittest
 
-from app.medical_agent import calculator, orchestrator, respond
+from app.medical_agent import calculator, orchestrator, respond, session
 from app.medical_agent.state import TerminationReason
 
 from tests.test_medical_agent_step4 import FakeLLM, _fresh_session, _run
@@ -172,6 +173,107 @@ class TestCalcIntegration(unittest.TestCase):
         self.assertEqual(calls["retrieval"], 1)  # 剩余问题走了知识检索
         self.assertIn("BMI = **27.7**", state.answer_text)
         self.assertIn("超重危害的解释", state.answer_text)
+
+
+class TestCalcParamFill(unittest.TestCase):
+    """隐性回指补全（N04a 参数回填）：「我的BMI」类追问从会话历史提取参数。
+
+    约束：改写只由 LLM 做"补全问法"，数字始终由 calculator 确定性函数产出；
+    任何补不出来（无历史/改写失败/仍缺参/丢意图）都降级为原追问文案，不猜。
+    """
+
+    def _seed(self, sid, turns):
+        """把若干轮问答写入会话历史。"""
+        for q, a in turns:
+            session.complete(sid, q, a, got_lock=True)
+
+    def test_followup_bmi_from_history(self):
+        # 用户实测 badcase：上一轮算过 BMI，追问「我的BMI」应复用历史参数
+        sid = _fresh_session()
+        self._seed(sid, [("帮我计算我的bmi 178 170斤", "BMI = **26.8** 超重")])
+        llm = FakeLLM(answer=json.dumps(
+            {"question": "我身高178，体重170斤，BMI是多少？"}, ensure_ascii=False))
+        state, calls = _run(sid, "我的BMI是多少", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
+        self.assertIn("BMI = **26.8**", state.answer_text)
+        self.assertIn("超重", state.answer_text)
+        self.assertIn(respond.CALC_PARAM_FROM_HISTORY, state.answer_text)
+        self.assertIn(respond.DISCLAIMER, state.answer_text)
+        self.assertEqual(calls["retrieval"], 0)      # 仍是 0 检索
+        self.assertEqual(llm.calls, 1)               # 仅 1 次改写，无分类/生成
+
+    def test_followup_standard_weight_from_history(self):
+        sid = _fresh_session()
+        self._seed(sid, [("我身高175，标准体重是多少？", "70.0kg")])
+        llm = FakeLLM(answer=json.dumps(
+            {"question": "我身高175，标准体重是多少？"}, ensure_ascii=False))
+        state, calls = _run(sid, "我的标准体重呢", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
+        self.assertIn("70.0kg", state.answer_text)
+        self.assertIn(respond.CALC_PARAM_FROM_HISTORY, state.answer_text)
+        self.assertEqual(calls["retrieval"], 0)
+
+    def test_no_history_still_asks(self):
+        # 首轮就问「我的BMI」：没有历史可回填，维持追问且 0 LLM
+        llm = FakeLLM(raise_on_invoke=True)
+        state, _ = _run(_fresh_session(), "我的BMI是多少", llm, None)
+        self.assertEqual(state.answer_text, respond.CALC_NEED_HEIGHT_WEIGHT)
+
+    def test_params_present_no_rewrite(self):
+        # 参数齐全时不触发改写：有历史也 0 LLM（不浪费调用）
+        sid = _fresh_session()
+        self._seed(sid, [("我身高170，体重65公斤，BMI是多少？", "22.5")])
+        llm = FakeLLM(raise_on_invoke=True)
+        state, calls = _run(sid, "我身高180，体重70公斤，BMI是多少？", llm, None)
+        self.assertIn("BMI = **21.6**", state.answer_text)
+        self.assertNotIn(respond.CALC_PARAM_FROM_HISTORY, state.answer_text)
+        self.assertEqual(calls["retrieval"], 0)
+
+    def test_rewrite_failed_still_asks(self):
+        # LLM 改写失败（空问题）→ 降级原追问，不猜参数
+        sid = _fresh_session()
+        self._seed(sid, [("帮我计算我的bmi 178 170斤", "26.8")])
+        llm = FakeLLM(answer=json.dumps({"question": ""}, ensure_ascii=False))
+        state, _ = _run(sid, "我的BMI是多少", llm, None)
+        self.assertEqual(state.answer_text, respond.CALC_NEED_HEIGHT_WEIGHT)
+
+    def test_rewrite_losing_intent_still_asks(self):
+        # 改写后不再是计算意图 → 不采纳，维持追问
+        sid = _fresh_session()
+        self._seed(sid, [("帮我计算我的bmi 178 170斤", "26.8")])
+        llm = FakeLLM(answer=json.dumps(
+            {"question": "今天天气怎么样"}, ensure_ascii=False))
+        state, _ = _run(sid, "我的BMI是多少", llm, None)
+        self.assertEqual(state.answer_text, respond.CALC_NEED_HEIGHT_WEIGHT)
+
+    def test_truncated_history_not_used(self):
+        # 历史已截断（最早的对话被丢弃）：上下文不完整，不用于回填健康参数
+        sid = _fresh_session()
+        self._seed(sid, [(f"q{i}", f"a{i}") for i in range(6)])  # 12 条 > maxlen 10
+        llm = FakeLLM(raise_on_invoke=True)  # 任何 LLM 调用都抛 → 证明未改写
+        state, _ = _run(sid, "我的BMI是多少", llm, None)
+        self.assertEqual(state.answer_text, respond.CALC_NEED_HEIGHT_WEIGHT)
+
+    def test_combined_fill_then_knowledge(self):
+        # 回填 + 组合问法：先算 BMI，剩余「有什么危害」交知识子 Agent
+        sid = _fresh_session()
+        self._seed(sid, [("帮我计算我的bmi 178 170斤", "26.8")])
+        llm = FakeLLM(resolve=json.dumps(
+            {"question": "我身高178，体重170斤，BMI是多少？有什么危害"},
+            ensure_ascii=False),
+            classify={"category": "knowledge", "confidence": 0.9},
+            judge={"answerable": True, "supporting_quote": "依据片段"},
+            answer="超重危害的解释。")
+        ok = service.RetrievalResult(
+            outcome=None, chunks=[service.RetrievedChunk(
+                content="依据片段", document="d.pdf", page=1, distance=0.3)],
+        )
+        state, calls = _run(sid, "我的BMI？有什么危害", llm, ok)
+        self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
+        self.assertIn("BMI = **26.8**", state.answer_text)
+        self.assertIn(respond.CALC_PARAM_FROM_HISTORY, state.answer_text)
+        self.assertIn("超重危害的解释", state.answer_text)
+        self.assertEqual(calls["retrieval"], 1)
 
 
 if __name__ == "__main__":
