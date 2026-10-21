@@ -152,5 +152,33 @@ MSD_NUTRITION = [
     ("nutrition-supplements-overview", "/home/special-subjects/dietary-supplements-and-vitamins/overview-of-dietary-supplements", "膳食补充剂概述", "用药安全与特殊人群"),
 ]
 
+# ---- 运动睡眠与生活习惯 + 常见症状疾病（2026-10-21 第八轮 P1；URL 逐个 curl 验证 200）----
+# 覆盖任务清单 P1 两组问题。已知无独立词条、诚实记缺口：咖啡因/咖啡量、
+# 长时间用电脑护眼（MSD 大众版无对应中文词条，记待补充来源）。
+MSD_P1 = [
+    # 运动、睡眠与生活习惯
+    ("p1-sleep-overview", "/home/brain-spinal-cord-and-nerve-disorders/sleep-disorders/overview-of-sleep", "睡眠概述", "症状与就医指引"),
+    ("p1-snoring", "/home/brain-spinal-cord-and-nerve-disorders/sleep-disorders/snoring", "打鼾", "症状与就医指引"),
+    ("p1-circadian-rhythm", "/home/brain-spinal-cord-and-nerve-disorders/sleep-disorders/circadian-rhythm-sleep-disorders", "昼夜节律失调性睡眠障碍", "症状与就医指引"),
+    ("p1-fatigue", "/home/special-subjects/nonspecific-symptoms/fatigue", "疲劳", "症状与就医指引"),
+    ("p1-alcohol-use", "/home/special-subjects/illicit-drugs-and-intoxicants/alcohol-use", "酒精使用", "疾病与健康知识"),
+    ("p1-smoking", "/home/special-subjects/tobacco-use/smoking-and-other-tobacco-use", "吸烟和其他烟草使用", "疾病与健康知识"),
+    ("p1-smoking-cessation", "/home/special-subjects/tobacco-use/smoking-cessation", "戒烟", "疾病与健康知识"),
+    ("p1-musculoskeletal-pain", "/home/bone-joint-and-muscle-disorders/symptoms-of-musculoskeletal-disorders/musculoskeletal-pain", "肌肉骨骼疼痛", "症状与就医指引"),
+    ("p1-choosing-exercise", "/home/special-subjects/exercise-and-fitness/choosing-the-right-exercise", "选择合适的运动", "疾病与健康知识"),
+    # 补收：覆盖「久坐/缺乏运动的危害」表述（实测「久坐人群」问法下锻炼概述未进 top-10，
+    # 该词条从缺乏运动危害角度叙述，URL 验证 200）
+    ("p1-exercise-benefits", "/home/special-subjects/exercise-and-fitness/benefits-of-exercise", "锻炼的益处", "疾病与健康知识"),
+    # 常见症状与疾病科普
+    ("p1-indigestion", "/home/digestive-disorders/symptoms-of-digestive-disorders/indigestion", "消化不良", "症状与就医指引"),
+    ("p1-gas", "/home/digestive-disorders/symptoms-of-digestive-disorders/gas", "胃肠气胀（腹胀）", "症状与就医指引"),
+    ("p1-influenza", "/home/infections/respiratory-virus-infections/influenza-flu", "流行性感冒（流感）", "疾病与健康知识"),
+    ("p1-antibiotics-overview", "/home/infections/antibiotics/overview-of-antibiotics", "抗生素概述", "用药安全与特殊人群"),
+    ("p1-steatotic-liver", "/home/liver-and-gallbladder-disorders/manifestations-of-liver-disease/steatotic-liver-disease", "脂肪性肝病", "疾病与健康知识"),
+    ("p1-gerd", "/home/digestive-disorders/esophageal-and-swallowing-disorders/gastroesophageal-reflux-disease-gerd", "胃食管反流病", "疾病与健康知识"),
+    ("p1-diabetes-overview", "/home/hormonal-and-metabolic-disorders/diabetes-mellitus-and-low-blood-sugar-hypoglycemia/overview-of-diabetes-mellitus", "糖尿病概述", "疾病与健康知识"),
+    ("p1-itching", "/home/skin-disorders/itching-and-dermatitis/itching", "瘙痒", "症状与就医指引"),
+]
+
 ALL_MSD = (MSD_DISEASES + MSD_SYMPTOMS + MSD_TESTS + MSD_MED_SAFETY
-           + MSD_COMMON_HEALTH + MSD_NUTRITION)
+           + MSD_COMMON_HEALTH + MSD_NUTRITION + MSD_P1)
