@@ -38,8 +38,11 @@ def get_llm(timeout: float = 35):
         base_url="https://api.deepseek.com/v1",
         model="deepseek-chat",
         http_client=http_client,
-        temperature=0.1,
-        max_tokens=512
+        # temperature=0：判定/分类必须确定性——实测 0.1 时同一证据的证据判定
+        # 会 flip（同一题两次判定一次通过一次拒绝），医疗门禁不允许掷硬币。
+        # max_tokens=2048：512 会把生成回答截断在长答案中段（判定引文也留足余量）。
+        temperature=0.0,
+        max_tokens=2048
     )
     return llm
 
