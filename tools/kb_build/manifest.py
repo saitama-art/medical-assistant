@@ -168,8 +168,7 @@ MSD_P1 = [
     ("p1-choosing-exercise", "/home/special-subjects/exercise-and-fitness/choosing-the-right-exercise", "选择合适的运动", "疾病与健康知识"),
     # 补收：覆盖「久坐/缺乏运动的危害」表述（实测「久坐人群」问法下锻炼概述未进 top-10，
     # 该词条从缺乏运动危害角度叙述，URL 验证 200）
-    ("p1-exercise-benefits", "/home/special-subjects/exercise-and-fitness/benefits-of-exercise", "锻炼的益处", "疾病与健康知识"),
-    # 常见症状与疾病科普
+    ("p1-exercise-benefits", "/home/special-subjects/exercise-and-fitness/benefits-of-exercise", "锻炼的益处", "疾病与健康知识"),    # 常见症状与疾病科普
     ("p1-indigestion", "/home/digestive-disorders/symptoms-of-digestive-disorders/indigestion", "消化不良", "症状与就医指引"),
     ("p1-gas", "/home/digestive-disorders/symptoms-of-digestive-disorders/gas", "胃肠气胀（腹胀）", "症状与就医指引"),
     ("p1-influenza", "/home/infections/respiratory-virus-infections/influenza-flu", "流行性感冒（流感）", "疾病与健康知识"),
@@ -180,5 +179,20 @@ MSD_P1 = [
     ("p1-itching", "/home/skin-disorders/itching-and-dermatitis/itching", "瘙痒", "症状与就医指引"),
 ]
 
+# ---- 就医指引与急救 + 用药安全与特殊人群（2026-10-21 第九轮；URL 逐个 curl 验证 200）----
+# 覆盖任务清单 P0 就医指引 12 题与 P2 用药安全/特殊人群 17 题。检查指标 17 题（P1）
+# 由既有化验/影像词条覆盖，本轮不新增文档。
+# 注：紧急风险问题主要由安全规则层拦截（emergency_handled），急救词条是兜底证据。
+MSD_P2 = [
+    ("p0-first-aid-steps", "/home/injuries-and-poisoning/first-aid/steps-in-emergency-first-aid", "急救的步骤", "症状与就医指引"),
+    ("p0-internal-bleeding", "/home/injuries-and-poisoning/first-aid/internal-bleeding", "内出血", "症状与就医指引"),
+    ("p0-anaphylaxis", "/home/immune-disorders/allergic-reactions-and-other-hypersensitivity-disorders/anaphylactic-reactions", "速发严重过敏反应", "症状与就医指引"),
+    ("p2-seizures", "/home/brain-spinal-cord-and-nerve-disorders/seizure-disorders/seizure-disorders", "癫痫（抽搐）", "症状与就医指引"),
+    ("p2-med-safety-overview", "/home/drugs/overview-of-medications/overview-of-medication-safety-and-effectiveness", "药物安全性和有效性概述", "用药安全与特殊人群"),
+    ("p2-children-fever", "/home/children-s-health-issues/symptoms-in-infants-and-children/fever-in-infants-and-children", "婴儿和儿童发热", "用药安全与特殊人群"),
+    ("p2-falls-older", "/home/older-people-s-health-issues/falls-in-older-adults/falls-in-older-adults", "老年人跌倒", "用药安全与特殊人群"),
+    ("p2-menopause", "/home/women-s-health-issues/menopause/menopause", "更年期", "用药安全与特殊人群"),
+]
+
 ALL_MSD = (MSD_DISEASES + MSD_SYMPTOMS + MSD_TESTS + MSD_MED_SAFETY
-           + MSD_COMMON_HEALTH + MSD_NUTRITION + MSD_P1)
+           + MSD_COMMON_HEALTH + MSD_NUTRITION + MSD_P1 + MSD_P2)
