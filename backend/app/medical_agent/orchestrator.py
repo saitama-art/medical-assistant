@@ -153,9 +153,18 @@ def run_agent(session_id: str, question: str) -> AgentState:
     # ---- N04a 健康计算规则短路（确定性任务：0 LLM、0 工具）----
     # 急症判定（N01/N03）已先行，计算意图绝不绕过安全规则。
     calc_plan = calculator.detect(state.resolved_question)
+    param_filled = False
+    if (calc_plan is not None and calc_plan.status == "missing"
+            and state.history
+            and state.context_status is not ContextStatus.MISSING):
+        # 隐性回指（「我的BMI」）：意图明确但参数缺失且有历史——先尝试用
+        # 会话历史改写补全再算；补不出来（改写失败/仍缺参/预算不足）维持原追问，不猜。
+        calc_plan = _try_calc_param_fill(state) or calc_plan
+        param_filled = calc_plan.status == "ready"
     if calc_plan is not None:
         state.add_trace("N04a", "decision",
-                        {"status": calc_plan.status, "kind": calc_plan.kind})
+                        {"status": calc_plan.status, "kind": calc_plan.kind,
+                         "param_filled": param_filled})
         if calc_plan.status == "missing":
             return _finish(state, got_lock, TerminationReason.COMPLETED,
                            respond.CALC_NEED_HEIGHT_WEIGHT
@@ -166,16 +175,17 @@ def run_agent(session_id: str, question: str) -> AgentState:
             return _finish(state, got_lock, TerminationReason.COMPLETED,
                            respond.CALC_NEED_HEIGHT_WEIGHT
                            if calc_plan.kind == "bmi" else respond.CALC_NEED_HEIGHT)
+        note = f"\n\n{respond.CALC_PARAM_FROM_HISTORY}" if param_filled else ""
         if calc_plan.remaining and calc_plan.kind in ("bmi", "standard_weight"):
             # 组合问法：先完成确定性计算，剩余医学解释交知识子 Agent 检索
             state.resolved_question = calc_plan.remaining
             state.category = QuestionCategory.KNOWLEDGE
             state = _delegate_knowledge(state, got_lock)
             if state.answer_text:
-                state.answer_text = calc_text + "\n\n---\n\n" + state.answer_text
+                state.answer_text = calc_text + note + "\n\n---\n\n" + state.answer_text
             return state
         return _finish(state, got_lock, TerminationReason.COMPLETED,
-                       calc_text + "\n\n" + respond.DISCLAIMER)
+                       calc_text + note + "\n\n" + respond.DISCLAIMER)
 
     # ---- N04 意图识别 ----
     node_budget = _node_budget(state, BUDGET_CLASSIFY_MS)
@@ -297,6 +307,38 @@ RESOLVE_USER_PROMPT = """【此前的对话】
 {question}
 
 请输出改写后的完整问题。"""
+
+
+def _try_calc_param_fill(state: AgentState) -> calculator.CalcPlan | None:
+    """N04a 隐性回指补全：计算意图明确但参数缺失时，用会话历史把本轮问题
+    改写成一个自包含问题，再交回 ``calculator.detect()`` 重新解析。
+
+    LLM 只负责"从上下文提取参数、补全问法"，**不做任何计算**——数字仍由
+    calculator 的确定性函数产出并过范围校验。任一环节不成（预算不足 / 改写失败 /
+    改写后仍缺参 / 改写丢了计算意图）都返回 None，调用方维持原追问文案，不猜参数。
+
+    前置条件（调用方保证）：detect 判 missing、历史非空、context_status 未截断。
+    """
+    node_budget = _node_budget(state, BUDGET_FOLLOWUP_MS)
+    if node_budget is None:
+        # 剩余预算不足以启动一次改写：不补全，维持追问（与 N02 同语义）
+        state.add_trace("N04a", "budget", {"param_fill": "skipped"})
+        return None
+    resolved = _resolve_reference(state, node_budget)
+    if not resolved:
+        state.add_trace("N04a", "decision", {"param_fill": "failed"})
+        return None
+    plan = calculator.detect(resolved)
+    if plan is None or plan.status != "ready":
+        # 改写后仍缺参或不再是计算意图：不采纳，维持追问
+        state.add_trace("N04a", "decision",
+                        {"param_fill": "unresolved",
+                         "resolved_status": plan.status if plan else "none"})
+        return None
+    state.resolved_question = resolved
+    state.add_trace("N04a", "decision",
+                    {"param_fill": "ok", "kind": plan.kind})
+    return plan
 
 
 def _resolve_reference(state: AgentState, node_budget_ms: int) -> str | None:
