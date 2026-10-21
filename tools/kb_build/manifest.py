@@ -208,6 +208,8 @@ MSD_EXTRA = [
     ("ext-therapeutic-objectives-older", "/home/older-people-s-health-issues/aging-and-quality-of-life/therapeutic-objectives-in-older-adults", "老年人的治疗目标", "用药安全与特殊人群"),
     ("ext-pregnancy-self-care", "/home/women-s-health-issues/normal-pregnancy/self-care-during-pregnancy", "孕期自我保健", "用药安全与特殊人群"),
     ("ext-pregnancy-physical-changes", "/home/women-s-health-issues/normal-pregnancy/physical-changes-during-pregnancy", "孕期母体变化", "用药安全与特殊人群"),
+    ("ext-delirium", "/home/brain-spinal-cord-and-nerve-disorders/delirium-and-dementia/delirium", "谵妄（急性意识模糊）", "疾病与健康知识"),
+    ("ext-postpartum-care", "/home/women-s-health-issues/postpartum-care/overview-of-postpartum-care", "产后护理概述", "用药安全与特殊人群"),
 ]
 
 # WHO 中文实况报道（权威国际来源；全 URL 直收，fetch.py 用通用正文抽取器）
