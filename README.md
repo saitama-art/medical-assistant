@@ -76,6 +76,15 @@ DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxx
 - Embedding 模型 `BAAI/bge-small-zh` 首次运行自动下载；
   离线建库脚本 `ingest.py` 内已设 `HF_ENDPOINT=https://hf-mirror.com` 镜像加速。
 
+可选项：
+
+```dotenv
+SESSION_PERSIST_DIR=backend/sessions   # 会话文件持久化（C-6），不设则纯内存
+```
+
+- 设置后会话写回时落盘，服务重启后同一 session_id 的历史自动恢复；
+  前端 session_id 已持久化在浏览器 localStorage，两者配合可实现重启不断上下文。
+
 ## 5. 启动
 
 ### 后端（端口 8000）
@@ -147,8 +156,8 @@ python -m app.rag.ingest
 
 - **FR-01 引用支持率核验已完成**：AI 辅助逐句核验 104/104 = 100% ≥ 0.85（见
   [`docs/FR01人工核验记录.md`](docs/FR01人工核验记录.md)，建议人工抽查后作为正式结论）。
-- 会话标识已持久化到浏览器 localStorage（页面刷新不丢上下文）；后端重启后会话
-  存储清空，按新会话处理并给出无历史说明（进程内会话，跨重启持久化未做，见 C-6）。
+- 会话标识已持久化到浏览器 localStorage（页面刷新不丢上下文）；后端可选
+  `SESSION_PERSIST_DIR` 文件持久化（服务重启不断上下文），见第 4 节。
 - 知识库暂无儿童/老年人用药专门文档（默沙东大众版无独立页，相关内容由
   「影响药物反应的因素」条目覆盖）、~~低血糖词条~~（2026-10-20 已入库）。
 - 中国医药信息查询平台类 PDF 无【】章节标记，走通用切分（国药准字说明书走章节切分）。
