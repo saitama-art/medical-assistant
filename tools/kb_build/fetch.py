@@ -20,7 +20,7 @@ import requests
 from bs4 import BeautifulSoup
 
 sys.path.insert(0, str(Path(__file__).parent))
-from manifest import ALL_MSD, DAYI_KNOWN, DAYI_WANTED, MSD_BASE  # noqa: E402
+from manifest import ALL_MSD, DAYI_KNOWN, DAYI_WANTED, MSD_BASE, WHO_EXTRA  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 KB_SRC = ROOT / "kb_src"
@@ -56,6 +56,19 @@ def extract_dayi(soup: BeautifulSoup) -> str:
         raise ValueError("未找到 article-detail-container 正文容器")
     blocks = []
     for el in art.find_all(["h1", "h2", "h3", "dt", "dd", "p", "li"]):
+        t = el.get_text(" ", strip=True)
+        if t:
+            blocks.append(t)
+    return "\n".join(blocks)
+
+
+def extract_generic(soup: BeautifulSoup) -> str:
+    """通用正文抽取（WHO 等）：main/article 容器内的标题与段落块。"""
+    container = soup.find("main") or soup.find("article") or soup.body
+    if container is None:
+        raise ValueError("未找到正文容器")
+    blocks = []
+    for el in container.find_all(["h1", "h2", "h3", "p", "li", "td", "th"]):
         t = el.get_text(" ", strip=True)
         if t:
             blocks.append(t)
@@ -129,6 +142,15 @@ def main() -> None:
     for key, url, title in resolve_dayi_urls():
         rec = fetch_one(url, dayi_dir, key, extract_dayi)
         rec.update(title=title, category="药品说明书", site="dayi")
+        results.append(rec)
+        print(("OK " if rec["ok"] else "FAIL"), key, rec.get("chars", rec.get("error", "")))
+        time.sleep(0.5)
+
+    # WHO 等全 URL 来源：通用正文抽取器，逐字原件存 kb_src/<site>/
+    for key, url, title, cat in WHO_EXTRA:
+        site = "who" if "who.int" in url else "ext"
+        rec = fetch_one(url, KB_SRC / site, key, extract_generic)
+        rec.update(title=title, category=cat, site=site)
         results.append(rec)
         print(("OK " if rec["ok"] else "FAIL"), key, rec.get("chars", rec.get("error", "")))
         time.sleep(0.5)

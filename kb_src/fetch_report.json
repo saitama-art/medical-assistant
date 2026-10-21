@@ -1040,6 +1040,96 @@
     "site": "msd"
   },
   {
+    "key": "ext-immunization-overview",
+    "url": "https://www.msdmanuals.cn/home/infections/immunization/overview-of-immunization",
+    "status": 200,
+    "chars": 13289,
+    "ok": true,
+    "title": "免疫接种概述",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "ext-influenza-vaccine",
+    "url": "https://www.msdmanuals.cn/home/infections/immunization/influenza-vaccine",
+    "status": 200,
+    "chars": 2116,
+    "ok": true,
+    "title": "流感疫苗",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "ext-blood-in-urine",
+    "url": "https://www.msdmanuals.cn/home/kidney-disorders/symptoms-of-kidney-disorders/blood-in-urine",
+    "status": 200,
+    "chars": 5459,
+    "ok": true,
+    "title": "血尿",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "ext-asymptomatic-proteinuria",
+    "url": "https://www.msdmanuals.cn/home/kidney-disorders/kidney-filtering-disorders/asymptomatic-proteinuria-and-hematuria",
+    "status": 200,
+    "chars": 1102,
+    "ok": true,
+    "title": "无症状性蛋白尿和血尿",
+    "category": "检查指标解读",
+    "site": "msd"
+  },
+  {
+    "key": "ext-hand-foot-mouth",
+    "url": "https://www.msdmanuals.cn/home/infections/enteroviruses/hand-foot-and-mouth-disease",
+    "status": 200,
+    "chars": 1534,
+    "ok": true,
+    "title": "手足口病",
+    "category": "疾病与健康知识",
+    "site": "msd"
+  },
+  {
+    "key": "ext-aging-and-medications",
+    "url": "https://www.msdmanuals.cn/home/older-people-s-health-issues/aging-and-medications/aging-and-medications",
+    "status": 200,
+    "chars": 6865,
+    "ok": true,
+    "title": "衰老和药物",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
+    "key": "ext-therapeutic-objectives-older",
+    "url": "https://www.msdmanuals.cn/home/older-people-s-health-issues/aging-and-quality-of-life/therapeutic-objectives-in-older-adults",
+    "status": 200,
+    "chars": 1128,
+    "ok": true,
+    "title": "老年人的治疗目标",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
+    "key": "ext-pregnancy-self-care",
+    "url": "https://www.msdmanuals.cn/home/women-s-health-issues/normal-pregnancy/self-care-during-pregnancy",
+    "status": 200,
+    "chars": 5185,
+    "ok": true,
+    "title": "孕期自我保健",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
+    "key": "ext-pregnancy-physical-changes",
+    "url": "https://www.msdmanuals.cn/home/women-s-health-issues/normal-pregnancy/physical-changes-during-pregnancy",
+    "status": 200,
+    "chars": 4841,
+    "ok": true,
+    "title": "孕期母体变化",
+    "category": "用药安全与特殊人群",
+    "site": "msd"
+  },
+  {
     "key": "drug-metformin-sr",
     "url": "https://www.dayi.org.cn/drug/1157161.html",
     "status": 200,
@@ -1168,5 +1258,15 @@
     "title": "头孢克肟",
     "category": "药品说明书",
     "site": "dayi"
+  },
+  {
+    "key": "who-cancer-fact-sheet",
+    "url": "https://www.who.int/zh/news-room/fact-sheets/detail/cancer",
+    "status": 200,
+    "chars": 3876,
+    "ok": true,
+    "title": "癌症（WHO 实况报道）",
+    "category": "疾病与健康知识",
+    "site": "who"
   }
 ]

@@ -206,7 +206,7 @@ COVERAGE_P1C = [
     dict(id="P1C-09", question="eGFR 代表什么？", topic="检查指标",
          expect_docs=["肾功能测定"]),
     dict(id="P1C-10", question="尿蛋白阳性、尿潜血阳性应该怎样理解？", topic="检查指标",
-         expect_docs=["肾功能测定"], note="MSD 大众版无尿常规词条，以肾功能测定兜底"),
+         expect_docs=["肾功能测定", "血尿", "无症状性蛋白尿和血尿"]),
     dict(id="P1C-11", question="尿酸偏高是否一定是痛风？", topic="检查指标",
          expect_docs=["痛风（高尿酸血症）"]),
     dict(id="P1C-12", question="TSH 偏高或偏低可能意味着什么？", topic="检查指标",
@@ -272,6 +272,26 @@ CASE_GROUPS.update({
     "p2a": ("COVERAGE-P2A", COVERAGE_P2A),
     "p2b": ("COVERAGE-P2B", COVERAGE_P2B),
 })
+
+# ---- EXT 阶段 5 补源后的缺口复测（72 题报告 D 类 + 相关题；2026-10-21）----
+COVERAGE_EXT = [
+    dict(id="EXT-01", question="疫苗接种的基本原则和常见误区有哪些？", topic="预防",
+         expect_docs=["免疫接种概述"]),
+    dict(id="EXT-02", question="哪些人应该接种流感疫苗？", topic="预防",
+         expect_docs=["流感疫苗", "免疫接种概述"]),
+    dict(id="EXT-03", question="癌症筛查的基本原则是什么？", topic="预防",
+         expect_docs=["癌症（WHO 实况报道）"]),
+    dict(id="EXT-04", question="尿蛋白阳性、尿潜血阳性应该怎样理解？", topic="检查指标",
+         expect_docs=["血尿", "无症状性蛋白尿和血尿"]),
+    dict(id="EXT-05", question="手足口病有哪些表现，什么时候需要就医？", topic="传染病",
+         expect_docs=["手足口病"]),
+    dict(id="EXT-06", question="多种慢性病并存时，为什么需要综合评估？", topic="慢病",
+         expect_docs=["衰老和药物", "老年人的治疗目标"]),
+    dict(id="EXT-07", question="孕期常见不适有哪些一般处理原则？", topic="特殊人群",
+         expect_docs=["孕期自我保健", "孕期母体变化"]),
+]
+
+CASE_GROUPS["ext"] = ("COVERAGE-EXT", COVERAGE_EXT)
 
 # ---- 失败原因分类（纯函数，可单测） ----
 
@@ -349,10 +369,11 @@ def run_coverage(do_chat: bool, group: str = "p0", client_factory=None) -> dict:
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="python -m acceptance.coverage",
                                  description="知识覆盖测试集（诊断用，不计通过/失败）")
-    ap.add_argument("--group", choices=["p0", "p1a", "p1b", "pa", "p1c", "p2a", "p2b"],
+    ap.add_argument("--group", choices=["p0", "p1a", "p1b", "pa", "p1c", "p2a", "p2b", "ext"],
                     default="p0",
                     help="测试集分组（p0 饮食营养 / p1a 运动睡眠 / p1b 症状疾病 / "
-                         "pa 就医指引 / p1c 检查指标 / p2a 用药安全 / p2b 特殊人群）")
+                         "pa 就医指引 / p1c 检查指标 / p2a 用药安全 / p2b 特殊人群 / "
+                         "ext 补源缺口复测）")
     ap.add_argument("--chat", action="store_true",
                     help="追加真实 LLM 链路判定（默认只跑零 LLM 检索级）")
     ap.add_argument("--out", help="JSON 报告路径（默认 acceptance_results/coverage_<组>_<ts>.json）")

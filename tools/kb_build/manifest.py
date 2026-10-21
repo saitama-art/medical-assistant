@@ -194,5 +194,27 @@ MSD_P2 = [
     ("p2-menopause", "/home/women-s-health-issues/menopause/menopause", "更年期", "用药安全与特殊人群"),
 ]
 
+# ---- 72 题覆盖测试暴露缺口的补充（2026-10-21 第十轮；URL 逐个 curl 验证 200）----
+# 依据 docs/覆盖分析报告-72题-20261021.md 阶段 4 清单：免疫接种(K05)、尿常规解读
+# (E05)、手足口病(H05)、多重用药/老年评估(C06)、孕期不适(G05)、癌症筛查(K04)。
+# 儿童用药剂量(G06) MSD 无词条且官方指南原文未能定位获取，记待补充来源（未完成）。
+MSD_EXTRA = [
+    ("ext-immunization-overview", "/home/infections/immunization/overview-of-immunization", "免疫接种概述", "疾病与健康知识"),
+    ("ext-influenza-vaccine", "/home/infections/immunization/influenza-vaccine", "流感疫苗", "疾病与健康知识"),
+    ("ext-blood-in-urine", "/home/kidney-disorders/symptoms-of-kidney-disorders/blood-in-urine", "血尿", "检查指标解读"),
+    ("ext-asymptomatic-proteinuria", "/home/kidney-disorders/kidney-filtering-disorders/asymptomatic-proteinuria-and-hematuria", "无症状性蛋白尿和血尿", "检查指标解读"),
+    ("ext-hand-foot-mouth", "/home/infections/enteroviruses/hand-foot-and-mouth-disease", "手足口病", "疾病与健康知识"),
+    ("ext-aging-and-medications", "/home/older-people-s-health-issues/aging-and-medications/aging-and-medications", "衰老和药物", "用药安全与特殊人群"),
+    ("ext-therapeutic-objectives-older", "/home/older-people-s-health-issues/aging-and-quality-of-life/therapeutic-objectives-in-older-adults", "老年人的治疗目标", "用药安全与特殊人群"),
+    ("ext-pregnancy-self-care", "/home/women-s-health-issues/normal-pregnancy/self-care-during-pregnancy", "孕期自我保健", "用药安全与特殊人群"),
+    ("ext-pregnancy-physical-changes", "/home/women-s-health-issues/normal-pregnancy/physical-changes-during-pregnancy", "孕期母体变化", "用药安全与特殊人群"),
+]
+
+# WHO 中文实况报道（权威国际来源；全 URL 直收，fetch.py 用通用正文抽取器）
+WHO_EXTRA = [
+    ("who-cancer-fact-sheet", "https://www.who.int/zh/news-room/fact-sheets/detail/cancer",
+     "癌症（WHO 实况报道）", "疾病与健康知识"),
+]
+
 ALL_MSD = (MSD_DISEASES + MSD_SYMPTOMS + MSD_TESTS + MSD_MED_SAFETY
-           + MSD_COMMON_HEALTH + MSD_NUTRITION + MSD_P1 + MSD_P2)
+           + MSD_COMMON_HEALTH + MSD_NUTRITION + MSD_P1 + MSD_P2 + MSD_EXTRA)
