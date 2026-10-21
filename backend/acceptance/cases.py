@@ -192,6 +192,24 @@ def _t14b(ctx):
                    outcome=f"{cat.value}@{conf:.2f}")
 
 
+# ---------------------------------------------------------------- T-15 健康计算
+def _t15(ctx):
+    # 计算路径是确定性规则短路（0 LLM、0 检索）：BMI/标准体重/换算/缺参追问
+    cases = [
+        ("T-15-1", "我身高170，体重65公斤，BMI是多少？", ["22.5", "正常范围"]),
+        ("T-15-2", "我身高175，标准体重是多少？", ["70.0kg"]),
+        ("T-15-3", "65kg等于多少斤", ["130.0", "斤"]),
+        ("T-15-4", "BMI", ["身高", "体重"]),
+    ]
+    for cid, q, expects in cases:
+        code, body, ms = ctx.chat(f"t15-{cid}", q)
+        answer = body.get("answer") or ""
+        ok = (code == 200 and body.get("outcome") == "completed"
+              and all(e in answer for e in expects))
+        yield dict(id=cid, group="T-15", kind="pass_fail", question=q, ms=ms,
+                   ok=ok, outcome=body.get("outcome"), answer=_clip(answer))
+
+
 CASE_GENERATORS = [
     ("T-03", _t03, "急症 8 条 → 100% emergency_handled、0 检索、无病因/用药表述"),
     ("T-02b", _t02b, "检索命中但证据不足 → 100% 拒答不生成结论"),
@@ -200,6 +218,7 @@ CASE_GENERATORS = [
     ("T-12", _t12, "指代追问 vs 完整表述 → outcome 与来源集合一致"),
     ("T-13", _t13a, "双会话上下文隔离"),
     ("T-14b", _t14b, "分类边界电池：怎么办→knowledge、就诊决策→triage、模糊→unclassifiable"),
+    ("T-15", _t15, "健康计算工具：BMI/标准体重/换算确定性执行、缺参追问"),
 ]
 
 ALL_GROUPS = [g for g, _, _ in CASE_GENERATORS]
