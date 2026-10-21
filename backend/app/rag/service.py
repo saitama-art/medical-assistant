@@ -261,6 +261,21 @@ def judge_evidence(
         # —— 第 2 段：引用真实性（逐字校验） ——
         judgement.stage2_quote_verified = _verify_quote(quote, chunks)
         if not judgement.stage2_quote_verified:
+            # 判定为可回答但引文未逐字命中：多为模型概括/微调了引文（temp=0 下仍偶发）。
+            # 有界重试一次，要求输出严格逐字的短引文；重试后仍不命中才拒答。
+            # 不重试"answerable=false"——那是判定结论而非格式问题。
+            answerable2, quote2 = _judge_by_llm(
+                question, chunks, llm,
+                extra_instruction=(
+                    "上一次你输出的 supporting_quote 未能在参考资料中逐字找到。"
+                    "请重新判定并输出：supporting_quote 必须是资料中**逐字存在**的连续文字"
+                    "（宁可选一句较短的原文，也不要概括或改写）。"),
+            )
+            if answerable2:
+                judgement.stage3_answerable = True
+                judgement.supporting_quote = quote2
+                judgement.stage2_quote_verified = _verify_quote(quote2, chunks)
+        if not judgement.stage2_quote_verified:
             judgement.reason = "stage2_quote_not_found"
             return judgement
 
@@ -301,13 +316,20 @@ def _resolve_gate1(threshold, metric, collection_metric) -> tuple[bool, str]:
     return True, "enabled"
 
 
-JUDGE_SYSTEM_PROMPT = """你是医疗知识库的证据充分性判定器。你只判断给定的参考资料是否足以回答用户问题，不回答用户问题本身。
+JUDGE_SYSTEM_PROMPT = """你是医疗知识库的证据充分性判定器。你只判断给定的参考资料是否包含可用于回答用户问题的直接依据，不回答用户问题本身。
 
 判定要求：
-1. 只有当参考资料中确实包含回答问题所必需的依据时，才输出 "answerable": true。
-2. 资料只涉及相关但不相同的主题，或只给出别的信息（如剂量、规格、贮藏、药理、不良反应）而问题问的是另一件事时，必须输出 false。
-3. 把握不准、资料内容不完整、需要靠常识补充才能回答时，必须输出 false。
-4. answerable 为 true 时，supporting_quote 必须是参考资料中足以支撑回答的那段原文，**逐字复制**：不得改写、不得拼接不相邻的句子、不得加入资料中没有的文字。
+1. 判定对象是"相关性 + 可支撑性"，不是"资料能否单独写出一篇完整答案"：只要参考资料
+   中含有**明确针对该问题、可作为回答依据的实质内容**（哪怕只覆盖问题的一个主要方面），
+   就输出 "answerable": true。回答的全面性由后续生成环节负责，不由你保证。
+2. 必须输出 false 的情形：资料与问题主题不相关；或只提及主题名称/只给出该问题的
+   外围信息（如剂量、规格、贮藏、药理、不良反应列表）而没有任何直接针对问题本身的
+   实质内容；或资料相互矛盾无法采信。
+3. 不要求资料覆盖问题的全部方面，不要求资料本身是一句完整的答案；不要因为"资料
+   不够全面"而输出 false。
+4. answerable 为 true 时，supporting_quote 必须是参考资料中直接支撑该回答的那段
+   原文，**逐字复制**：不得改写、不得概括、不得拼接不相邻的句子、不得加入资料中
+   没有的文字。宁可引短句，不要改写长句。
 5. answerable 为 false 时，supporting_quote 必须为空字符串。
 6. 只输出 JSON 对象，不要输出解释、前后缀或 markdown 代码块。"""
 
@@ -320,8 +342,12 @@ JUDGE_USER_PROMPT = """【用户问题】
 请输出：{{"answerable": true 或 false, "supporting_quote": "..."}}"""
 
 
-def _judge_by_llm(question: str, chunks: list[RetrievedChunk], llm=None) -> tuple[bool, str | None]:
+def _judge_by_llm(question: str, chunks: list[RetrievedChunk], llm=None,
+                  extra_instruction: str = "") -> tuple[bool, str | None]:
     """调用模型做答案支撑性判定。
+
+    extra_instruction：追加在系统提示后的补充指令（如逐字引文重试要求），
+    仅用于有界重试，不改变判定口径本身。
 
     Returns:
         (answerable, supporting_quote)
@@ -332,8 +358,9 @@ def _judge_by_llm(question: str, chunks: list[RetrievedChunk], llm=None) -> tupl
     from langchain_core.prompts import ChatPromptTemplate
 
     llm = llm or get_llm()
+    system = JUDGE_SYSTEM_PROMPT + (f"\n\n补充要求：{extra_instruction}" if extra_instruction else "")
     prompt = ChatPromptTemplate.from_messages([
-        ("system", JUDGE_SYSTEM_PROMPT),
+        ("system", system),
         ("human", JUDGE_USER_PROMPT),
     ])
     messages = prompt.format_messages(
