@@ -165,7 +165,7 @@ COVERAGE_PA = [
     dict(id="PA-02", question="腹痛、胸闷、咳嗽等症状通常如何选择就诊科室？", topic="就医指引",
          expect_docs=["慢性腹痛和反复发作性腹痛", "胸痛"]),
     dict(id="PA-03", question="看医生前应该准备哪些信息？", topic="就医指引",
-         expect_docs=[], note="待补充来源：MSD 大众版无就诊准备词条"),
+         expect_docs=["门诊就诊指南与看病前准备（北京市中关村医院）"]),
     dict(id="PA-04", question="如何记录家庭血压和血糖？", topic="就医指引",
          expect_docs=["高血压", "2型糖尿病"]),
     dict(id="PA-05", question="体检发现异常后应该如何安排复查？", topic="就医指引",
@@ -266,7 +266,8 @@ COVERAGE_P2B = [
     dict(id="P2B-07", question="慢性病患者如何进行家庭监测？", topic="特殊人群",
          expect_docs=["高血压", "2型糖尿病"]),
     dict(id="P2B-08", question="多种慢性病并存时，为什么需要综合评估？", topic="特殊人群",
-         expect_docs=[], note="待补充来源：无多重用药/共病综合评估词条"),
+         expect_docs=["老年综合评估（CGA）简述（北京协和医院）", "衰老和药物",
+                      "老年人的治疗目标"]),
 ]
 
 CASE_GROUPS.update({

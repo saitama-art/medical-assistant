@@ -1,0 +1,663 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<link href="/Public/static/themes/favicon.ico" type="image/x-icon" rel="shortcut icon"/>
+<meta name="author" content="http://www.fractal-technology.com">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="format-detection" content="telephone=no,email=no,adress=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>就诊指南 - 北京市中关村医院   - 就诊指南</title>
+
+	<meta name="description" content="就诊指南" />
+		<meta name="keywords" content="就诊指南" />
+	
+<link rel="stylesheet" type="text/css" href="/Public/static/themes/css/jquery.mCustomScrollbar.css">
+<link rel="stylesheet" type="text/css" href="/Public/static/themes/css/video-js.css">
+<link rel="stylesheet" type="text/css" href="/Public/static/themes/css/global.css">
+<link rel="stylesheet" type="text/css" href="/Public/static/themes/css/flex.css">
+<link rel="stylesheet" type="text/css" href="/Public/static/themes/css/page.css">
+
+<script src="/Public/static/themes/js/plugs/jquery.min.js"></script>
+<script src="/Public/static/themes/js/plugs/jquery.placeholder.min.js"></script>
+<script src="/Public/static/themes/js/plugs/jquery.ba-throttle-debounce.min.js"></script>
+<script src="/Public/static/themes/js/plugs/jquery.touchSwipe.min.js"></script>
+<script src="/Public/static/themes/js/plugs/jquery.carouFredSel-6.2.1-packed.js"></script>
+<script src="/Public/static/themes/js/plugs/jquery.mCustomScrollbar.concat.min.js"></script>
+<script src="/Public/static/themes/js/plugs/iscroll-v4.2.js"></script>
+<script src="/Public/static/themes/js/plugs/TweenMax.min.js"></script>
+<script src="/Public/static/themes/js/plugs/video.js"></script>
+<script src="/Public/static/themes/js/plugs/slick.js"></script>
+<script src="/Public/static/themes/js/plugs/xRoll.js"></script>
+<script src="/Public/static/themes/js/global.js"></script>
+<script src="/Public/static/themes/js/qrcode.min.js"></script>
+<script src="/Public/static/themes/js/share.js"></script>
+<!--[if lt IE 9]>
+<script src="/Public/static/themes/js/plugs/html5shiv.min.js"></script>
+<script src="/Public/static/themes/js/plugs/respond.min.js"></script>
+<![endif]-->
+</head>
+
+<body>
+            <span class="gotop js-gotop js-scroller">top</span>
+        <style>
+        .empty-data{ width:100%; font-size:25px; padding-top:8%; padding-bottom:8%; text-align: center;}
+        </style>
+    <style>
+#myalert{ display:none; }
+.recruit .block1{ height: auto}
+.layer{background:url(/Public/static/themes/image/con_mask.png);;position:fixed;left:0;right: 0;top:0;bottom: 0;width:100%;height:100%;z-index: 1000000;}
+.layer .myalert{padding:30px;background:#fff;width:240px;position:absolute;margin-top:-100px;top:50%;left:50%;margin-left:-120px;text-align:center; z-index: 100000}
+.layer .guan{background:url(/Public/static/themes/image/clos.png) no-repeat center; display:block;width:23px;height:23px;position:absolute;top:10px;right:10px;}
+.layer .text{padding-bottom:15px;font-size:16px;color:#474747;}
+.layer .button{background:none;border:1px solid #bbbbbb;width:91px;height:29px;font:14px/100% "Microsoft YaHei", Arial, Tahoma, Helvetica, sans-serif;color: #707070;}
+</style>
+<div id="myalert" class="layer">
+    <div class="myalert">
+        <a href="javascript:;" onclick="myalert_hide();" class="guan"></a>
+        <div class="text">请输入关键字</div>
+        <a><button class="button" id="my_ok" style="cursor:pointer ;opacity: 1;transform: translateY(0px);">确定</button></a>
+    </div>
+</div>
+<script>
+function my_alert(text,callback) {
+    $('#myalert').show();
+    $('#myalert .myalert div').html(text);
+
+    $('#my_ok').click( function() {
+        $('#myalert').hide();
+
+        if (typeof(callback) == 'function') {
+            callback();
+            return false;
+        }
+    });
+}
+
+function myalert_hide(){
+    $('#myalert').hide();
+}
+</script>
+    <div class="side-bar p-show"><a href="javascript:void(0);" class="side-item">
+    <span class="side-txt">预约挂号</span>
+</a>
+<a href="javascript:void(0);" class="side-item">
+    <span class="side-txt">报告查询</span>
+</a>
+<a href="/job.html" class="side-item">
+    <span class="side-txt">人才招聘</span>
+</a>
+<div class="side-item">
+    <span class="side-txt">微信预约</span>
+    <span class="side-code"><img src="/Uploads/Picture/2020/03/04/s5e5f1e0a134c1.jpg" alt=""></span>
+</div>
+<div class="side-item js-gotop">
+    <div class="side-icon"></div>
+</div></div><div class="x-header">
+    <div class="x-wrap">
+        <div class="menu-head">
+         <div class="logo"><a href="/"><img src="/Uploads/Picture/2018/12/17/s5c173da7c2a33.png" alt="" title="就诊指南"></a></div>            <div class="menu-btn m-show"><span class="line"></span></div>
+        </div>
+        <div class="user p-show" id="logins">
+             <div ><a href="/passport/login.html?link=L2NvbnN1bHRhdGlvbi5odG1s" class="user-btn">登录</a><a href="/passport/signup.html" class="user-btn">注册</a></div>
+        </div>
+        <div class="tools p-show"><!-- <a class="oa" href="javascript:void(0);" >OA</a> -->
+<div class="share-box bdsharebuttonbox">
+    <a href="#" class="share-item icon-sinawb" data-cmd="tsina" title="分享到新浪微博"></a>
+    <a class="share-item icon-wchat" href="javascript:;" title="分享到微信"><span class="code"><img src="/Uploads/Picture/2018/12/17/s5c173e1b638de.png" alt="" title="新浪微博"></span></a>
+</div>
+<div class="search-trigger">
+    <div class="search-box">
+        <div class="search-txt"><input type="text" placeholder="请输入搜索内容" id="txtSearch" onkeydown="keydown(event, '#btnSearch')" name="txtSearch"></div>
+        <button class="search-btn" type="submit" id="btnSearch"></button>
+    </div>
+</div></div>        <div class="nav-mod">
+            <div class="user-box m-show" id="logins2">
+                <div ><a href="/passport/login.html?link=L2NvbnN1bHRhdGlvbi5odG1s" class="user-btn">登录</a><a href="/passport/signup.html" class="user-btn">注册</a></div>
+            </div>
+            <div class="search-box m-show">
+                <div class="search-txt"><input type="text" placeholder="请输入搜索内容" id="txtSearchwap" onkeydown="keydown(event, '#btnSearchwap')" name="txtSearchwap"></div>
+                <button class="search-btn" type="submit" id="btnSearchwap"></button>
+            </div>
+            <ul class="nav-lv nav-lv1 clear"><li class="nav-item nav1">
+    <div class="nav-tit"><a class="nav-link" href="/">首页</a></div>
+</li>
+<li class="nav-item nav1">
+    <div class="nav-tit"><a class="nav-link" href="/introduction.html">医院概况</a><span class="arr"></span></div>
+    <ul class="nav-lv nav-lv2">
+          <li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/introduction.html#hospital_introduction1">医院简介</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/culture.html">医院文化</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/introduction.html#hospital_introduction2">领导团队</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/introduction.html#hospital_introduction3">医院历史</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/introduction.html#hospital_introduction4">医院荣誉</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/introduction.html#hospital_introduction5">组织架构</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/introduction.html#hospital_introduction6">合作共建</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/introduction.html#hospital_introduction7">我要求职</a></div>
+            </li>      </ul></li><li class="nav-item nav1">
+    <div class="nav-tit"><a class="nav-link" href="/consultation.html">患者服务</a><span class="arr"></span></div>
+    <ul class="nav-lv nav-lv2">
+          <li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/consultation.html">就诊指南</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/guide.html">交通指南</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/medical/insurance.html">医保服务</a></div>
+            </li>      </ul></li><li class="nav-item nav1">
+    <div class="nav-tit"><a class="nav-link" href="/department.html">医护团队</a><span class="arr"></span></div>
+    <ul class="nav-lv nav-lv2">
+          <li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/department.html">科室介绍</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/expert/ourhospital.html">出诊专家</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/hulifuwu.html">护理服务</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/teseyiliao.html">特色医疗</a></div>
+            </li>      </ul></li><li class="nav-item nav1">
+    <div class="nav-tit"><a class="nav-link" href="/hospitab.html">新闻中心</a><span class="arr"></span></div>
+    <ul class="nav-lv nav-lv2">
+          <li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/hospitab.html">医院动态</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/hospital/notice.html">医院公告</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/partys/plot.html">党群工作</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/hospital/pdf.html">电子院报</a></div>
+            </li>      </ul></li><li class="nav-item nav1">
+    <div class="nav-tit"><a class="nav-link" href="/open/partyswork.html">信息公开</a><span class="arr"></span></div>
+    <ul class="nav-lv nav-lv2">
+          <li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/open/partyswork.html">党务工作</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/open/courtyard.html">院务公开</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/open/tend.html">招标采购</a></div>
+            </li>      </ul></li><li class="nav-item nav1">
+    <div class="nav-tit"><a class="nav-link" href="/information.html">健康时代</a><span class="arr"></span></div>
+    <ul class="nav-lv nav-lv2">
+          <li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/information.html">健康资讯</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/education.html">健康教育</a></div>
+            </li><li class="nav-item">
+                <div class="nav-tit"><a class="nav-link" href="/management.html">健康管理</a></div>
+            </li>      </ul></li><script type="text/javascript">
+// 高亮
+function navgl(){
+
+    var category = "/consultation.html" ;
+
+    var now  = ( category != 'javascript:void(0);' ) ? category : window.location.pathname;
+        now2 = now +window.location.hash;
+    var category_parent_id = "2",
+        category_top_id = "2",
+        category_id = "19";
+    var href = '';
+    if(category_parent_id==1){
+        $('.nav-lv1 .nav1').eq(1).addClass('cur'); 
+    }else if(category_top_id==4){
+        $('.nav-lv1 .nav1').eq(4).addClass('cur'); 
+    }
+    if(category_top_id==3){
+        $('.nav-lv1 .nav1').eq(3).addClass('cur'); 
+    }
+    // if(category_id==53){
+    //     $('.nav-lv1 li').eq(1).find('.nav-lv2 li').eq(0).addClass("cur")
+    // }
+    // if(category_id==58){
+    //     $('.nav-lv1 li').eq(1).find('.nav-lv2 li').eq(6).addClass("cur")
+    // }
+    $('.nav-lv1 .nav1').each(function(index){
+        var _this = $(this);
+        var _index = index;
+        href = _this.find('.nav-tit a').attr('href');
+        if(category_id=='' ){
+            if( now == '/index.html' || now == '/index' || now == '/' ){
+              $('.nav-lv1 li:first').addClass('cur');
+                return false ;
+            }else{
+                $('.nav-lv1 .nav1').eq(2).addClass('cur'); 
+            } 
+        }
+        
+        // 一级
+        try {
+            if( href.indexOf(now) > -1 ){
+                _this.addClass('cur');
+            }
+
+        } catch (e) {
+        } 
+         var isShow = true ;
+        // 二级
+        if(_this.find('.nav-lv2 li').size() > 0){
+             _this.find('.nav-lv2 li a').each(function(i){
+                href = $(this).attr('href');
+
+                if( isShow && href.indexOf(now2) > -1 ){  
+                    _this.addClass("cur").siblings().removeClass('cur');
+                    // $(this).parent().parent().addClass('cur')
+                    isShow = false ;
+                }
+                
+            })
+        }
+    })
+}
+navgl();
+
+</script></ul>            <div class="share-box bdsharebuttonbox m-show"><a href="#" class="share-item icon-sinawb" data-cmd="tsina" title="分享到新浪微博"></a>
+<a class="share-item icon-wchat" href="javascript:;" title="分享到微信"><span class="code"><img src="/Uploads/Picture/2018/12/17/s5c173e1b638de.png" alt="" title="新浪微博" id="icon-wchat"></span></a></div>        </div>
+    </div>
+</div>
+<script type="text/javascript">
+$(function(){
+    window.ISLONGIN = false;
+    $.get( "/get_uid.html" +'?'+Math.random(), function( data ) {
+        if( data.status == 1 ) {
+            $('#logins,#logins2').html('<div style="display: block;"><span class="user-txt">欢迎您，'+ data.name +'</span><a href="/member/index.html" class="user-btn">进入会员中心</a><a href="/passport/logout.html" class="user-btn">退出</a></div>');
+            window.ISLONGIN = true;
+        }
+    })
+})
+$(function(){
+    $('#btnSearch').click(function(){
+        var keywords = $("#txtSearch").val();
+        if(keywords == ''){
+            my_alert("请输入关键字"); return false;
+        }
+        window.location.href = "/searchs/keywords.html?txtSearch=" + encodeURI(keywords);
+    });
+   
+})
+$(function(){
+    $('#btnSearchwap').click(function(){
+        var keywords = $("#txtSearchwap").val();
+        if(keywords == ''){
+            my_alert("请输入关键字"); return false;
+        }
+        window.location.href = "/searchs/keywords.html?txtSearch=" + encodeURI(keywords);
+    });
+   
+})
+function keydown(e, but) {
+    var currKey=0,e=e||event;
+    var _this = $(but);
+
+    if(e.keyCode==13)
+    {
+        _this.click();
+        return false;
+    }
+}
+</script>
+        <div class="x-container">
+		
+		<div class="t_bannar" edit_params="width%3D1920%26height%3D304%26zoom%3D2"><div class="x-wrap">
+	<div class="bread-mod p-show">
+	<div class="bread-txt">您现在的位置：</div>
+	<div class="bread-item"><a href="/">首页</a></div>
+					<div class="bread-item"><a href="javascript:void(0);">患者服务</a></div>					<div class="bread-item cur"><a href="/consultation.html" style="display:none"></a>就诊指南</div>				</div>
+<script type="text/javascript">
+$('.p-show .bread-item').each(function(){
+  var href=$(this).find('a').attr('href');
+  if(href.indexOf('javascript:void(0)')>-1){
+    var href=$(this).next().find('a').attr('href');
+    $(this).find('a').attr('href',href);
+  }
+  if(href.indexOf('$')>-1){
+  	var href=href.replace('$','');
+  	$(this).find('a').attr('href',href);
+  }
+  
+})
+</script>
+	<div class="t_box">
+		<div class="h24">患者服务</div>
+	</div>
+</div>
+<style type="text/css">
+.t_bannar {
+       background-image: url(/Uploads/Picture/2018/12/17/s5c17602dd4106.jpg);
+}
+</style></div>		<div class="patient_service">
+			<div class="x-wrap">
+<a href="/consultation.html" class="link-item odd">
+		<div class="icon"><img src="/Uploads/Picture/2018/12/17/s5c17607f4a29e.png" alt=""><img src="/Uploads/Picture/2018/12/17/s5c1760dd8ef59.png" alt=""></div>
+		<div class="p">就诊指南</div>
+	</a><a href="/guide.html" class="link-item even">
+		<div class="icon"><img src="/Uploads/Picture/2018/12/07/s5c09fed952f6b.png" alt=""><img src="/Uploads/Picture/2018/12/07/s5c09fee319e0f.png" alt=""></div>
+		<div class="p">交通指南</div>
+	</a><a href="/medical/insurance.html" class="link-item odd">
+		<div class="icon"><img src="/Uploads/Picture/2018/12/06/s5c090c26db70c.png" alt=""><img src="/Uploads/Picture/2018/12/06/s5c090c335781a.png" alt=""></div>
+		<div class="p">医保服务</div>
+	</a><script>
+	var url = window.location.pathname;
+	$('.link-item').each(function(){
+
+		if($(this).attr('href') == url){
+			$(this).addClass('cur').siblings().removeClass('cur');
+		}
+	});
+
+</script></div>		</div>
+		
+		<div class="consultation">
+			<div class="x-wrap tab-mod">
+			
+				<div class="tab-bar">
+					<div class="tab-term" title="预约挂号"><div class="h16">预约挂号</div></div><div class="tab-term" title="患者就诊流程"><div class="h16">患者就诊流程</div></div><div class="tab-term" title="门急诊就诊须知"><div class="h16">门急诊就诊须知</div></div><div class="tab-term" title="出入院及转科须知"><div class="h16">出入院及转科须知</div></div>				</div>
+				<div class="tab-cont">
+					<div class="tab-item">
+							<div class="h24">预约挂号</div>
+							<p>
+	<span style="color:#000000;"><br />
+</span> 
+</p>
+<p>
+	<span style="color:#000000;"><br />
+</span> 
+</p>
+<p>
+	<span style="color:#000000;font-family:&quot;line-height:2;">按照北京市卫健委《</span><span style="text-align:center;color:#000000;font-family:&quot;white-space:normal;line-height:2;">北京市医疗机构门诊预约诊疗服务管理规范</span><span style="color:#000000;font-family:&quot;line-height:2;">》要求，我院</span><span style="color:#000000;font-family:&quot;line-height:2;"><span style="text-align:justify;color:#000000;font-family:&quot;white-space:normal;background-color:#F8F9FD;caret-color:#000000;line-height:2;">实行非急诊全面预约，</span></span><span style="font-family:&quot;line-height:2;">目前提供以下</span><span style="font-family:&quot;line-height:2;">预约就诊途径供您选择：</span> 
+</p>
+<p>
+	<span style="font-family:&quot;line-height:2;">1.公众号预约：</span><span style="font-family:&quot;line-height:2;">关注公众号</span><span style="font-family:&quot;line-height:2;"><span style="font-family:&quot;line-height:2;">“北京市中关村医院”，“预约服务-预约挂号”；</span></span> 
+</p>
+<p>
+	<span><span><img src="/Uploads/Picture/2023/03/29/u6423ae1e0b787.jpg" width="181" height="148" alt="" /></span><br />
+<span style="font-family:&quot;line-height:2;"> &nbsp;</span></span> 
+</p>
+<p>
+	<span style="font-family:&quot;line-height:2;">2.医院人工电话预约：010-82548730，82548731（工作时间：8:00-11:30，13:30-16:30）；</span> 
+</p>
+<p>
+	<span style="font-family:&quot;line-height:2;">3.医生诊间分时段预约：患者诊疗结束后，接诊医生为患者进行诊间分时段预约；</span> 
+</p>
+<p style="margin:0px;padding:0px;">
+	<span style="font-family:&quot;line-height:2;">4.114挂号平台：拨打010-114或关注“北京114预约挂号”，24小时服务；</span> 
+</p>
+<p style="margin:0px;padding:0px;">
+	<span style="font-family:&quot;line-height:2;">5.官网在线预约挂号：</span><a class="link" style="margin:0px;padding:0px;color:#008A5F;text-decoration-line:none;" href="/consultation.html#"><span style="font-family:&quot;line-height:2;">立即前往</span></a><span style="font-family:&quot;line-height:2;">；</span> 
+</p>
+<p style="margin:0px;padding:0px;">
+	<span style="font-family:&quot;line-height:2;">6.门诊自助机预约：对未提前预约直接来就诊患者自助机可预约当日号，同时自助机也支持其他时间段预约；</span> 
+</p>
+<p style="margin:0px;padding:0px;">
+	<span style="font-family:&quot;line-height:2;">预约成功后，请按照预约时间段携带医保卡（或电子医保卡）和有效证件及预约挂号信息取号，挂号窗口或自助机均可取号。</span> 
+</p>
+<p style="margin:0px;padding:0px;">
+	<span><span style="white-space:normal;font-family:&quot;line-height:2;">医院咨询电话：010-82548751 010-82548999</span><br />
+</span> 
+</p>
+<p style="margin:0px;padding:0px;">
+	<br />
+</p>
+<p style="margin:0px;padding:0px;">
+	<br />
+</p>
+<p style="margin:0px;padding:0px;">
+	<span style="font-family:&quot;line-height:2;"><strong>挂号注意事项：</strong></span> 
+</p>
+<p style="margin:0px;padding:0px;">
+	<br />
+</p>
+<p style="margin:0px;padding:0px;">
+	<span style="font-family:&quot;line-height:2;">1.首次就医患者，请持身份证或医保卡到挂号处或自助机办理注册登记。初次就诊患者需购买病历手册，首次住院患者需建立门诊大病历；</span> 
+</p>
+<p style="margin:0px;padding:0px;">
+	<span style="font-family:&quot;line-height:2;">2.我院属于海淀区三级康复医院（医保代码08110025），医保等级医院证明请到综合楼一层医保办公室领取；</span> 
+</p>
+<p style="margin:0px;padding:0px;">
+	<span style="font-family:&quot;line-height:2;">3.门诊就诊时持医保卡（或电子医保卡）进行挂号缴费，否则就诊费用全部自理（急诊除外）；</span> 
+</p>
+<p style="margin:0px;padding:0px;">
+	<span style="font-family:&quot;line-height:2;">4.我院实行实名制就医，就诊患者需出示医保卡（或电子医保卡）和身份证件办理挂号。如您行动不便、长期卧床等原因，不能到医院就医时，接诊医生核对患者有效身份证明（身份证和社保卡）、确诊医院的门诊病历（或出院诊断证明），确认患者病情稳定需要长期服用同类药品，家人方可代开药品。除上述证件外，还需提供被委托人身份证明方可挂号。</span> 
+</p>						</div><div class="tab-item">
+							<div class="h24">患者就诊流程</div>
+							<p style="text-align:center;">
+	<span style="font-size:18px;"><strong>门诊就诊流程</strong></span> 
+</p>
+<p style="text-align:center;">
+	<span style="font-size:18px;"><strong><img src="/Uploads/Picture/2023/03/29/u6423da7b467b3.png" width="300" height="274" alt="" /><br />
+</strong></span> 
+</p>
+<p style="text-align:center;">
+	<span style="font-size:18px;"><strong><br />
+</strong></span> 
+</p>
+<p style="text-align:center;">
+	<span style="font-size:18px;"><strong>急诊就诊流程</strong></span> 
+</p>
+<p style="text-align:center;">
+	<span style="font-size:18px;"><strong><img src="/Uploads/Picture/2023/03/29/u6423dac1cef76.png" width="300" height="298" alt="" /><br />
+</strong></span> 
+</p>						</div><div class="tab-item">
+							<div class="h24">门急诊就诊须知</div>
+							<p style="text-align:left;">
+	<br />
+</p>
+<p style="text-align:left;">
+	<br />
+</p>
+<p style="text-align:left;">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">1、工作日门诊时间：</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">上午&nbsp; 8:00-12:00 ，</span><span style="font-size:18px;font-family:&quot;line-height:2;">&nbsp;</span><span style="font-size:18px;font-family:&quot;line-height:2;">挂号起始截止时间：</span><span style="font-size:18px;font-family:&quot;line-height:2;">7:50-11:30</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">下午&nbsp; 13:00-17:00，</span><span style="font-size:18px;font-family:&quot;line-height:2;">挂号起始截止时间：</span><span style="font-size:18px;font-family:&quot;line-height:2;">12:50-16:30&nbsp;</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">我院已上线自助挂号，挂号时间同窗口一致</span><o:p></o:p>
+</p>
+<p class="MsoNormal">
+	<span style="font-size:16px;"><br />
+</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">2、周六日及节假门诊时间：</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">周六日及节假日出诊时间及出诊科室以院内公告为准，急诊为24小时全天上班。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:16px;"><span style="font-size:10px;"></span><br />
+</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">3、我院实行实名制就医，来院就诊需出示医保卡（可使用电子医保卡）或相关身份证件办理挂号，非本人挂号需提供患者本人身份证明方可挂号。我院为北京市医保A类定点医疗机构，患者无需选择定点医院，可直接持医保卡就诊。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;"></span> 
+</p>
+<p class="MsoNormal">
+	<br />
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">4、节假日开诊科室请关注医院通知或致电咨询。</span><o:p></o:p>
+</p>
+<p class="MsoNormal">
+	<span style="font-size:16px;"><span style="font-size:10px;"><span style="font-size:10px;"></span></span><br />
+</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">5、本医院实行电子病历，就诊患者如需《北京地区医疗机构门急诊病历手册》可在门诊大厅健康云柜购买。</span><o:p></o:p>
+</p>
+<p class="MsoNormal">
+	<span style="font-size:16px;"><span style="font-size:10px;"></span><br />
+</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">6、挂号凭证</span><strong><span style="font-size:18px;font-family:&quot;line-height:2;">当天有效</span></strong><span style="font-size:18px;font-family:&quot;line-height:2;">，如需退换号可到收费挂号窗口持挂号凭证或医保卡进行退换号。</span><o:p></o:p>
+</p>
+<p class="MsoNormal">
+	<span style="font-size:16px;"><span style="font-size:10px;"></span><br />
+</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">7、请根据挂号条上提示，到相应诊区就诊，将挂号条交分诊台护士进行分诊，在候诊大厅等候。请您听从分诊护士安排，按挂号顺序“一医一患”有序就诊，行动不便者可有一位家属陪同。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:16px;"><span style="font-size:10px;"></span><br />
+</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">8、自助机缴费补打发票、退费请到</span><strong><span style="font-size:18px;font-family:&quot;line-height:2;">2号</span></strong><span style="font-size:18px;font-family:&quot;line-height:2;">窗口办理。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:16px;"><span style="font-size:10px;"></span><br />
+</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;font-family:&quot;line-height:2;">9、请携带好您的随身物品，谨防丢失或被盗。</span> 
+</p>
+<p>
+	<br />
+</p>
+<p>
+	<br />
+</p>
+<p>
+	<br />
+</p>
+<div class="dl" style="margin:19px 0px 0px;padding:0px;color:#333333;font-family:微软雅黑, Arial, Tahoma, Helvetica, sans-serif;font-size:14px;white-space:normal;background-color:#FFFFFF;">
+	<div class="dt" style="margin:0px 0px 11px;padding:0px;font-size:18px;">
+	</div>
+	<div class="dd" style="margin:0px;padding:0px;color:#474747;">
+		<div class="p" style="margin:0px;padding:0px;">
+		</div>
+	</div>
+</div>						</div><div class="tab-item">
+							<div class="h24">出入院及转科须知</div>
+							<p>
+	<br />
+</p>
+<p>
+	<br />
+</p>
+<p class="MsoNormal">
+	<strong><span style="font-size:18px;line-height:2;font-family:&quot;">办理住院准备及注意事项：</span></strong> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;text-indent:15.6pt;font-family:&quot;line-height:2;">1.准备好日常生活用品如洗漱用具、餐具、拖鞋等；</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;text-indent:15.6pt;font-family:&quot;line-height:2;">2.接到住院通知后，请按医生的要求去门诊做入院前的常规检查；</span> 
+</p>
+<p class="MsoNormal">
+	<span style="text-indent:15.6pt;font-size:18px;line-height:2;font-family:&quot;">3.请携带</span><strong style="text-indent:15.6pt;"><span style="font-size:18px;line-height:2;font-family:&quot;">住院证，身份证，医疗卡，住院预交金</span></strong><span style="text-indent:15.6pt;font-size:18px;line-height:2;font-family:&quot;">、到住院处办理住院手续，填写“患者个人信息”；</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;text-indent:15.6pt;font-family:&quot;line-height:2;">4.办完住院手续后，持住院证到入住科室。活动不便的由接诊室护士送您到病房。</span> 
+</p>
+<p class="MsoNormal" style="text-indent:15.6pt;">
+	<span style="font-size:16px;"><br />
+</span> 
+</p>
+<p class="MsoNormal" style="text-align:left;">
+	<strong><span style="font-size:16px;"><span style="font-size:18px;font-family:&quot;line-height:2;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </span><span style="font-size:18px;font-family:&quot;line-height:2;">&nbsp;</span><span style="font-size:18px;font-family:&quot;line-height:2;">&nbsp; &nbsp;</span><span style="font-size:18px;font-family:&quot;line-height:2;">出入院流程</span></span></strong> 
+</p>
+<p class="MsoNormal" style="text-align:center;">
+	<img src="/Uploads/Picture/2023/03/29/u6423dc8e72721.png" width="300" height="369" alt="" /><span style="font-size:18px;"></span> 
+</p>
+<p class="MsoNormal">
+	<br />
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;line-height:2;font-family:&quot;">（一）首次或曾经在我院住院的患者需持住院证到门诊一层大厅住院处办理住院手续。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;line-height:2;font-family:&quot;">（二）医保患者必须携带医保卡或领卡证明办理住院手续，如领卡证明及医保卡未携带，请于当日送到，如未能及时补交，本次住院费用不能以医保方式结算，将全额现金结帐。(如住院期间发生门诊费用，住院费用全部自费;住院期间医保卡一律不外借，以免造成费用重叠不能报销。) 如在他院住院未结账的患者，送卡时间可在住院日期往后延三个工作日，待上家医院结算后应立即把社保卡送往住院处。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;line-height:2;font-family:&quot;">（三）认真准确填写入院登记表，详细填写各项内容及联系方式。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;line-height:2;font-family:&quot;">（四）根据规定收取住院押金，同时一联交患者妥善保管，出院结算时需携带并由结账处收回。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;line-height:2;font-family:&quot;">（五）刷卡交费的患者还须保管好刷卡单复联，结帐时需携带押金收据、刷卡单复联及交费时所刷银联卡，如结算费用有余款必须退回原卡，退卡费用于20个工作日内到账。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;line-height:2;font-family:&quot;">（六）病服及水卡押金在住院处办理。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;line-height:2;font-family:&quot;">（七）住院处</span><strong><span style="font-size:18px;line-height:2;font-family:&quot;">7:30-17:00</span></strong><span style="font-size:18px;line-height:2;font-family:&quot;">办理入院手续并收取住院押金。其它时间住院的患者请您前往收费处办理。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;line-height:2;font-family:&quot;">（八）住院手续办理完成后，请您仔细核对所有收据并妥善保存，待出院结账时使用。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;line-height:2;font-family:&quot;">（九）每个入院的新患者都会发一张出入院须知，上边都有标注出院后结账的时间。</span> 
+</p>
+<p class="MsoNormal">
+	<span style="font-size:18px;line-height:2;font-family:&quot;">（十）住院患者必须实名制就医。</span> 
+</p>
+<p>
+	<br />
+</p>
+<p>
+	<br />
+</p>						</div>				</div>
+			</div>
+		</div>
+	</div>
+<script>
+$(function(){
+	
+});
+// $('.x-wrap .link-item:first').addClass('cur');
+</script>
+
+    <div class="x-footer">
+    <div class="foot-box">
+        <div class="x-wrap">
+            <div class="left">
+                <div class="p"><div class="link-item"><a href="/sitemap.html" target="_blank">网站地图 </a></div><div class="link-item"><a href="/hospital_details.html#hospital_details5" target="_blank">联系我们 </a></div>
+<div class="link-item">
+    <a target="_blank" href="https://beian.miit.gov.cn">京ICP备05086968号-1</a>
+</div>
+<div class="link-item">
+    <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010802035307" style="display:inline-block;text-decoration:none;height:20px;line-height:20px;width:auto;margin:0 auto; padding: 0;">
+        <img src="/Public/static/themes/image/icon.png" style="float:left;padding-top: 5px;" />
+        <p style="float:left;height:20px;line-height:30px;margin: 0px 0px 0px 5px;">京公网安备 11010802035307号</p>
+    </a>
+</div></div>                <div class="p">医院地址：海淀区中关村南路12号</div>                <div class="p"></div>                <p class="ftbj"><a href="http://www.fractal-technology.com" target="_blank">网站建设</a>：<a href="http://www.fractal-technology.com" target="_blank">北京分形科技</a></p>
+            </div>
+            <div class="right">
+                <div class="let" edit_params="width%3D87%26height%3D87%26zoom%3D0.5%26showtitle%3D1%26showtitle2%3D1%26nums%3D6"><img class="i" src="/Public/static/images/default.png"     >
+<div class="p"></div></div>                <div class="rgh" edit_params="width%3D87%26height%3D87%26zoom%3D0.5%26showtitle%3D1%26showtitle2%3D1"><img class="i" src="/Public/static/images/default.png"     >
+<div class="p"></div></div>            </div>
+          
+        </div>
+    </div>
+</div>
+    <style type="text/css">
+      .medium-editor-toolbar-form .medium-editor-toolbar-input, .medium-editor-toolbar-form label{background: darkgray}
+      .medium-editor-toolbar-anchor-preview .medium-editor-toolbar-anchor-preview-inner{background-color: slategrey}
+    </style>
+</body>
+</html>
+<script>
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "https://hm.baidu.com/hm.js?ef3854614745a6f26a2eb1076973993a";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
