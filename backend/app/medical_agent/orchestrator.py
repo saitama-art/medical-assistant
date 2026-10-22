@@ -119,7 +119,8 @@ def run_agent(session_id: str, question: str) -> AgentState:
     if (
         state.history
         and state.context_status is not ContextStatus.MISSING
-        and router.has_reference(state.resolved_question)
+        and (router.has_reference(state.resolved_question)
+             or router.has_followup_lead(state.resolved_question))
     ):
         node_budget = _node_budget(state, BUDGET_FOLLOWUP_MS)
         if node_budget is None:
@@ -297,8 +298,12 @@ RESOLVE_SYSTEM_PROMPT = """你是对话上下文整理器。用户本轮的问�
 要求：
 1. 只输出 JSON 对象，不要输出解释、前后缀或 markdown 代码块；
 2. 改写后的问题必须保留用户本轮的原始意图，补全被指代的药名、症状或事物；
-3. 确实无法确定指代对象时，输出 {{"question": ""}}，不要猜测；
-4. 输出格式：{{"question": "改写后的完整问题"}}"""
+3. **保留实体**：本轮问题中出现的或历史对话中已明确的具体实体（疾病名、症状、
+   药品名、检查名）必须原样保留在改写后的问题里，只补全指代词所指的内容，
+   不得把具体问题泛化成通用问题（如「腹泻要去医院的情况」不得泛化为
+   「什么情况要去医院」）；
+4. 确实无法确定指代对象时，输出 {{"question": ""}}，不要猜测；
+5. 输出格式：{{"question": "改写后的完整问题"}}"""
 
 RESOLVE_USER_PROMPT = """【此前的对话】
 {history}

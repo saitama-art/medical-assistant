@@ -101,6 +101,13 @@ class TestRouter(unittest.TestCase):
         self.assertFalse(router.is_greeting("你好，二甲双胍怎么用"))
         self.assertFalse(router.is_greeting("二甲双胍的适应症"))
 
+    def test_followup_lead_trigger(self):
+        # 隐性回指开头（T-12 腹泻案例：「那什么情况要去医院？」不含任何显式指代词）
+        for text in ["那什么情况要去医院？", "那要不要紧", "那种药能吃吗", "那该怎么办"]:
+            self.assertTrue(router.has_followup_lead(text), text)
+        for text in ["那是我自己的事", "今天天气怎么样", "嗯嗯"]:
+            self.assertFalse(router.has_followup_lead(text), text)
+
     def test_route_table_priorities(self):
         none = EmergencyLevel.NONE
         # 1. 强紧急优先于一切
@@ -306,6 +313,28 @@ class TestSession(unittest.TestCase):
 
 
 # ==================== orchestrator ====================
+
+
+class TestFollowupLeadResolution(unittest.TestCase):
+    """隐性回指追问（「那什么…」无显式指代词）应触发 N02 改写并保留实体。"""
+
+    def test_na_followup_resolves_with_entity(self):
+        import json as _json
+        llm = FakeLLM(
+            resolve=_json.dumps({"question": "成人腹泻出现什么情况需要去医院？"},
+                                ensure_ascii=False),
+            classify={"category": "knowledge", "confidence": 0.9},
+            judge={"answerable": True, "supporting_quote": "依据片段"})
+        ok = service.RetrievalResult(
+            outcome=None, chunks=[service.RetrievedChunk(
+                content="依据片段", document="d.pdf", page=1, distance=0.3)])
+        sid = _fresh_session()
+        session.complete(sid, "成人腹泻有什么表现？", "腹泻的表现。", got_lock=True)
+        state, _ = _run(sid, "那什么情况要去医院？", llm, ok)
+        self.assertIn("成人腹泻", state.resolved_question)
+        self.assertIn("需要去医院", state.resolved_question)
+        self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
+
 
 
 def _run(state_holder, question, fake_llm, retrieval_result, side_effect=None):
