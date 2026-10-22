@@ -36,6 +36,20 @@ def has_reference(text: str) -> bool:
     return any(word in text for word in REFERENCE_WORDS)
 
 
+# 隐性回指开头：「那什么情况要去医院？」——「那」起头的追问句式不含 REFERENCE_WORDS
+# 任何词，但显然依赖上文。只匹配句首（自包含问题罕见以「那什么/那该/那要/那还」
+# 开头），且 N02 另有"历史非空"前置条件，误触发代价最多一次改写调用。
+# 注意：「那」已在 ^ 后消费，「那种」只需匹配剩余的「种」，写「种」即可。
+FOLLOWUP_LEAD_RE = re.compile(r"^那(?:什么|哪种|种|该|要|还能|还)")
+
+
+def has_followup_lead(text: str) -> bool:
+    """文本是否以隐性追问开头（那什么/那该/那要…），用于 N02 触发补充。"""
+    if not isinstance(text, str):
+        return False
+    return bool(FOLLOWUP_LEAD_RE.match(text.strip()))
+
+
 # ==================== 寒暄短路（T-04：命中时 0 次 LLM、0 次工具） ====================
 
 _GREETING_RE = re.compile(
@@ -80,6 +94,9 @@ knowledge 与 triage 的分界（最常见混淆点，2026-10-21 按 72 题覆�
   「挂什么科」「去哪看」「需要去急诊吗（询问就诊去向而非急症知识）」。例如：
   「胸口疼要不要去医院」→ triage（决定去不去医院是主要诉求）
   「持续性头痛应该挂什么科」→ triage（选择科室是主要诉求）
+- 「（某病/某症状）出现什么情况要去医院」「什么情况需要就医」问的是该疾病的
+  就医指征/警示征象知识 → knowledge。例如：
+  「腹泻出现什么情况要去医院」→ knowledge（腹泻的警示征象知识）
 - 仅描述症状而未问就诊安排（如「晚上睡不着」「最近总是头晕」）→ knowledge
 - 问「某症状该吃什么药/用什么药好」而未指明具体药名 → triage（用药选择须医生判断）；
   指明具体药名问用法用量、不良反应 → knowledge
@@ -189,6 +206,7 @@ __all__ = [
     "CATEGORY_CONFIDENCE_MIN",
     "REFERENCE_WORDS",
     "has_reference",
+    "has_followup_lead",
     "is_greeting",
     "classify",
     "decide_route",
