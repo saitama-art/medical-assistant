@@ -20,7 +20,7 @@ import requests
 from bs4 import BeautifulSoup
 
 sys.path.insert(0, str(Path(__file__).parent))
-from manifest import ALL_MSD, DAYI_KNOWN, DAYI_WANTED, MSD_BASE, WHO_EXTRA  # noqa: E402
+from manifest import ALL_MSD, DAYI_KNOWN, DAYI_WANTED, MSD_BASE, WHO_EXTRA, GOV_EXTRA  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 KB_SRC = ROOT / "kb_src"
@@ -146,9 +146,18 @@ def main() -> None:
         print(("OK " if rec["ok"] else "FAIL"), key, rec.get("chars", rec.get("error", "")))
         time.sleep(0.5)
 
-    # WHO 等全 URL 来源：通用正文抽取器，逐字原件存 kb_src/<site>/
-    for key, url, title, cat in WHO_EXTRA:
-        site = "who" if "who.int" in url else "ext"
+    # WHO/政府/学会等全 URL 来源：通用正文抽取器，逐字原件存 kb_src/<site>/
+    def _site_of(url: str) -> str:
+        if "who.int" in url:
+            return "who"
+        if "cnsoc.org" in url:
+            return "cnsoc"
+        if "beijing.gov.cn" in url:
+            return "bwjw"
+        return "ext"
+
+    for key, url, title, cat in list(WHO_EXTRA) + list(GOV_EXTRA):
+        site = _site_of(url)
         rec = fetch_one(url, KB_SRC / site, key, extract_generic)
         rec.update(title=title, category=cat, site=site)
         results.append(rec)

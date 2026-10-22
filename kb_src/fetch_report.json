@@ -1288,5 +1288,25 @@
     "title": "癌症（WHO 实况报道）",
     "category": "疾病与健康知识",
     "site": "who"
+  },
+  {
+    "key": "gov-dietary-balance-eight",
+    "url": "http://dg.cnsoc.org/article/04/J4-AsD_DR3OLQMnHG0-jZA.html",
+    "status": 200,
+    "chars": 1461,
+    "ok": true,
+    "title": "中国居民膳食指南（2022）平衡膳食八准则",
+    "category": "疾病与健康知识",
+    "site": "cnsoc"
+  },
+  {
+    "key": "gov-dietary-core-criteria",
+    "url": "https://wjw.beijing.gov.cn/xwzx_20031/xwfb/202610/t20261021_4913349.html",
+    "status": 200,
+    "chars": 2185,
+    "ok": true,
+    "title": "中国居民膳食指南（2022）核心准则解读",
+    "category": "疾病与健康知识",
+    "site": "bwjw"
   }
 ]
