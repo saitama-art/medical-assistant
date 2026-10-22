@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html class="">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>【健康知识】“药”不能停？忘了吃一次怎么办？-沈阳市卫生健康委员会</title>
+<meta name="SiteName" content="沈阳市卫生健康委员会">
+<meta name="SiteDomain" content="wjw.shenyang.gov.cn">
+<meta name="SiteIDCode" content="2101000045">
+<meta name="ColumnName" content="公告信息">
+<meta name="ColumnDescription" content="公告信息">
+<meta name="ColumnKeywords" content="公告信息">
+<meta name="ColumnType" content="公告信息">
+<meta name="ArticleTitle" content="各区房屋安全投诉举报公开电话">
+<meta name="PubDate" content="2021-06-30">
+<meta name="ContentSource" content="沈阳市房产局">
+<link href="https://www.tiexi.gov.cn/material/gongyong/sytx/common/idangerous.swiper.css" rel="stylesheet" type="text/css">	
+<link rel="stylesheet" type="text/css" href="../../../material/gongyong/syswsj/css/reset.css" />
+<link rel="stylesheet" type="text/css" href="../../../material/gongyong/syswsj/new/css/index.css" />
+<script type="text/javascript" src="../../../material/gongyong/syswsj/js/jquery-3.7.1.min.js"></script>
+<script type="text/javascript" src="https://www.shenyang.gov.cn/material/gongyong/syszf/js/jquery.qrcode.js"></script>
+<script type="text/javascript" src="https://www.shenyang.gov.cn/material/gongyong/syszf/js/wap/uni.webview.1.5.2.js"></script>
+<script type="text/javascript">
+$(function(){
+    //分享
+    var title = "【" + $.trim(document.title) + "】";
+    var description = $.trim($('meta[name="description"]').attr('content'));
+    var portalUrl = window.location.href;
+    //生成二维码
+    function generateQRCode(rendermethod, picwidth, picheight, url) {
+        $(".qrcode").qrcode({
+            render: rendermethod, // 渲染方式有table方式（IE兼容）和canvas方式
+            width: picwidth, //宽度
+            height: picheight, //高度
+            text: utf16to8(portalUrl), //内容
+            typeNumber: -1, //计算模式
+            correctLevel: 2, //二维码纠错级别
+            background: "#ffffff", //背景颜色
+            foreground: "#000000" //二维码颜色
+
+        });
+    }
+    canvas_table = !!document.createElement('canvas').getContext ? 'canvas' : 'table';
+
+    function init() {
+        generateQRCode(canvas_table, 100, 100, window.location.href);
+    }
+    //中文编码格式转换
+    function utf16to8(str) {
+        var out, i, len, c;
+        out = "";
+        len = str.length;
+        for(i = 0; i < len; i++) {
+            c = str.charCodeAt(i);
+            if((c >= 0x0001) && (c <= 0x007F)) {
+                out += str.charAt(i);
+            } else if(c > 0x07FF) {
+                out += String.fromCharCode(0xE0 | ((c >> 12) & 0x0F));
+                out += String.fromCharCode(0x80 | ((c >> 6) & 0x3F));
+                out += String.fromCharCode(0x80 | ((c >> 0) & 0x3F));
+            } else {
+                out += String.fromCharCode(0xC0 | ((c >> 6) & 0x1F));
+                out += String.fromCharCode(0x80 | ((c >> 0) & 0x3F));
+            }
+        }
+        return out;
+    }
+    init();
+
+    $(".share-wechat").on("mouseover", function() {
+        $(".bg-code,.qrcode").toggle();
+    });
+    //清空二维码
+    $(".close-btn").on("mouseover", function(event) {
+        $(".bg-code,.qrcode,.close-btn").hide();
+        event.stopPropagation();
+    });
+
+    function showToQzone() {
+         var _desc = description;
+         var _title = title;
+         var _url = portalUrl;
+         var _shareUrl = 'http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?';
+         _shareUrl += 'url=' + encodeURIComponent(_url);   //参数url设置分享的内容链接|默认当前页location
+         _shareUrl += '&title=' + encodeURIComponent(_title);    //参数title设置分享标题，可选参数
+         window.open(_shareUrl,'','width=700,height=680,top=0,left=0,toolbar=no,menubar=no,scrollbars=no,resizable=1,location=yes,status=0'); 
+    }
+
+    function showToSina(title, portalUrl, desc) {
+        var _desc = desc;
+        var _t = title + " " + _desc;
+        var _url = portalUrl;
+        var _appkey = "2806082167"; //你从微薄获得的appkey
+        var _site = ''; //你的网站地址
+        var _ralateUid = "";
+        var _u = 'http://service.weibo.com/share/share.php?url=' + _url + '&appkey=' + _appkey + '&title=' + _t + '&ralateUid=' + _ralateUid + '&searchPic=false';
+        window.open(_u, '', 'width=700, height=680, top=0, left=0, toolbar=no, menubar=no, scrollbars=no, location=yes, resizable=no, status=no');
+    }
+    
+    $('.share-qqzone').on('click', function() {
+        showToQzone(title, portalUrl, description);
+    });
+    $('.share-weibo').on('click', function() {
+        showToSina(title, portalUrl, description);
+    });
+});
+</script>
+<style>
+.cjdh {width: 100%; height: 50px; line-height: 50px; padding: 0 20px; background: #f5f5f5; font-size: 18px; color: #292929;}
+.cjdh a {font-size: 16px; color: #292929;}
+.cjdh a:hover {font-size: 16px; color: #B50000;}
+.cont {width: 100%; pdding: 20px 0;}
+.cont .title {width: 100%; padding: 20px 50px; font-size: 30px; line-height: 45px; margin: 5px 0; text-align: center;}
+.sjly {width: 95%; margin: 15px auto; background: #f1f1f1; height: 35px; line-height: 35px; text-align: center; font-size: 14px; border: 1px solid #dddddd;}
+.lysj span {float: left; margin-left: 10px;}
+/*分享*/
+.m-share {float: right; margin-right: 10px;}
+.share{zoom: 1;}
+.share:after{content: "";display: block;clear: both;}
+.share a{float: right;width: 26px;height: 26px;border-radius: 50%;margin-left: 10px;background: #c9c9c9;cursor: pointer;display: block;margin-top: 5px;}
+.share a i{display: block;width: 26px;height: 26px;-webkit-transition: .4s all;-moz-transition: .4s all;-ms-transition: .4s all;transition: .4s all;}
+.share a:hover i{-webkit-transform: rotate(360deg);-moz-transform: rotate(360deg);-ms-transform: rotate(360deg);transform: rotate(360deg);}
+.share #share-icon{width: 26px;height: 26px;float: left;display: none;}
+.share #share-icon img{width: 100%;height: 100%;}
+.share .share-qqzone i{background: url("https://www.shenyang.gov.cn/material/gongyong/syszf/images/cont_ico_share_20200422.png") 4px center no-repeat;}
+.share .share-qqzone{background-color: #fc7354;}
+.share .share-qqzone:hover{background-color: #fc7354;}
+.share .share-wechat{position: relative;}
+.share .share-wechat i{background: url("https://www.shenyang.gov.cn/material/gongyong/syszf/images/cont_ico_share_20200422.png") -30px center no-repeat;}
+.share .share-wechat{background-color: #1fbc7d;}
+.share .share-wechat:hover{background-color: #1fbc7d;}
+.share .share-weibo i{background: url("https://www.shenyang.gov.cn/material/gongyong/syszf/images/cont_ico_share_20200422.png") -65px center no-repeat;}
+.share .share-qq{background-color: #27a8f2;}
+.share .share-qq:hover{background-color: #27a8f2;}
+.share .share-qq i{background: url("https://www.shenyang.gov.cn/material/gongyong/syszf/images/cont_ico_share_20200422.png") -96px center no-repeat;}
+.share .share-weibo{background-color: #e96157;}
+.share .share-weibo:hover{background-color: #e96157;}
+.share .bg-code{left: -36px;z-index: 10;}
+.share .qrcode{position: absolute;top: -140px;padding: 5px;display: none;left: 60px;z-index: 11;}
+.share .close-btn{position: absolute;background: #fff;color: #000;font-size: 12px;z-index: 12;width: 12px;height: 12px;line-height: 12px;text-align: center;right: -39px;top: 50px;display: none;cursor: pointer;}
+/*字体大中小*/
+.zf-centertime {line-height: 35px; text-align: center; font-size: 14px;  padding: 0px 10px; float: right; margin: auto; color: #555555;}
+.zf-centertime span {line-height: 30px; text-align: center; font-size: 14px;  color: #555555;}
+.zf-centertime span a {line-height: 30px; text-align: center; font-size: 14px;  color: #555555;}
+
+.content, .xglj {width: 90%; margin: 0 auto; font-size: 16px; color: #000000; line-height: 35px; margin-top: 33px; text-align: left; margin-bottom: 20px;}
+.xsy_rul1 { width: 100%; margin: 0 50px; }
+.xsy_rul li{ float:left; width:100%; height:30px; line-height:30px; margin:3px 0 0;}
+.xsy_rul li a{color:#000; font-size:16px; padding-left: 15px; background: url(https://wjw.shenyang.gov.cn/material/gongyong/syswsj/new/img/dian.png) left center no-repeat; background-size: 8px;}
+.content img {max-width:1000px;}
+</style>
+</head>
+<body>
+<!--头部-->
+<link rel="stylesheet" type="text/css" href="../../../material/gongyong/syswsj/css/reset.css" />
+<style>
+body, div, a {font-size: 16px; color: #0d0d0d;}
+.w1200 {width: 1200px; margin: 0 auto;}
+.head {width: 100%; height: auto; margin: 0 auto; background: #f5f5f5; min-width: 1200px}
+.head .top {height: 40px; margin: 0 auto; line-height: 40px;}
+.head .banner {width: 100%; height: 198px; background: #000 url(../../../material/gongyong/syswsj/new/img/banner1.png) 50% 0 no-repeat;}
+.head .banner .seach form {float: right; width: 300px; margin-top: 80px; margin-right: 10px;}
+.head .banner .seach .qt {width: 260px; height: 40px; background: #fff; font-size: 16px; color: #000; padding: 5px 10px; border-radius: 10px 0 0 10px;}
+.head .banner .seach .button {width: 40px; height: 41px; background: #af0400 url(../../../material/gongyong/syswsj/new/img/ss.png); border: 0; border-radius: 0 10px 10px 0;}
+.nav {width: 100%; height: 60px; background: #af0400; padding: 10px 0;}
+.nav a {display: inline-block; float: left; padding: 8px 40px; font-size: 20px; color: #fff; font-weight: 400; border-radius: 10px; margin: 0 5px;}
+.nav .aaa, .nav a:hover {background: #fff; color: #af0400; font-weight: 700;}
+</style>
+
+<script type="text/javascript">
+// 设置为主页 
+function SetHome(obj,vrl){ 
+try{ 
+obj.style.behavior='url(#default#homepage)';obj.setHomePage(vrl); 
+} 
+catch(e){ 
+if(window.netscape) { 
+try { 
+netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect"); 
+} 
+catch (e) { 
+alert("此操作被浏览器拒绝！\n请在浏览器地址栏输入“about:config”并回车\n然后将 [signed.applets.codebase_principal_support]的值设置为'true',双击即可。"); 
+} 
+var prefs = Components.classes['@mozilla.org/preferences-service;1'].getService(Components.interfaces.nsIPrefBranch); 
+prefs.setCharPref('browser.startup.homepage',vrl); 
+}else{ 
+alert("您的浏览器不支持，请按照下面步骤操作：1.打开浏览器设置。2.点击设置网页。3.输入："+vrl+"点击确定。"); 
+} 
+} 
+}
+// 加入收藏 兼容360和IE6 
+function shoucang(sTitle,sURL) 
+{ 
+try 
+{ 
+window.external.addFavorite(sURL, sTitle); 
+} 
+catch (e) 
+{ 
+try 
+{ 
+window.sidebar.addPanel(sTitle, sURL, ""); 
+} 
+catch (e) 
+{ 
+alert("加入收藏失败，请使用Ctrl+D进行添加"); 
+} 
+} 
+}
+</script>
+<script language="javascript">
+	//页面使用UTF-8编码时form表单方法
+function utf8Test(){
+    var query = form1.query.value;
+    if(!query || query.trim() === ""){
+        alert("请输入提交条件");
+        return false;
+    } else{
+        var baseUrl = '//wjw.shenyang.gov.cn/dist/index.html#/';
+        var params = '?query=' + encodeURIComponent(query) + 
+                    '&zdname=' + encodeURIComponent('沈阳市卫生健康委员会');
+        
+        window.open(baseUrl + params, '_blank');
+        return false;
+    }
+}
+</script>
+<div class="head">
+	<div class="top w1200">
+		<div class="fl">欢迎访问沈阳市卫生健康委员会官方网站！</div>
+		<div class="fr">
+			<a href="javascript:void(0);" id='start-aria'  title="无障碍辅助浏览工具条" class="fr pl15">无障碍辅助浏览工具条</a>
+			<a id="sethome" href="javascript:void(0)" onclick="SetHome(this,window.location)" class="fr pl15">设为首页</a>
+			<a id="setfav" href="javascript:void(0)" onclick="shoucang(this,window.location)" class="fr pl15">加入收藏</a>  
+		</div>
+	</div>
+	<div class="banner">
+		<div class="seach w1200">
+			<form method="get" name="form1" onsubmit="return utf8Test()"  target="_blank" rel="noopener noreferrer" id="form1">
+				<input name="query" type="text" id="query" class="fl qt" placeholder="请输入关键字" />
+				<input type="submit" id="button" value="" class="fr button" />
+			</form>
+		</div>
+	</div>
+	<div class="nav">
+		<div class="w1200">
+			<li><a href="/" target="_blank" rel="noopener noreferrer" class="aaa">网站首页</a></li>
+			<li><a href="../../../zwgk/fdzdgknr/jgjj/" target="_blank" rel="noopener noreferrer">机关简介</a></li>
+			<li><a href="../../../xwzx/" target="_blank" rel="noopener noreferrer">新闻中心</a></li>
+			<li><a href="../../../zwgk/" target="_blank" rel="noopener noreferrer">政务公开</a></li>
+			<li><a href="../../../djgz/" target="_blank" rel="noopener noreferrer">党建工作</a></li>
+			<li><a href="../../../hdjl/" target="_blank" rel="noopener noreferrer">互动交流</a></li>
+			<li><a href="http://zwfw.shenyang.gov.cn/syzwdt/syzwdt/pages/depttasklist/depttasklist.html?ouguid=2996fa4d-0ca2-4b54-a5a8-745af22b5868" target="_blank" rel="noopener noreferrer">政务服务</a></li>
+		</div>
+	</div>
+</div>
+<!--主页面-->
+<div class="main w1200">
+	<div class="cjdh">您现在的位置：<a href="../../../" title="首页" class="CurrChnlCls">首页</a>&nbsp;>&nbsp;<a href="../../" title="专题专栏" class="CurrChnlCls">专题专栏</a>&nbsp;>&nbsp;<a href="../" title="健康科普" class="CurrChnlCls">健康科普</a></div>
+	<div class="cont">
+		<div class="title">【健康知识】“药”不能停？忘了吃一次怎么办？</div>
+		<div class="sjly">
+			<div class="lysj">
+				<span>时间：2026年02月27日</span>
+				<span>来源：沈阳市第十人民医院（沈阳市胸科医院）</span>
+			</div>
+            <div class="m-share">
+                <div class="share" id="share">
+                    <span>分享：</span>
+                    <a class="share-wechat" href="javascript:;"><i></i><div class="bg-code"></div><div class="qrcode"><canvas width="100" height="100"></canvas></div><span class="close-btn">X</span></a>
+                    <a class="share-weibo"><i></i></a>
+                    <a class="share-qqzone"><i></i></a>
+                </div>
+            </div>
+            <div class="zf-centertime">            
+				<span>[字体：
+					<a onclick="$('.content, .view, .view span').css('font-size','24px')">大</a>
+					<a onclick="$('.content, .view, .view span').css('font-size','20px')">中</a>
+					<a onclick="$('.content, .view, .view span').css('font-size','16px')">小</a>]
+				</span>
+				<span>
+					<a href="javascript:window.print();" style="background: url(images/ico.png) no-repeat 0px 5px;
+					padding-left: 22px;">打印</a>
+				</span>
+            </div>
+		</div>
+		<div class="content artical">
+			<div class="view TRS_UEDITOR trs_paper_default trs_web"><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">生活忙碌间，不少人都有过忘记吃药的经历。想起时，有人慌忙补服，有人打算下次吃双份，这些做法其实都暗藏风险。今天，就让药师教您一招，科学补救不踩坑。</span></p><p style="text-align: center; text-indent: 32px;"><img src="./W020260227387431052629.jpeg" data-uploadpic="U020260227386490390049.jpeg" needdownload="true" data-needdownload="true" title="55079dfa0efd43448b8c023fa5ebeb0f_tplv-tt-origin-web_gif.jpeg" alt="" style="width: 500px; height: 281.136px;" picname="55079dfa0efd43448b8c023fa5ebeb0f_tplv-tt-origin-web_gif.jpeg" OLDSRC="W020260227387431052629.jpeg" /></p><h1 style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">一、补服总原则：先看时间，别慌张</span></h1><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">药物生效就像一场药效接力赛，规律服药是按时派出“运动员”，维持体内有效浓度；漏服会让药效“断档”，盲目吃双倍剂量则易导致药物过量，引发副作用。</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">核心原则：发现漏服，先看距离下次服药的时间，以此判断补救方案，绝不擅自加倍服药。</span></p><p style="text-align: center; text-indent: 32px;"><img src="./W020260227387431079082.jpeg" data-uploadpic="U020260227386734210736.jpeg" needdownload="true" data-needdownload="true" title="e1af1d026ee84aeb86ec9d4a75d7add4_tplv-tt-origin-web_gif.jpeg" alt="" style="width: 500px; height: 281.57px;" picname="e1af1d026ee84aeb86ec9d4a75d7add4_tplv-tt-origin-web_gif.jpeg" OLDSRC="W020260227387431079082.jpeg" /></p><h1 style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">二、两种情况，对症处理</span></h1><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">1. 发现得早：立即补服。</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">判断标准：漏服时间超过用药间隔的一半。比如12小时服一次的药，早上8点该吃，下午2点前想起。</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">做法：马上补服单次剂量，下次服药仍按原时间进行，不影响后续节奏。</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">2. 发现得晚：果断跳过。</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">判断标准：漏服时间不足用药间隔的一半。比如12小时服一次的药，晚上7点才想起早上的药没吃。</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">做法：直接跳过本次剂量，下次正常服药即可，避免短时间内药物浓度过高。</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">口诀速记：早发现（时间未过半），就补上；晚发现（时间过半），就跳过；永远不吃双份量！</span></p><p style="text-align: center; text-indent: 32px;"><img src="./W020260227387431078934.jpeg" data-uploadpic="U020260227386995667111.jpeg" needdownload="true" data-needdownload="true" title="588f60f4d02045768a0752a222629e56_tplv-tt-origin-web_gif.jpeg" alt="" style="width: 500px; height: 281.18px;" picname="588f60f4d02045768a0752a222629e56_tplv-tt-origin-web_gif.jpeg" OLDSRC="W020260227387431078934.jpeg" /></p><h1 style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">三、特殊药物，特殊对待</span></h1><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">普通药物按上述原则处理即可，但以下几类药需格外注意：</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">1.降压/降糖药：白天漏服可补，临睡前不建议补服，以免夜间血压、血糖过低引发危险。</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">2.激素类药物：当日想起可随时补服，次日才想起则只吃当日剂量，切勿加倍。</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">3.抗生素：尽快补服，接近下次服药时间就跳过，确保血药浓度稳定。</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">4.按需服用药：如止痛药、抗过敏药，想起时吃一次即可，无需刻意补服。</span></p><p style="text-align: center; text-indent: 32px;"><img src="./W020260227387431074886.jpeg" data-uploadpic="U020260227387217230810.jpeg" needdownload="true" data-needdownload="true" title="5ebf253cbf2a4923b2d686dc3a120756_tplv-tt-origin-web_gif.jpeg" alt="" style="width: 500px; height: 281.145px;" picname="5ebf253cbf2a4923b2d686dc3a120756_tplv-tt-origin-web_gif.jpeg" OLDSRC="W020260227387431074886.jpeg" /></p><h1 style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">四、防患于未然：防忘小妙招</span></h1><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">最好的补救是不忘记：把药盒放在牙刷旁、电饭煲边，联动日常习惯；用手机设专属闹钟；备一个七天小药盒，服药情况一目了然；在显眼处贴便利贴提醒。</span></p><h1 style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">五、出现哪些情况要尽快联系医生？</span></h1><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">1.漏服后出现头晕、心悸、胸闷、剧烈腹痛等不适情况；</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">2.心血管、抗凝、抗癫痫、抗抑郁、甲状腺等药物频繁漏服；</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">3.不确定漏服的具体是哪种药名或剂量。</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">忘记吃药别焦虑，牢记“看时间、判情况”原则。如不确定情况，请及时到医疗机构就诊。</span></p><p style="text-indent: 32px; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">最后药师提醒：漏服药物要警惕，及时咨询别随意！按时吃药不忘记，健康防线不缺席！</span></p><blockquote style="text-indent: 32px; line-height: 1.5em;"><p style="text-indent: 2em; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">作者：佟露</span></p><p style="text-indent: 2em; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">来源：沈阳市第十人民医院（沈阳市胸科医院）</span></p><p style="text-indent: 2em; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">编辑：杨薇 黄琬淇</span></p><p style="text-indent: 2em; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">校对：陈泽明</span></p><p style="text-indent: 2em; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">初审：陈路</span></p><p style="text-indent: 2em; line-height: 1.5em;"><span data-index="9" style="font-size: 16px;">审核：崔乐文</span></p></blockquote><p style="line-height: 1.5em; text-indent: 32px;"><br/></p></div>
+
+		</div>
+		<div class="xglj">			
+			
+		</div>
+	</div>	
+<div id="VABT_SpeechBox"><audio id="bgMusic"></audio></div>
+<script type="text/javascript">
+    var videoList = document.querySelectorAll(".artical iframe")
+    removeIndex = [];
+    for (var i = 0, length = videoList.length; i < length; i++) {
+        var video = videoList[i]
+            src = video.getAttribute('src');
+            durl = video.getAttribute('durl');
+        if (durl) {
+            var videoEle = document.createElement('video');
+            videoEle.setAttribute('src', durl);
+            videoEle.setAttribute('controls', true);
+            videoEle.setAttribute('appendix', true);
+            videoEle.setAttribute('preload', true);
+            if(videoList[i].getAttribute('style')!=null){
+                var ssty=videoList[i].getAttribute('style').split(';');
+                var sstyy1=ssty[0].split(':')[1];
+                var sstyy2=ssty[1].split(':')[1];
+                videoEle.setAttribute('width', sstyy1);
+                videoEle.setAttribute('height', sstyy2);
+            }else{
+                videoEle.setAttribute('width', video.getAttribute('width'));
+                videoEle.setAttribute('height', video.getAttribute('height'));
+
+            }
+            videoEle.setAttribute('name', video.getAttribute('name'));
+            videoEle.setAttribute('class', video.getAttribute('class'));
+            video.parentElement.insertBefore(videoEle, video);
+            removeIndex.push(i);
+        }
+    };
+    //console.log(removeIndex)//[0,1]
+    //console.log(videoList)
+    //console.log(videoList[0])
+    //console.log(videoList[1])
+    if (removeIndex.length > 0) {
+        for (var i = 0, length = removeIndex.length; i < length; i++) {
+            var videoIframe = videoList[removeIndex[i]];
+            //console.log(videoIframe)
+            videoIframe.parentElement.removeChild(videoIframe);
+        }
+    };
+</script>
+</div>
+<!--底部-->
+<style>
+.foot {width: 100%; min-width: 1200px; height: 230px; background: #af0400; font-size: 16px; color: #fff; text-align: center; padding: 20px;}
+.foot a {font-size: 16px; color: #fff; }
+.foot p {margin: 8px auto; font-size: 16px; }
+.foot .mt20 {margin-top: 20px; }
+</style>
+<div class="foot">
+	<p>主办单位：沈阳市卫生健康委员会</p>
+	<p>
+		<span class="mr30">网站标识码：2101000009 </span>
+		<span class="mr30">地址：沈阳市和平区南堤西路529-2</span>
+		<span class="mr30">投诉举报电话：024-86856666</span>
+		<span>邮编：110003</span>
+	</p>
+	<p>	
+		<span class="mr30">
+			<a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=21010202000465" target="_blank" rel="noopener noreferrer" ><img src="../../../material/gongyong/images/beian.png" />辽公网安备 21010202000465号</a>
+		</span>
+		<span class="mr30">
+			<a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">辽ICP备18010395号-1</a>
+		</span>
+		<span>
+			<a href="../../../wzdt/" target="_blank"  rel="noopener noreferrer">网站地图</a>
+		</span>
+	</p>
+	<p>技术支持单位：沈阳市大数据管理中心（沈阳市信息中心、沈阳市信用中心）</p>
+	<p class="mt20">
+		<a href="http://bszs.conac.cn/sitename?method=show&amp;id=6500C355AA5403F0E053022E1AAC6CFF" target="_blank" rel="noopener noreferrer"><img src="../../../material/gongyong/images/footer-img01.png" width="43" height="55" /></a>
+		<span class="ml30"><a href="https://zfwzgl.www.gov.cn/exposure/jiucuo.html?site_code=2101000009&url=http%3A%2F%2Fwjw.shenyang.gov.cn%2Fswsj%2F" target="_blank" rel="noopener noreferrer"><img src="../../../material/gongyong/images/footer-img01-02.png" width="110" height="55" /></a></span>
+	</p>
+</div>
+<script src="../../../material/gongyong/fwltj/crypto-js.js" type="text/javascript"></script>
+<script src="../../../material/gongyong/fwltj/aes.js" type="text/javascript"></script>
+<script src="../../../material/gongyong/fwltj/fingerprint2.min.js" type="text/javascript"></script>
+<script src="../../../material/gongyong/fwltj/httpUtils.js" type="text/javascript"></script>
+<script type="text/javascript">
+        $(function () {
+         var param = {}
+			const start = new Date().getTime();
+			let excludes = {
+				userAgent: true,
+				audio: true,
+				enumerateDevices: true,
+				fonts: true,
+				fontsFlash: true,
+				webgl: true,
+				canvas: true
+			};
+			let options = {
+				excludes: excludes,
+			};
+		var param={};
+			Fingerprint2.get(options, function (components) {
+				const values = components.map(function (component) {
+					return component.value
+				});
+				// 指纹
+				const murmur = Fingerprint2.x64hash128(values.join(''), 31);
+				// 替换为实际值
+				 param = {
+					siteId: '124',
+					channelId: '38335',
+					docId: '4991893',
+					recId: 114,
+					docTitle: '【健康知识】“药”不能停？忘了吃一次怎么办？',
+					siteName: '沈阳市卫生健康委员会',
+					channelName: '健康科普',
+					sessionId: murmur,
+				}
+			});
+			httpUtils.sendPost('hits/click-info/do', param, backData1);
+			function backData1(res) {
+			}
+			var viewsNum = "0";
+			
+        });
+</script>
+</body>
+</html>

@@ -225,6 +225,18 @@ GOV_EXTRA = [
      "中国居民膳食指南（2022）平衡膳食八准则", "疾病与健康知识"),
     ("gov-dietary-core-criteria", "https://wjw.beijing.gov.cn/xwzx_20031/xwfb/202610/t20261021_4913349.html",
      "中国居民膳食指南（2022）核心准则解读", "疾病与健康知识"),
+    # 72 题/覆盖测试来源缺口补充（2026-10-22，URL 逐个 curl 验证 200）：
+    # 护眼（P1A-13，烟台市政府转载科学护眼指南）、漏服处理原则（P2A-02/03/F03，
+    # 武汉市第一医院 + 沈阳市卫健委双来源互补：原则 vs 分药物类别细则）。
+    ("gov-eye-care-computer", "https://www.yantai.gov.cn/art/2024/11/21/art_82990_3230440.html",
+     "长时间使用电脑如何保护眼睛（科学护眼指南）", "疾病与健康知识"),
+    ("gov-missed-dose-whsyy", "https://www.whsyy.net/view_6130.html",
+     "漏服药的补服原则（武汉市第一医院）", "用药安全与特殊人群"),
+    ("gov-missed-dose-shenyang", "https://wjw.shenyang.gov.cn/ztzl/xsxxjkdjt/202602/t20260227_4991893.html",
+     "漏服药物如何处理（沈阳市卫健委）", "用药安全与特殊人群"),
+    # 咖啡因（P1A-12，开平市卫生健康局科普；Mayo 中文页被反爬 403，政府来源替代）
+    ("gov-caffeine-coffee", "http://www.kaiping.gov.cn/kpswsjkj/zwgk/ztlm/jkkpzs/content/post_3037114.html",
+     "怎么喝咖啡才健康（咖啡因摄入科普）", "疾病与健康知识"),
 ]
 
 ALL_MSD = (MSD_DISEASES + MSD_SYMPTOMS + MSD_TESTS + MSD_MED_SAFETY

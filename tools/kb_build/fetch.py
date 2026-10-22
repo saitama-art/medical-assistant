@@ -154,6 +154,14 @@ def main() -> None:
             return "cnsoc"
         if "beijing.gov.cn" in url:
             return "bwjw"
+        if "yantai.gov.cn" in url:
+            return "ytgov"
+        if "whsyy.net" in url:
+            return "whsyy"
+        if "shenyang.gov.cn" in url:
+            return "sywjw"
+        if "kaiping.gov.cn" in url:
+            return "kpswj"
         return "ext"
 
     for key, url, title, cat in list(WHO_EXTRA) + list(GOV_EXTRA):

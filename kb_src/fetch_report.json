@@ -1308,5 +1308,45 @@
     "title": "中国居民膳食指南（2022）核心准则解读",
     "category": "疾病与健康知识",
     "site": "bwjw"
+  },
+  {
+    "key": "gov-eye-care-computer",
+    "url": "https://www.yantai.gov.cn/art/2024/11/21/art_82990_3230440.html",
+    "status": 200,
+    "chars": 1044,
+    "ok": true,
+    "title": "长时间使用电脑如何保护眼睛（科学护眼指南）",
+    "category": "疾病与健康知识",
+    "site": "ytgov"
+  },
+  {
+    "key": "gov-missed-dose-whsyy",
+    "url": "https://www.whsyy.net/view_6130.html",
+    "status": 200,
+    "chars": 3343,
+    "ok": true,
+    "title": "漏服药的补服原则（武汉市第一医院）",
+    "category": "用药安全与特殊人群",
+    "site": "whsyy"
+  },
+  {
+    "key": "gov-missed-dose-shenyang",
+    "url": "https://wjw.shenyang.gov.cn/ztzl/xsxxjkdjt/202602/t20260227_4991893.html",
+    "status": 200,
+    "chars": 1145,
+    "ok": true,
+    "title": "漏服药物如何处理（沈阳市卫健委）",
+    "category": "用药安全与特殊人群",
+    "site": "sywjw"
+  },
+  {
+    "key": "gov-caffeine-coffee",
+    "url": "http://www.kaiping.gov.cn/kpswsjkj/zwgk/ztlm/jkkpzs/content/post_3037114.html",
+    "status": 200,
+    "chars": 3588,
+    "ok": true,
+    "title": "怎么喝咖啡才健康（咖啡因摄入科普）",
+    "category": "疾病与健康知识",
+    "site": "kpswj"
   }
 ]
