@@ -63,16 +63,42 @@ def extract_dayi(soup: BeautifulSoup) -> str:
 
 
 def extract_generic(soup: BeautifulSoup) -> str:
-    """通用正文抽取（WHO 等）：main/article 容器内的标题与段落块。"""
-    container = soup.find("main") or soup.find("article") or soup.body
-    if container is None:
+    """通用正文抽取（WHO/政府/医院/媒体等）。
+
+    候选容器：main/article，或 class 含 main/detail/content/article/text 的 div。
+    按**可抽取文本块**（h1-h3/p/li/td/th）的实际长度选最优——class 命名的布局
+    div 常有原始文本但无可抽取块（中关村医院页教训），不能按原始文本量选择。
+    """
+    def _blocks(container) -> str:
+        out = []
+        for el in container.find_all(["h1", "h2", "h3", "p", "li", "td", "th"]):
+            t = el.get_text(" ", strip=True)
+            if t:
+                out.append(t)
+        return "\n".join(out)
+
+    candidates = []
+    for tag in ("main", "article"):
+        el = soup.find(tag)
+        if el is not None:
+            candidates.append(el)
+    for div in soup.find_all("div"):
+        cls = " ".join(div.get("class") or []).lower()
+        if any(k in cls for k in ("main", "detail", "content", "article", "text")):
+            candidates.append(div)
+
+    best = ""
+    for c in candidates:
+        text = _blocks(c)
+        if len(text) > len(best):
+            best = text
+    if not best and soup.body is not None:
+        # 最终兜底（中关村医院页：正文表格不在任何命名容器内，按块抽取的 body
+        # 也能避开导航——块级过滤只收 h/p/li/td/th 长文本）
+        best = _blocks(soup.body)
+    if not best:
         raise ValueError("未找到正文容器")
-    blocks = []
-    for el in container.find_all(["h1", "h2", "h3", "p", "li", "td", "th"]):
-        t = el.get_text(" ", strip=True)
-        if t:
-            blocks.append(t)
-    return "\n".join(blocks)
+    return best
 
 
 def fetch_one(url: str, site_dir: Path, key: str, extractor) -> dict:
@@ -162,6 +188,12 @@ def main() -> None:
             return "sywjw"
         if "kaiping.gov.cn" in url:
             return "kpswj"
+        if "pumch.cn" in url:
+            return "pumch"
+        if "zgchospital.com" in url:
+            return "zgch"
+        if "news.cn" in url:
+            return "xinhua"
         return "ext"
 
     for key, url, title, cat in list(WHO_EXTRA) + list(GOV_EXTRA):

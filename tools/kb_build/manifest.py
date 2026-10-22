@@ -237,6 +237,15 @@ GOV_EXTRA = [
     # 咖啡因（P1A-12，开平市卫生健康局科普；Mayo 中文页被反爬 403，政府来源替代）
     ("gov-caffeine-coffee", "http://www.kaiping.gov.cn/kpswsjkj/zwgk/ztlm/jkkpzs/content/post_3037114.html",
      "怎么喝咖啡才健康（咖啡因摄入科普）", "疾病与健康知识"),
+    # 共病综合评估（P2B-08/C06，北京协和医院老年医学科科普）
+    ("hosp-geriatric-cga", "https://www.pumch.cn/detail/16378.html",
+     "老年综合评估（CGA）简述（北京协和医院）", "用药安全与特殊人群"),
+    # 就诊准备（PA-03，北京市中关村医院官方就诊指南）
+    ("hosp-visit-preparation", "https://www.zgchospital.com/consultation.html",
+     "门诊就诊指南与看病前准备（北京市中关村医院）", "症状与就医指引"),
+    # 儿童用药剂量（G06，新华网健康科普：按体重计算退热药剂量 + 就医时机）
+    ("media-children-fever-dose", "https://www.news.cn/enterprise/20260625/526b3be00dd74513a431f63832d41148/c.html",
+     "孩子发烧别慌张：测体温、选退热药、就医时机（新华网）", "用药安全与特殊人群"),
 ]
 
 ALL_MSD = (MSD_DISEASES + MSD_SYMPTOMS + MSD_TESTS + MSD_MED_SAFETY

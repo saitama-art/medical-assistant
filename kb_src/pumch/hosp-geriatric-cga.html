@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="ie ie8 lt9 lt10"><![endif]-->
+<!--[if IE 9]><html class="ie ie9 lt10"><![endif]-->
+<!--[if (gt IE 9) | !(IE)]><!--><html><!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta name="format-detection" content="telephone=no" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="author" content="www.fractal-technology.com">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<meta name="referrer" content="no-referrer" />
+
+<meta name="keywords" content="ååå»é¢,åäº¬ååå»é¢,ååé«é¢,åäº¬ååå»é¢é¦é¡µ,åäº¬ååå»é¢çµè¯,åå,åå,å»é¢,é«é¢,åäº¬ååé«é¢,åäº¬ååå»é¢å¦ç§,åäº¬ååå»é¢å°å,æå·" />
+<meta name="description" content="&nbsp;&nbsp;&nbsp; éçå¹´é¾çå¢é¿åè¡°èçåçï¼èå¹´äººåç§ççåè½éæ¸ä¸éï¼å¸¸æå¤ç§æ¢æ§ç¾çå±å­ï¼å ä¹è¡°å¼±ï¼frailtyï¼çåçï¼å¯ä»¥é æä¸åç¨åº¦çåè½ä¸§å¤±ï¼å½±åçæ´»è´¨éãèå¹´ç»¼åè¯ä¼°(comprehensive geriatric assessment, CGA)æ¯å¯¹èå¹´äººå»å­¦..." />
+
+<!-- <title>èå¹´ç»¼åè¯ä¼°ï¼CGAï¼ç®è¿° - åäº¬ååå»é¢ - ååå»é¢,åäº¬ååå»é¢,ååé«é¢,åäº¬ååå»é¢é¦é¡µ,åäº¬ååå»é¢çµè¯,åå,åå,å»é¢,é«é¢,åäº¬ååé«é¢,åäº¬ååå»é¢å¦ç§,åäº¬ååå»é¢å°å,æå·</title> -->
+<title>èå¹´ç»¼åè¯ä¼°ï¼CGAï¼ç®è¿° - åäº¬ååå»é¢ - ååå»é¢,åäº¬ååå»é¢,ååé«é¢,åäº¬ååå»é¢é¦é¡µ,åäº¬ååå»é¢çµè¯,åå,åå,å»é¢,é«é¢,åäº¬ååé«é¢,åäº¬ååå»é¢å¦ç§,åäº¬ååå»é¢å°å,æå·</title>
+<link href="/favicon.ico" type="image/x-icon" rel="shortcut icon"/>
+<link rel="stylesheet" type="text/css" href="/Public/static/themes/common1/css/global.css">
+<link rel="stylesheet" type="text/css" href="/Public/static/themes/common1/css/lyc.css">
+<link rel="stylesheet" type="text/css" href="/Public/static/themes/common1/slick/slick.css">
+<link rel="stylesheet" type="text/css" href="/Public/static/themes/common1/css/page.css">
+<script src="/Public/static/themes/common1/js/jquery.min.js"></script>
+<script src="/Public/static/themes/common1/js/global.js"></script>
+<script src="/Public/static/themes/common1/js/jquery.mousewheel.js"></script>
+<link rel="stylesheet" type="text/css" href="/Public/static/themes/common1/css/jquery.mCustomScrollbar.css">
+<script src="/Public/static/themes/common1/js/jquery.mCustomScrollbar.min.js"></script>
+<script src="/Public/static/themes/common1/slick/slick.js"></script>
+ <!--[if IE 8]><script type="text/javascript" src="/Public/static/themes/common1/js/PIE_IE678.js"></script><![endif]-->
+</head>
+
+<body> 
+	<link href="/Public/static/themes/myalert/global.css" rel="stylesheet" type="text/css" />
+<!-- <link href="/Public/static/themes/myalert/fix.css" rel="stylesheet" type="text/css" /> -->
+<div id="myalert-shadow" class="myalert-shadow"></div>
+<div id="myalert" class="dev-alert">
+  <div id="my_alert" class="inner">
+    <!-- <a href="javascript:;" onclick="myalert_hide();" class="guan"></a> -->
+    <h1 style="font-weight: 400;"></h1>
+    <div class="btns"><a id="my_ok" href="javascript:void(0);" class="button ok">ç¡®å®</a></div>
+  </div>
+</div>
+<script type="text/javascript">
+
+    function my_alert( title, url) {
+        $('#myalert, #myalert-shadow').show();
+        $('#myalert .inner h1').html(title);
+        if(url){
+            $('#my_ok').click(function(){
+                if (typeof(url) == 'function') {
+                    url();
+                    return false;
+                }else{
+                    window.location.href=url;
+                }
+                
+            });
+        }else{
+            $('#my_ok').click(function(){
+                $('#myalert, #myalert-shadow').hide();
+            });
+        }
+    }
+    function myalert_hide(){
+        $('#myalert, #myalert-shadow').hide();
+    }
+</script>
+	<div class="rightNav"><ul>
+    <li>
+        <a href="/register.html" target="_blank">
+            <span class="s1">
+                <img title="" src="/Uploads/Picture/2017/12/15/s5a3391c2731ce.png" title="" alt="">
+            </span>
+            <span class="s2">é¢çº¦æå·</span>
+        </a>
+    </li>
+    <li>
+        <a href="/visitinfo.html" target="_blank">
+            <span class="s1">
+                <img title="" src="/Uploads/Picture/2017/11/21/s5a13f10b7c2f1.png" title="" alt="">
+            </span>
+            <span class="s2">é¨è¯åºè¯</span>
+        </a>
+    </li>
+    <li>
+        <a href="/characteristic.html#part2" target="_blank">
+            <span class="s1">
+                <img title="" src="/Uploads/Picture/2017/11/21/s5a13f377cf196.png" title="" alt="">
+            </span>
+            <span class="s2">ç¹è²ç§å®¤</span>
+        </a>
+    </li>
+    <li>
+        <a href="https://telemedicine.pumch.cn/#/login" target="_blank">
+            <span class="s1">
+                <img title="" src="/Uploads/Picture/2019/08/15/s5d551e15a425b.png" title="" alt="">
+            </span>
+            <span class="s2">è¿ç¨å»ç</span>
+        </a>
+    </li>
+    <li>
+        <a href="/reportquery.html" target="_blank">
+            <span class="s1">
+                <img title="" src="/Uploads/Picture/2018/03/22/s5ab35182e9b81.png" title="" alt="">
+            </span>
+            <span class="s2">æ¥åæ¥è¯¢</span>
+        </a>
+    </li>
+    <li class="w li4">
+        <a href="javascript:;">
+            <span class="s1">
+                <img title="" src="/Uploads/Picture/2017/11/21/s5a13f3d214f87.png" title="" alt="">
+            </span>
+            <span class="s3">
+                <img title="" src="/Uploads/Picture/2017/11/21/s5a13f3d316bea.png" title="" alt="">
+            </span>
+        </a>
+        <div class="r_ewm">
+            <i></i>
+            <img title="" src="/Uploads/Picture/2023/04/19/s643fbead8553e.png" title="" alt="">
+        </div>
+    </li>
+    <li class="w">
+        <a href="javascript:;">
+            <span class="s1">
+                <img title="" src="/Uploads/Picture/2017/11/21/s5a13f42c76838.png" title="" alt="">
+            </span>
+            <span class="s3">
+                <img title="" src="/Uploads/Picture/2017/11/21/s5a13f42d6591f.png" title="" alt="">
+            </span>
+        </a>
+        <div class="r_ewm">
+            <i></i>
+            <img title="" src="/Uploads/Picture/2018/01/12/s5a588a95819b9.jpg" title="" alt="">
+        </div>
+    </li>
+    <li class="w">
+        <a href="javascript:;">
+            <span class="s1">
+                <img title="" src="/Uploads/Picture/2017/11/21/s5a13f487774a6.png" title="" alt="">
+            </span>
+            <span class="s3">
+                <img title="" src="/Uploads/Picture/2017/11/21/s5a13f4885951b.png" title="" alt="">
+            </span>
+        </a>
+        <div class="r_ewm">
+            <i></i>
+            <img title="" src="/Uploads/Picture/2018/01/12/s5a588aafcbb35.jpg" title="" alt="">
+        </div>
+    </li>
+
+    <li class="goto">
+        <a href="javascript:;">
+            <span class="s1">
+                <img title="" src="/Uploads/Picture/2017/11/21/s5a13f67f86b3d.png" title="" alt="">
+            </span>
+            <span class="s3">
+                <img title="" src="/Uploads/Picture/2017/11/21/s5a13f68083622.png" title="" alt="">
+            </span>
+        </a>
+    </li>
+</ul></div><div class="header"><a href="javascript:;" class="menu_h"><span>Menu</span></a>
+<div class="top">
+    <div class="wrap">
+                    <a href="https://www.pumch.cn/ICM/index.html" >ä¸´ç æ</a>            <a href="/centenary.html" >ç¾å¹´åå</a>            <a href="/en.html" class="en ">en</a>            <a href="http://www.pumch.cn/staff.html" >åå·¥ç</a>            <a href="http://www.pumch.cn/learning.html" >å­¦æ¯ç</a>            <a href="http://www.pumch.cn/patient.html" class="on">æ£èç</a>    </div>
+</div>
+<div class="nav">
+    <div class="wrap cf">
+        <div class="logo" edit_params="width%3D102%26height%3D86%26showAlt%3D1"><a href="http://www.pumch.cn/patient">
+    <img title="åäº¬ååå»é¢" alt="" src="/Uploads/Picture/2017/12/09/s5a2b951e74258.png">
+</a></div>        <div class="navList">
+            <ul class="cf">
+                <li>
+                        <a href="/register.html" class="one">é¢çº¦æå·<span class="open">+</span></a>
+                        <div class="secondNav">
+                                <a href="/register.html">APPé¢çº¦</a><a href="/register.html?tab=å½éå»çé¨é¢çº¦">å½éå»çé¨é¢çº¦</a><a href="/register.html?tab=é¶è¡å¡é¢çº¦">é¶è¡å¡é¢çº¦</a>                            </div>                    </li><li>
+                        <a href="/characteristic.html" class="one">ç¹è²è¯ç<span class="open">+</span></a>
+                        <div class="secondNav">
+                                <a href="/characteristic.html">çé¾çä¼è¯ä¸­å¿</a><a href="/characteristic.html#partlhmz">èåé¨è¯</a><a href="http://telemedicine.pumch.cn/#/login">è¿ç¨å»å­¦ä¸­å¿</a><a href="/characteristic.html#part2">ç¹è²ç§å®¤</a><a href="/characteristic.html#part3">ä¸ç§ä¸ç</a><a href="/characteristic.html#part4">è¯çæ°ææ¯</a>                            </div>                    </li><li>
+                        <a href="/doctors.html" class="one">å»çä»ç»</a>
+                                            </li><li>
+                        <a href="/department.html" class="one">ç§å®¤å¯¼èª</a>
+                                            </li><li>
+                        <a href="/visitinfo.html" class="one">å°±å»æå<span class="open">+</span></a>
+                        <div class="secondNav">
+                                <a href="/news_visitinfo.html">é¨è¯åºè¯è¡¨</a><a href="/regulations.html">è§ç« å¶åº¦</a><a href="/medical_notice.html">å°±å»é¡»ç¥</a><a href="/medical_guide.html">å»ä¿æå</a><a href="/nosocomial.html">ä½ç½®åæå¡æ¶é´</a><a href="/azimuth.html">é¢åå¯¼èª</a><a href="/community.html">ç¤¾åºè½¬è¯</a><a href="/price_publicity.html">ä»·æ ¼å¬ç¤º</a><a href="/query_service.html">æ¥è¯¢æå¡</a><a href="/letter_thanks.html">æè°¢ä¿¡</a><a href="/department_ims/guide/feedback.html">æè§åé¦</a><a href="https://pumchapp.pumch.cn/pages/pc/home/index">å»çæå¡</a><a href="/patientQA.html">æ£èé®ç­</a><a href="/reportquery.html">æ¥åæ¥è¯¢</a>                            </div>                    </li><li>
+                        <a href="/pnotice.html" class="one">å»é¢å¬å</a>
+                                            </li><li>
+                        <a href="/bignews.html" class="one">æ°é»ä¸­å¿<span class="open">+</span></a>
+                        <div class="secondNav">
+                                <a href="/bignews.html">éå¤§æ°é»</a><a href="/tends.html">å»é¢å¨æ</a><a href="/fronts.html">å»å­¦åæ²¿</a><a href="/medias.html">åªä½èç¦</a><a href="/humanities.html">äººæå³æ</a><a href="/videos.html">è§é¢æ°é»</a>                            </div>                    </li><li>
+                        <a href="/popular.html" class="one">å¥åº·ç§æ®</a>
+                                            </li><li>
+                        <a href="/centenary.html" class="one">ç¾å¹´é¢åº</a>
+                                            </li><li>
+                        <a href="/xhxy/index" class="one">è¥¿åé¢åº<span class="open">+</span></a>
+                        <div class="secondNav">
+                                <a href="/xhxy/index.html">é¦é¡µ</a><a href="/xhxy/new_introduce.html">å³äºè¥¿é¢</a><a href="/xhxy/new_brief_introduction.html">ç»¼åé¨è¯</a><a href="/xhxy/new_specialty.html">ç¹è²ä¸ç§</a><a href="/xhxy/new_business.html">å½éå»ç</a><a href="/xhxy/new_health_science.html">å¥åº·ç§æ®</a>                            </div>                    </li><li>
+                        <a href="/department_xionganyq.html" class="one">éå®é¢åº</a>
+                                            </li><li>
+                        <a href="https://www.cmm-pumch.gov.mo/" target="_blank" class="one">æ¾³é¨å»å­¦ä¸­å¿</a>
+                                            </li>            </ul>
+            <div class="ul" style="padding-top:0" edit_params="showLink%3D1%26title1Show%3D1%26title1Max%3D8"><li class="pc_displayNone"><a href="http://xhyxzz.pumch.cn/" target="_blank" class="one">ååå»å­¦æå¿</a></li>
+<!-- <li class="pc_displayNone"><a href="http://paper.pumch.cn/" target="_blank" class="one">ååé¢æ¥</a></li> -->
+<li class="pc_displayNone"><a href="/Uploads/xhyyysgdo/html/index.html" target="_blank" class="one">é¢å²å±</a></li><li class="pc_displayNone"><a href="/Uploads/xhyyblz2109/html/index.html" target="_blank" class="one">çåå±</a></li><li class="pc_displayNone"><a href="/Uploads/kyz200720/html/index.html?scene_id=51117035" target="_blank" class="one">æç«å±</a></li><li class="pc_displayNone"><a href="/Uploads/zxqdc120/html/index.html?scene_id=48343427" target="_blank" class="one">å¼ å­éªå±</a></li><li class="pc_displayNone"><a href="/Uploads/360yun/html/index.html" target="_blank" class="one">æ¾å®ªä¹å±</a></li></div>        </div>
+        <div class="shareNav cf" edit_params="showLink%3D1%26title1Show%3D1%26title1Max%3D8"><a href="http://xhyxzz.pumch.cn/" target="_blank" class="a1">ååå»å­¦æå¿</a>
+<!-- <a href="http://paper.pumch.cn/" target="_blank" class="a1">ååé¢æ¥</a> -->
+<!--<a href="/Uploads/blz360/index.html" target="_blank" class="a1">çåå±</a>
+<a href="javascript:void(0);" class="a1"></a>-->
+<div class="select">
+    <div class="t1">ååå±è§</div>
+    <div class="a1_list">
+        <a href="/Uploads/xhyyysgdo/html/index.html" target="_blank">é¢å²å±</a><a href="/Uploads/xhyyblz2109/html/index.html" target="_blank">çåå±</a><a href="/Uploads/kyz200720/html/index.html?scene_id=51117035" target="_blank">æç«å±</a><a href="/Uploads/zxqdc120/html/index.html?scene_id=48343427" target="_blank">å¼ å­éªå±</a><a href="/Uploads/360yun/html/index.html" target="_blank">æ¾å®ªä¹å±</a>    </div>
+</div>
+<a href="javascript:;" class="seachBtn" title="æç´¢"></a>
+<div class="seach_w">
+    <div class="inp">
+        <input id="keywords" type="text" placeholder="è¯·è¾å¥æç´¢åå®¹" />
+    </div>
+    <a href="javascript:;" class="btn_sea"></a>
+</div>
+<a href="javascript:;" class="shareBtn" title="åäº«"></a>
+<div class="share_w">
+    <div class="bdsharebuttonbox">
+        <a href="#" title="åäº«å°å¾®ä¿¡" class="popup_wx" data-cmd="weixin"></a>
+        <a href="#" title="åäº«å°qqå¥½å" class="popup_sqq" data-cmd="sqq"></a>
+        <a href="#" title="åäº«å°æ°æµªå¾®å" class="bds_tsina" data-cmd="tsina"></a>
+        <a href="#" title="åäº«å°qqç©ºé´" class="popup_qzone" data-cmd="qzone"></a>
+        <a href="#" title="åäº«å°è¾è®¯å¾®å" class="popup_tqf" data-cmd="tqf"></a>
+    </div>
+</div>
+
+<script>
+    $(function(){
+        $('.btn_sea').on('click', function(){
+            var keywords = $('#keywords').val();
+            if ( $.trim(keywords) == '' || keywords == 'è¯·è¾å¥æç´¢åå®¹' ) {
+                return false;
+            }
+
+            window.location.href = "/searchs/patient/" + keywords + ".html";
+        });
+
+        $('#keywords').on('keyup', function(e){
+            if(e.keyCode==13){
+                $('.btn_sea').click();
+            }
+        });
+    })
+</script>
+
+<script>
+    window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/Public/static/baiduShare/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+</script></div>    </div>
+</div></div><input type="hidden" id="catebynav" value="/news/xhyb"/>
+<script>
+    $(function(){
+        var now  = ($('#catebynav').val() && $('#catebynav').val() != 'javascript:void(0);' ) ? $('#catebynav').val() : window.location.pathname;
+        var href = '';
+        var hrefOver = '';
+        $('.header .navList ul li').each(function(index){
+            var _this = $(this);
+            href = _this.children('a').attr('href');
+            hrefOver = href.replace(now, '');
+            if(!hrefOver){
+                hrefOver = '.html';
+            }
+            if( href.indexOf(now) > -1 && hrefOver == '.html' ){
+                _this.addClass('on');
+                return false;
+            } else {
+                if(_this.find('.secondNav a').length > 0){
+                    _this.find('.secondNav a').each(function(i){
+                        href = $(this).attr('href');
+                        hrefOver = href.replace(now, '');
+                        if(!hrefOver){
+                            hrefOver = '.html';
+                        }
+                        if( href.indexOf(now) > -1 && hrefOver == '.html' ){
+                            _this.addClass('on');
+                            return false;
+                        }
+                    })
+                }
+            }
+        });
+        var cate = "34";
+        if(cate==5){
+            $('.header .navList ul li').eq(1).addClass('on').siblings().removeClass('on');
+        }
+    })
+</script>
+	<link rel="stylesheet" type="text/css" href="/Public/static/themes/common1/css/xf.css">
+<style>
+    .article .text img{max-width: 100%;height: auto;}
+    .article .text embed,.article .text video{max-width: 100%;height: auto;}
+    .header .nav .logo {padding-right:10px;}
+    .header .navList li .one {padding:0 13px;}
+    .viewnum_ajax i{display: none;}
+</style>
+<div class="body_box">
+    <div class="x-page3">
+        <div class="bread">
+	<div class="wrap">æ¨ç°å¨çä½ç½®ï¼ 
+	            <a href="/patient.html">é¦é¡µ</a>			 &gt; <a href="/news/xhyb.html">ååå»æ¥</a>	</div>
+</div>
+                <div class="article">
+            <div class="wrap clearfix">
+                <div class="main">
+                    <div class="t">èå¹´ç»¼åè¯ä¼°ï¼CGAï¼ç®è¿°</div>
+                    <div class="tip">
+                        <span>æ¶é´ï¼<i>2011.11.03</i></span>
+                        <!--<span class="viewnum_ajax">ç¹å»æ°ï¼<i></i> æ¬¡</span>-->
+                        <span>å­ä½ï¼<b class="small">å°</b><b class="big">å¤§</b></span>
+                        <span>åå¸æ¥æºï¼åç§èå¹´ç¤ºèçæ¿</span>                        <span>ä½èï¼çç§æ¢  åæçº¢</span>                    </div>
+                                        <div class="text">
+                                                                            <p><span >&nbsp;&nbsp;&nbsp; éçå¹´é¾çå¢é¿åè¡°èçåçï¼èå¹´äººåç§ççåè½éæ¸ä¸éï¼å¸¸æå¤ç§æ¢æ§ç¾çå±å­ï¼å ä¹è¡°å¼±ï¼frailtyï¼çåçï¼å¯ä»¥é æä¸åç¨åº¦çåè½ä¸§å¤±ï¼å½±åçæ´»è´¨éãèå¹´ç»¼åè¯ä¼°(comprehensive geriatric assessment, CGA)æ¯å¯¹èå¹´äººå»å­¦ãå¿çååè½ç­å¤é¡¹ç®ãå¤ç»´åº¦è¿è¡é´å®çè¯æ­è¿ç¨ï¼å·²ç»æä¸ºèå¹´å»å­¦å®è·µä¸­ä¸å¯ç¼ºå°çå·¥å·ä¹ä¸ï¼æ®æ­¤æåºç»´æææ¹ååè½ç¶æçå¤çæ¹æ³ï¼æå¤§éåº¦å°æé«æç»´æèå¹´äººççæ´»è´¨éãCGAå¨å½å¤å·²å¾å°å¹¿æ³åºç¨ï¼ä½æ¯å¨å½åæ è®ºæ¯å»å¡å·¥ä½èè¿æ¯æ£èåå®¶å±ç¾¤ä½ä¸­ï¼CGAçç¥æçè¿ä¸æ®åï¼çç»åºç¨æ´è¾å°ãå æ­¤ï¼æä»¬æ¦æ¬æ§ä»ç»CGAã<br />
+&nbsp;&nbsp;&nbsp; CGAçç®æ äººç¾¤ï¼æå¤ç§æ¢æ§ç¾çï¼å¤ç§èå¹´é®é¢æèå¹´ç»¼åå¾ï¼ä¼´æä¸åç¨åº¦çåè½æå®³ï¼è½éè¿CGAåå¹²é¢èè·ççè¡°å¼±èå¹´æ£èï¼èå¥åº·èäººæä¸¥éç¾ççæ£èï¼å¦ç¾çææãä¸¥éç´åãå®å¨åè½ä¸§å¤±ï¼ä¸éååCGAã<br />
+&nbsp;&nbsp;&nbsp; CGAçåå®¹ï¼ä¸»è¦åæ¬å¨é¢çå»çè¯ä¼°ãèº¯ä½åè½è¯ä¼°ãè®¤ç¥åå¿çåè½è¯ä¼°ï¼ä»¥åç¤¾ä¼/ç¯å¢å ç´ è¯ä¼°åä¸ªæ¹é¢ã<br />
+&nbsp;&nbsp;&nbsp; å¨é¢çç¾çè¯ä¼°åç®¡çæ¯CGAçéè¦åå®¹ï¼ä¸ä¼ ç»çåç§è¯æ²»è¿ç¨ä¸åï¼CGAé¤äºè¯ä¼°é«è¡åãç³å°¿çãå å¿çç­èå¹´æ¢æ§ç¾ççç¨åº¦ï¼æ´æ³¨éèå¹´é®é¢/ç»¼åå¾çç­æ¥ï¼å¦è®°å¿éç¢ãè§ååå¬åä¸éãçé½¿è±è½ãè¥å»ä¸è¯ãéª¨è´¨çæ¾ä¸è·åéª¨æãç¼çåå°¿ä¾¿å¤±ç¦ç­ï¼ï¼èè¿äºé®é¢å¸¸è¢«è¯¯è§£ä¸º&ldquo;æ­£å¸¸è¡°èç°è±¡&rdquo;æªå¾å°åºæçå¤çãå¦å¤ï¼å¤éç¨è¯ç®¡çå¨CGAä¸­ä¸å¯æç¼ºãå¨ä¼ ç»çå»çæ¨¡å¼ä¸­ï¼èå¹´æ£èå¸¸è¾è½¬å¤ä¸ªä¸ç§å°±è¯ï¼æ®éå­å¨çé®é¢æ¯è¯¥ç¨çè¯æªç¨ï¼è¯¥åçè¯æªåï¼&ldquo;å¤æ¹çå¸&rdquo;ï¼å¼èµ·è¯ç©å¯ä½ç¨ã<br />
+&nbsp;&nbsp;&nbsp; å¨é¢çåè½è¯ä¼°æ¯CGAçåºç³ï¼åæ¶åç°èå¹´é®é¢ï¼å¹¶è¿è¡é¢é²ï¼åå®¹è§ä¸è¡¨ãä¾å¦æå¹³è¡¡åæ­¥æéç¢èæè·åéª¨æçé£é©ï¼çæ´»ä¸è½èªçèå¦å¾ä¸å°æ¯æåå¸®å©ï¼å¶å¥åº·æåµä¼æç»­æ¶åï¼ç´åçæ©æè¯çå¯å»¶ç¼ç¾çè¿å±ãä¸éçè§ååå¬åå¾ä¸å°çº æ­£ä¼ä½¿èå¹´äººè¡ä¸ºéç¼©ï¼è±ç¦»ç¤¾ä¼ã&nbsp;<br />
+&nbsp;&nbsp;&nbsp; æ­¤å¤ï¼ç¤¾ä¼æ¯æç³»ç»åç»æµæåµå¯¹è¡°å¼±å¤ççèå¹´æ£èå¾éè¦ãäºè§£æ£èçå±å®¶ç¯å¢åç»æµåºç¡ãç§æèçè´ææåµï¼è¯ä¼°æ£èå±å®¶ç¯å¢çæ´»å¨å®å¨æ§ï¼å¶å®åçå¯è¡çç»¼åå¹²é¢æªæ½ï¼æç¡®å¯ä»¥ç§é¡¾åå¸®å©èå¹´æ£èçäººåç­ã<br />
+&nbsp;&nbsp;&nbsp; CGAçå®æ½èååºæï¼é´äºCGAæ¶åçåå®¹å®½å¹¿åç¹æï¼å¨ä¸´åºå®è·µä¸­ï¼â ç±å¤å­¦ç§å¢éï¼åæ¬èå¹´ç§å»çãè¥å»å¸ãä¸´åºè¯å¸ãè¯­è¨æ²»çå¸ãä¸´åºå¿çå¸ãç¤¾ä¼å·¥ä½èåæ¤å£«ç­ï¼å¨é¨è¯ãä½é¢é¨æèäººé¢å®æï¼â¡ä¹å¯ç±èå¹´ç§å»çåæ­¥è¿è¡ï¼å¨åæ¬¡å°±è¯æ¶åå¤çå³é®é®é¢å¹¶ç»åºéè¦çå»ºè®®ï¼å¨éåçå°±è¯ä¸­åå®åå¶å®çç­æ¥è¯ä¼°ï¼å¿è¦æ¶è¯·æ¤å£«ãç¤¾ä¼å·¥ä½èä»¥åå¶ä»ä¸ç§çå»çå¦éª¨ç§ãååæ³ç§ãåº·å¤ççç§ç­åä¸è¯ä¼°åæ²»çå¹²é¢ã<br />
+&nbsp;&nbsp;&nbsp; æ»ä¹ï¼CGAéè¦å»å¡äººåãæ£èåå®¶å±å±ååä¸ï¼ç®æ æ¯ç»´æèå¹´æ£èçèº«å¿å¥åº·ãèº¯ä½åç¤¾ä¼åè½ï¼æé«çæ´»è´¨éï¼è¿ä¹æ¯ç°ä»£å»å­¦æ¨¡å¼çåå®ä½ç°ã</span></p>
+<p><br />
+<span ><strong>èå¹´ç»¼åè¯ä¼°çåå®¹ãç­æ¥æ¹æ³åå¹²é¢æªæ½å°ç»è¡¨<img alt="" src="/Uploads/UploadFiles/yydt/2011/11/2011113143655.jpg"  /></strong></span><br />
+&nbsp;</p>
+                    </div>
+                    <div class="share_details">
+                        <div class="bdsharebuttonbox">
+                            <a href="#" title="åäº«å°å¾®ä¿¡" class="popup_wx" data-cmd="weixin"></a>
+                            <a href="#" title="åäº«å°qqå¥½å" class="popup_sqq" data-cmd="sqq"></a>
+                            <a href="#" title="åäº«å°æ°æµªå¾®å" class="bds_tsina" data-cmd="tsina"></a>
+                            <a href="#" title="åäº«å°qqç©ºé´" class="popup_qzone" data-cmd="qzone"></a>
+                            <a href="#" title="åäº«å°è¾è®¯å¾®å" class="popup_tqf" data-cmd="tqf"></a>
+                        </div>
+                    </div>
+                    <div class="handle">
+                    	                    	<a href="/detail/16377.html" class="prev">ä¸ä¸æ¡ï¼æé¢ç¬¬ä¸å±âå¹¸ç¦é©¿ç«âè¾åä¼èå©å¬å¼</a>                    	<a href="/detail/16379.html" class="next">ä¸ä¸æ¡ï¼é¦å±âåå-éæ®éæ¯èå¹´å»å­¦è®ºåâå¨...</a>                    </div>
+                </div>
+
+                <div class="side">
+                    <div class="t">éå¤§æ°é»</div>
+                    <ul class="list">
+                        <li class="middle"><a href="/detail/47001.html" target="_blank">åå®ä¸ç§»èµ°ä¸­å½ç¹è²å«çä¸å¥åº·åå±éè·¯ | ä¹ è¿å¹³æ»ä¹¦è®°éè¦è®²è¯å¼åå¨é¢ç­çåå</a></li><li class="middle"><a href="/detail/46994.html" target="_blank">åå®ä¸ç§»èµ°ä¸­å½ç¹è²å«çä¸å¥åº·åå±éè·¯ | ä¹ è¿å¹³æ»ä¹¦è®°éè¦è®²è¯å¼åå¨é¢ç­çåå</a></li><li class="middle"><a href="/detail/46974.html" target="_blank">æ°ææ³å¼é¢æ°å¾ç¨ä¸¨ä»¥äººæ°ä¸ºä¸­å¿ å å¿«å»ºè®¾å¥åº·ä¸­å½</a></li><li class="middle"><a href="/detail/46964.html" target="_blank">å­¦ä¹ æ¶é´ | ä¹ è¿å¹³åºå¸­å¨å½å«çä¸å¥åº·å¤§ä¼å¹¶åè¡¨éè¦è®²è¯</a></li><li class="middle"><a href="/detail/46956.html" target="_blank">æ°åç¤¾ | ä¹ è¿å¹³æ»ä¹¦è®°å¼é¢å¥åº·ä¸­å½å»ºè®¾</a></li><li class="middle"><a href="/detail/46948.html" target="_blank">ãäººæ°æ¥æ¥ã| å¤¯å®ä¸­å½å¼ç°ä»£åçå¥åº·æ ¹åºââä¹ è¿å¹³æ»ä¹¦è®°å¼é¢å¥åº·ä¸­å½å»ºè®¾</a></li><li class="middle"><a href="/detail/46940.html" target="_blank">æ°åç¤¾ | ä¹ è¿å¹³æ»ä¹¦è®°åå«çå¥åº·å·¥ä½èçæäº</a></li><li class="middle"><a href="/detail/46915.html" target="_blank">ä¸´åºç ç©¶ææ | å¤å/é¾æ²»æ§èªèº«åç«æ§æº¶è¡æ§è´«è¡æ²»çè¿æ¥âèè¯æ°ç¨âæ°è¯æ®</a></li><li class="middle"><a href="/detail/46907.html" target="_blank">å»çº¿ä¼ ç | åäº¬ååå»é¢æ°é»éè§</a></li><li class="middle"><a href="/detail/46886.html" target="_blank">ç¾å¹´äºé´Â·åååå | è¸å¤ç§å¯ä¸»ä»»é­è¶ï¼å¨ç¾å¹´åæ ä¸ï¼æ¾å°èªå·±çä½ç½®</a></li>                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="pubc-box"><style>
+        .pubc-box .list .item.i1 .img {background: url(/Uploads/Picture/2017/12/15/s5a3388c78ca06.png) center no-repeat;}
+        .pubc-box .list .item.i1:hover .img{background-image:url(/Uploads/Picture/2017/11/28/s5a1d090c0cdaf.png)}
+    </style><style>
+        .pubc-box .list .item.i2 .img {background: url(/Uploads/Picture/2017/12/15/s5a338807c130a.png) center no-repeat;}
+        .pubc-box .list .item.i2:hover .img{background-image:url(/Uploads/Picture/2017/11/28/s5a1d090d196cd.png)}
+    </style><style>
+        .pubc-box .list .item.i3 .img {background: url(/Uploads/Picture/2017/11/25/s5a193a55cdad1.png) center no-repeat;}
+        .pubc-box .list .item.i3:hover .img{background-image:url(/Uploads/Picture/2017/11/28/s5a1d090e27cea.png)}
+    </style><style>
+        .pubc-box .list .item.i4 .img {background: url(/Uploads/Picture/2017/11/25/s5a193a56b7374.png) center no-repeat;}
+        .pubc-box .list .item.i4:hover .img{background-image:url(/Uploads/Picture/2017/11/28/s5a1d090f300ab.png)}
+    </style><style>
+        .pubc-box .list .item.i5 .img {background: url(/Uploads/Picture/2017/11/25/s5a193a57bd3f3.png) center no-repeat;}
+        .pubc-box .list .item.i5:hover .img{background-image:url(/Uploads/Picture/2017/11/28/s5a1d0910575e2.png)}
+    </style><style>
+        .pubc-box .list .item.i6 .img {background: url(/Uploads/Picture/2017/11/25/s5a193a58be013.png) center no-repeat;}
+        .pubc-box .list .item.i6:hover .img{background-image:url(/Uploads/Picture/2017/11/28/s5a1d09115fcf4.png)}
+    </style><style>
+        .pubc-box .list .item.i7 .img {background: url(/Uploads/Picture/2017/11/25/s5a193a59b8256.png) center no-repeat;}
+        .pubc-box .list .item.i7:hover .img{background-image:url(/Uploads/Picture/2017/11/28/s5a1d091268852.png)}
+    </style>
+<div class="block">
+    <div class="title1">äºè§£è¿äºæå¯è½å¯¹æ¨çå°±è¯ææå¸®å©</div>
+    <div class="list clearfix">
+        <div class="item i1">
+                <a class="vertical" href="/visitinfo.html">
+                    <div class="icon-box">
+                        <div class="img">
+                        </div>
+                        <div class="h2">é¨è¯åºè¯è¡¨</div>
+                    </div>
+                </a>
+            </div><div class="item i2">
+                <a class="vertical" href="/medical_notice.html">
+                    <div class="icon-box">
+                        <div class="img">
+                        </div>
+                        <div class="h2">å°±å»é¡»ç¥</div>
+                    </div>
+                </a>
+            </div><div class="item i3">
+                <a class="vertical" href="/azimuth.html">
+                    <div class="icon-box">
+                        <div class="img">
+                        </div>
+                        <div class="h2">æ¹ä½æå</div>
+                    </div>
+                </a>
+            </div><div class="item i4">
+                <a class="vertical" href="/characteristic.html#part3">
+                    <div class="icon-box">
+                        <div class="img">
+                        </div>
+                        <div class="h2">ä¸ç§ä¸ç</div>
+                    </div>
+                </a>
+            </div><div class="item i5">
+                <a class="vertical" target="_blank" href="http://ims.pumch.cn/">
+                    <div class="icon-box">
+                        <div class="img">
+                        </div>
+                        <div class="h2">å½éå»çé¨</div>
+                    </div>
+                </a>
+            </div><div class="item i6">
+                <a class="vertical" href="/department_tijzx.html">
+                    <div class="icon-box">
+                        <div class="img">
+                        </div>
+                        <div class="h2">å¥åº·ä½æ£</div>
+                    </div>
+                </a>
+            </div><div class="item i7">
+                <a class="vertical" href="/popular.html">
+                    <div class="icon-box">
+                        <div class="img">
+                        </div>
+                        <div class="h2">å¥åº·ç§æ®</div>
+                    </div>
+                </a>
+            </div>    </div>
+</div></div>
+    </div>
+</div>
+<script>
+setTimeout(function(){
+    $.get('/Article/Index/viewnum.html',{ id:16378 },function(data){
+        if(data.status){
+            console.log('oooos')
+            $('.viewnum_ajax i').text( data.info );
+        }
+    })
+    $('.viewnum_ajax i').show();
+}, 1)
+var t = $(".article .main .text").html();
+var v = t.replace('<!--','').replace('-->','');
+$(".article .main .text").html(v);
+function getExplorer() {
+    var type,explorer = window.navigator.userAgent;
+    //ie
+    if (explorer.indexOf("MSIE") >= 0) {type='ie';}
+    //firefox
+    else if (explorer.indexOf("Firefox") >= 0) {type='Firefox';}
+    //Chrome
+    else if(explorer.indexOf("Chrome") >= 0){type='Chrome';}
+    //Opera
+    else if(explorer.indexOf("Opera") >= 0){type='Opera';}
+    //Safari
+    else if(explorer.indexOf("Safari") >= 0){type='Safari';}
+    return type;
+}
+if(getExplorer() != 'ie'){
+    $('body').find('embed').each(function(index){
+        var _that    = $(this);
+        var width    = _that.width();
+        var height   = _that.height();
+        var src      = _that.attr('data-src');
+        if(src){
+            _that.after('<video controls width="'+width+'" height="'+height+'">\
+                <source src="' + src + '" type="video/mp4">\
+                <p>è¯·ä½¿ç¨è°·æ­,ç«ç,IE10ãä»¥ä¸çæ¬çæµè§å¨</p>\
+            </video>');
+            _that.remove();
+        }
+    })
+}
+$(function() {
+    $('.small').on('click', function() {
+        var text = $(".article .main .text"),
+            size = parseInt(text.css("fontSize"));
+        size-=2;
+        text.css({fontSize:size});
+        text.find('p span').css({fontSize:size});
+    });
+
+    $('.big').on('click', function() {
+        var text = $(".article .main .text"),
+            size = parseInt(text.css("fontSize"));
+
+        if( size < 22 ) {
+            size+=2;
+            text.css({fontSize:size});
+            text.find('p span').css({fontSize:size});
+        }
+    });
+});
+</script>
+
+	<div class="footer">
+    <div class="link"><div class="wrap cf">
+    <span class="l">åæé¾æ¥ï¼</span>
+    <div class="a">
+    	    	<a  href="http://www.nhc.gov.cn/"  target="_blank">ä¸­åäººæ°å±åå½å½å®¶å«çå¥åº·å§åä¼</a><a  href="http://wjw.beijing.gov.cn/"  target="_blank">åäº¬å¸å«çå¥åº·å§åä¼</a><a  href="http://www.cams.ac.cn/"  target="_blank">ä¸­å½å»å­¦ç§å­¦é¢</a><a  href="http://www.pumf.org.cn/"  target="_blank">åäº¬ååå»å­¦åºéä¼</a><a  href="http://www.xiehekjkf.com/"  target="_blank">ååç§æå¼åæéè´£ä»»å¬å¸</a><a class="last" href="http://www.xiehejx.com/"  target="_blank">åååå¦å</a>    </div>
+</div></div>    <div class="copy"><div class="wrap cf">
+    <div class="left">
+        <div class="siteMap">
+                        <a href="/sitemap.html">ç½ç«å°å¾</a><a href="/research/gudie.html">å³äºæä»¬</a>        </div>
+        <p class="cf address"><span>å°ããåï¼</span><span class="div"><b>ï¼ä¸åé¢åºï¼åäº¬å¸ä¸ååºå¸åºå­ä¸å·ï¼100730ï¼</b><b>ï¼è¥¿åé¢åºï¼åäº¬å¸è¥¿ååºå¤§æ¨ä»è¡å41å·ï¼100032</b></span></p>
+        <p>æå¡ç­çº¿ï¼ 010-69151188ï¼ä¸åé¢åºï¼ï¼69158100ï¼è¥¿åé¢åºï¼</p>
+    </div>
+    <div class="right">
+        <p>Copyright åäº¬ååå»é¢ All Rights Reserved. æ¬ç«åå®¹ä»ä¾åèï¼ä¸ä½ä¸ºè¯æ­åå»çä¾æ®            <br/> äº¬ICP å¤ 05067313å·-5 æä¿ç½å®å¤æ¡å·ï¼1101010023 äº¬å«ç½å®¡å­ã2014ãç¬¬39å·</p>
+        <p><a href="http://www.fractal-technology.com" target="_blank">ç½ç«å»ºè®¾</a>ï¼<a href="http://www.fractal-technology.com" target="_blank">åäº¬åå½¢ç§æ</a></p>
+    </div>
+</div></div></div>
+<script>
+window.onload = function(){
+	if($(window).width()<1262){
+		anchor();
+		//çå¬è§¦åæä½
+		function hashChangeFire(){
+		    var hh = 10;
+			if($('.header').css("position") === "fixed"){
+				hh = hh+$('.header').height();
+			}
+		    var id = window.location.href.split('#');
+			id = '#'+id[id.length-1];
+			try{
+				$('html,body').animate({scrollTop:$(id).offset().top-hh});
+			}catch (e){
+				console.log(e);
+			}
+		}
+		//urlååçå¬å¨
+		if( ('onhashchange' in window) && ((typeof document.documentMode==='undefined') || document.documentMode==8)) {
+		    // æµè§å¨æ¯æonhashchangeäºä»¶
+		    window.onhashchange = hashChangeFire;  // TODOï¼å¯¹åºæ°çhashæ§è¡çæä½å½æ°
+		} else {
+		    // ä¸æ¯æåç¨å®æ¶å¨æ£æµçåæ³
+		    setInterval(function() {
+		        // æ£æµhashå¼æå¶ä¸­æä¸æ®µæ¯å¦æ´æ¹çå½æ°ï¼ å¨ä½çæ¬çiEæµè§å¨ä¸­éè¿window.location.hashååºçæåå¶å®çæµè§å¨ä¸åï¼è¦æ³¨æ
+		        var ischanged = isHashChanged();
+		        if(ischanged) {
+		            hashChangeFire();  // TODOï¼å¯¹åºæ°çhashæ§è¡çæä½å½æ°
+		        }
+		    }, 150);
+		}
+	}
+}
+</script>
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+	var hm = document.createElement("script");
+	hm.src = "https://hm.baidu.com/hm.js?e433a0b553c50c4663c2ef927781bc71";
+	var s = document.getElementsByTagName("script")[0]; 
+	s.parentNode.insertBefore(hm, s);
+})();
+</script>
+<script>
+var _hmt = _hmt || [];
+(function() {
+	var hm = document.createElement("script");
+	hm.src = "https://hm.baidu.com/hm.js?fa06b5d83a50d14d11bd70f117d24063";
+	var s = document.getElementsByTagName("script")[0]; 
+	s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<script type="text/javascript">
+var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cspan style='display:none;' id='cnzz_stat_icon_1272450198'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s13.cnzz.com/z_stat.php%3Fid%3D1272450198%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));
+</script>
+
+</body>
+</html>
