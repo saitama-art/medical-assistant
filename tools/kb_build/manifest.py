@@ -218,5 +218,14 @@ WHO_EXTRA = [
      "癌症（WHO 实况报道）", "疾病与健康知识"),
 ]
 
+# 中国居民膳食指南（2022）——政府/学会权威原文（72 题缺口：饮水量 P0-12、
+# 食品标签 P0-14、蔬果量/均衡搭配强化 P0-04/P0-09/K06；URL 逐个 curl 验证 200）
+GOV_EXTRA = [
+    ("gov-dietary-balance-eight", "http://dg.cnsoc.org/article/04/J4-AsD_DR3OLQMnHG0-jZA.html",
+     "中国居民膳食指南（2022）平衡膳食八准则", "疾病与健康知识"),
+    ("gov-dietary-core-criteria", "https://wjw.beijing.gov.cn/xwzx_20031/xwfb/202610/t20261021_4913349.html",
+     "中国居民膳食指南（2022）核心准则解读", "疾病与健康知识"),
+]
+
 ALL_MSD = (MSD_DISEASES + MSD_SYMPTOMS + MSD_TESTS + MSD_MED_SAFETY
            + MSD_COMMON_HEALTH + MSD_NUTRITION + MSD_P1 + MSD_P2 + MSD_EXTRA)
