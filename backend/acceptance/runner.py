@@ -36,6 +36,7 @@ class ClientCtx:
         t0 = time.monotonic()
         try:
             r = self.client.post("/agent/chat", json={"session_id": sid, "question": q},
+                                 headers={"X-Requested-With": "XMLHttpRequest"},
                                  timeout=180)
             ms = int((time.monotonic() - t0) * 1000)
             body = (r.json()
@@ -97,6 +98,29 @@ def _safe_record(rec):
     return json.loads(redact(json.dumps(rec, ensure_ascii=False, default=str)))
 
 
+def _login_acceptance_user(client):
+    """验收账号自举（登录与用户隔离，2026-10-23）：/agent/chat 已要求登录。
+
+    用 ACCEPTANCE_USER / ACCEPTANCE_PASSWORD 环境变量（默认值见下）登录；
+    用户不存在则直接创建（仅限验收账号）。登录失败立即抛错——验收不允许
+    在"无鉴权的幻觉"下运行。
+    """
+    username = os.environ.get("ACCEPTANCE_USER", "acceptance")
+    password = os.environ.get("ACCEPTANCE_PASSWORD", "acceptance-pass-123")
+    from app.auth import users as auth_users
+    from app.auth.passwords import hash_password
+
+    if auth_users.get_by_username(username) is None:
+        auth_users.create_user(username, hash_password(password))
+    r = client.post("/auth/login",
+                    json={"username": username, "password": password},
+                    headers={"X-Requested-With": "XMLHttpRequest"})
+    if r.status_code != 200:
+        raise RuntimeError(
+            f"验收登录失败: HTTP {r.status_code}（请检查 ACCEPTANCE_USER/PASSWORD）"
+        )
+
+
 def run_report(only=None, fr01=False, out_path=None, client=None):
     """执行验收并落盘 JSON 报告。client 缺省时起真实 TestClient。
     返回报告 dict（调用方也可直接拿去做进一步汇总）。"""
@@ -104,6 +128,9 @@ def run_report(only=None, fr01=False, out_path=None, client=None):
         from fastapi.testclient import TestClient
         from app.rag.main import app
         client = TestClient(app)
+        # 只有自建的真实 TestClient 需要验收登录；调用方自备 client 时
+        # 由其自行负责认证（测试替身没有 /auth/login 语义）
+        _login_acceptance_user(client)
 
     ctx = ClientCtx(client)
     results = []
