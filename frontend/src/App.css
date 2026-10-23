@@ -463,3 +463,74 @@ body {
   .input-area button { padding: 10px 18px; }
   .upload-btn span { display: none; }
 }
+
+/* ---------- 登录页（登录与用户隔离，2026-10-23） ---------- */
+.loading-screen {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary); font-size: 15px;
+}
+.login-shell {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: var(--bg); padding: 16px;
+}
+.login-card {
+  width: 100%; max-width: 360px; background: var(--sidebar-bg);
+  border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-lg);
+  padding: 28px 24px; display: flex; flex-direction: column; gap: 14px;
+}
+.login-icon { font-size: 34px; text-align: center; }
+.login-card h1 { font-size: 18px; text-align: center; margin: 0; }
+.login-sub { text-align: center; color: var(--text-secondary); font-size: 13px; margin: 0 0 6px; }
+.login-card label {
+  display: flex; flex-direction: column; gap: 6px;
+  font-size: 13px; color: var(--text-secondary);
+}
+.login-card input {
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 14px; color: var(--text); outline: none;
+}
+.login-card input:focus { border-color: var(--primary); }
+.login-error {
+  margin: 0; color: var(--danger); background: var(--danger-bg);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px;
+}
+.login-card button[type="submit"] {
+  padding: 10px; border: none; border-radius: 8px; cursor: pointer;
+  background: var(--primary); color: #fff; font-size: 15px;
+}
+.login-card button[type="submit"]:disabled { opacity: .6; cursor: default; }
+.login-card button[type="submit"]:hover:not(:disabled) { background: var(--primary-dark); }
+
+/* ---------- 旧数据导入横幅 ---------- */
+.import-banner {
+  margin: 0 auto 10px; max-width: 860px; padding: 10px 14px;
+  background: var(--primary-light); color: var(--primary-dark);
+  border: 1px solid #a5f3fc; border-radius: 10px; font-size: 13px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.import-banner button {
+  border: 1px solid var(--primary); background: #fff; color: var(--primary-dark);
+  border-radius: 6px; padding: 4px 12px; font-size: 13px; cursor: pointer;
+}
+.import-banner button:hover { background: var(--primary-light); }
+
+/* ---------- 侧边栏底部（用户 + 退出） ---------- */
+.sidebar-footer {
+  margin-top: auto; padding: 10px 12px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.sidebar-user {
+  font-size: 13px; color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.logout-btn {
+  flex: none; border: 1px solid var(--border); background: #fff;
+  color: var(--text-secondary); border-radius: 6px; padding: 4px 10px;
+  font-size: 12px; cursor: pointer;
+}
+.logout-btn:hover { color: var(--danger); border-color: var(--danger); }
+
+.suggestion-chip.start-chat { margin-top: 10px; }
+
+.conv-list { flex: 1; min-height: 0; }
+.sidebar { display: flex; flex-direction: column; }

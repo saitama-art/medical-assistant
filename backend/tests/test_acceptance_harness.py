@@ -20,7 +20,8 @@ class _FakeClient:
         self.mode = mode
         self.calls = 0
 
-    def post(self, path, json=None, timeout=None):
+    def post(self, path, json=None, timeout=None, headers=None):
+        # headers：runner 自登录与用户隔离改造起会带 X-Requested-With（CSRF 防线）
         self.calls += 1
         resp = MagicMock()
         resp.headers = {"content-type": "application/json"}
