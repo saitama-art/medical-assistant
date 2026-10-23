@@ -119,6 +119,14 @@ def _login_acceptance_user(client):
         raise RuntimeError(
             f"验收登录失败: HTTP {r.status_code}（请检查 ACCEPTANCE_USER/PASSWORD）"
         )
+    # 登录后必须立刻验证凭证回传：Cookie 属性（Secure/SameSite）若与
+    # TestClient 的 base_url 不匹配，会在后续请求全部 401——此处 fail-fast
+    me = client.get("/auth/me")
+    if me.status_code != 200:
+        raise RuntimeError(
+            f"验收凭证回传失败: /auth/me HTTP {me.status_code}"
+            "（检查 Secure Cookie 与 TestClient base_url 的 scheme 匹配）"
+        )
 
 
 def run_report(only=None, fr01=False, out_path=None, client=None):
@@ -127,7 +135,9 @@ def run_report(only=None, fr01=False, out_path=None, client=None):
     if client is None:
         from fastapi.testclient import TestClient
         from app.rag.main import app
-        client = TestClient(app)
+        # base_url 必须 https：登录 Cookie 带 Secure，http.cookiejar 不会
+        # 经 http 回传（2026-10-23 验收实录：用 http 导致 48 题全部 401 blocked）
+        client = TestClient(app, base_url="https://testserver")
         # 只有自建的真实 TestClient 需要验收登录；调用方自备 client 时
         # 由其自行负责认证（测试替身没有 /auth/login 语义）
         _login_acceptance_user(client)
