@@ -230,9 +230,19 @@ class TestAgentChatAuthz(ApiTestBase):
     def test_chat_invalid_session_id_400(self):
         c = self._client()
         _login(c, "user-a", "pw-a-123456")
-        for bad in ("../evil", "x" * 65, "", "a b"):
+        # 仅"空/纯空白/超长"拒绝；字符集不限制（历史验收用例用中文 session_id，
+        # 持久化层对非白名单 id 本来就是静默跳过，见 session.py C-6 口径）
+        for bad in ("", "   ", "x" * 65):
             r = self._chat(c, bad, "问题")
             self.assertEqual(r.status_code, 400, f"sid={bad!r}")
+
+    def test_chat_chinese_session_id_accepted(self):
+        c = self._client()
+        _login(c, "user-a", "pw-a-123456")
+        r = self._chat(c, "T-12-二甲双胍", "它的用法用量呢？")
+        self.assertEqual(r.status_code, 200)
+        msgs = c.get(f"/conversations/T-12-二甲双胍/messages").json()["messages"]
+        self.assertEqual(msgs[0]["content"], "它的用法用量呢？")
 
     def test_chat_happy_path_writes_history_and_owner_file(self):
         c = self._client()

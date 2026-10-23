@@ -82,10 +82,6 @@ class AgentChatRequest(BaseModel):
     question: str
 
 
-# session_id 与 session.py 的持久化白名单同一口径（owner 子目录名也来自它）
-_SID_SAFE = re.compile(r"[A-Za-z0-9_-]{1,64}")
-
-
 @app.post("/agent/chat")
 def agent_chat(req: AgentChatRequest, request: Request,
                user=Depends(deps.get_current_user)):
@@ -102,7 +98,10 @@ def agent_chat(req: AgentChatRequest, request: Request,
 
     deps.csrf_protect(request)
 
-    if not _SID_SAFE.fullmatch(req.session_id or "") or not req.question.strip():
+    # session_id 口径：非空、≤64 字符即接受（历史客户端/验收用例含中文 id；
+    # 落盘文件名由 session.py 做哈希兜底，见 _file_stem）。 question 非空。
+    if (not req.session_id or not req.session_id.strip()
+            or len(req.session_id) > 64 or not req.question.strip()):
         raise HTTPException(status_code=400, detail=respond.INVALID_ARGS_REPLY)
 
     owner = int(user["id"])
