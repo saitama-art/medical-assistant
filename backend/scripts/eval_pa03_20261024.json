@@ -1,0 +1,198 @@
+{
+  "target": {
+    "question": "看医生前应该准备哪些信息？",
+    "doc": "门诊就诊指南与看病前准备"
+  },
+  "target_results": {
+    "A_baseline_k10": {
+      "top10": [
+        "药物安全性和有效性概述_默沙东诊疗手册.pdf",
+        "常见的医疗检查（总览）_默沙东诊疗手册.pdf",
+        "血尿_默沙东诊疗手册.pdf",
+        "常见的医疗检查（总览）_默沙东诊疗手册.pdf",
+        "影响药物反应的因素（年龄_特殊人群）_默沙东诊疗手册.pdf",
+        "常见的医疗检查（总览）_默沙东诊疗手册.pdf",
+        "抑郁症_默沙东诊疗手册.pdf",
+        "计算机断层扫描（CT）_默沙东诊疗手册.pdf",
+        "孕期用药_默沙东诊疗手册.pdf",
+        "痛经_默沙东诊疗手册.pdf"
+      ],
+      "target_rank": null,
+      "target_rank_in_k50": 14
+    },
+    "B_rerank_k50": {
+      "top10": [
+        "门诊就诊指南与看病前准备（北京市中关村医院）_中关村医院.pdf",
+        "脱发_默沙东诊疗手册.pdf",
+        "脑卒中（中风）_默沙东诊疗手册.pdf",
+        "血尿_默沙东诊疗手册.pdf",
+        "头痛概述_默沙东诊疗手册.pdf",
+        "常见的医疗检查（总览）_默沙东诊疗手册.pdf",
+        "头痛概述_默沙东诊疗手册.pdf",
+        "常见的医疗检查（总览）_默沙东诊疗手册.pdf",
+        "药物安全性和有效性概述_默沙东诊疗手册.pdf",
+        "衰老和药物_默沙东诊疗手册.pdf"
+      ],
+      "target_rank": 1,
+      "latency_ms": 5453.0
+    },
+    "C1_qexp_materials": {
+      "query": "看医生前应该准备哪些信息？就诊前准备 病史资料 症状记录 用药清单 检查报告",
+      "top10": [
+        "药物安全性和有效性概述_默沙东诊疗手册.pdf",
+        "门诊就诊指南与看病前准备（北京市中关村医院）_中关村医院.pdf",
+        "成人恶心和呕吐_默沙东诊疗手册.pdf",
+        "药物安全性和有效性概述_默沙东诊疗手册.pdf",
+        "衰老和药物_默沙东诊疗手册.pdf",
+        "常见的医疗检查（总览）_默沙东诊疗手册.pdf",
+        "影响药物反应的因素（年龄_特殊人群）_默沙东诊疗手册.pdf",
+        "药物安全性和有效性概述_默沙东诊疗手册.pdf",
+        "抑郁症_默沙东诊疗手册.pdf",
+        "国药准字H20055226_布洛芬颗粒.pdf"
+      ],
+      "target_rank": 2
+    },
+    "C2_qexp_visit": {
+      "query": "门诊就诊前需要准备什么材料？既往病史 正在服用的药物 过敏史 体检报告",
+      "top10": [
+        "药物安全性和有效性概述_默沙东诊疗手册.pdf",
+        "门诊就诊指南与看病前准备（北京市中关村医院）_中关村医院.pdf",
+        "头孢克肟_中国医药信息查询平台.pdf",
+        "荨麻疹（风团）_默沙东诊疗手册.pdf",
+        "晕厥（昏厥）_默沙东诊疗手册.pdf",
+        "常见的医疗检查（总览）_默沙东诊疗手册.pdf",
+        "门诊就诊指南与看病前准备（北京市中关村医院）_中关村医院.pdf",
+        "婴儿和儿童发热_默沙东诊疗手册.pdf",
+        "药物安全性和有效性概述_默沙东诊疗手册.pdf",
+        "肛门瘙痒_默沙东诊疗手册.pdf"
+      ],
+      "target_rank": 2
+    }
+  },
+  "regression_batch": [
+    {
+      "question": "出现持续性头痛应该挂什么科？",
+      "expects": [
+        "头痛概述"
+      ],
+      "baseline_top1": "头痛概述_默沙东诊疗手册.pdf",
+      "baseline_hit_rank": 1,
+      "rerank_top1": "头痛概述_默沙东诊疗手册.pdf",
+      "rerank_hit_rank": 1,
+      "top1_flipped": false
+    },
+    {
+      "question": "腹痛、胸闷、咳嗽等症状通常如何选择就诊科室？",
+      "expects": [
+        "慢性腹痛",
+        "胸痛"
+      ],
+      "baseline_top1": "成人咳嗽_默沙东诊疗手册.pdf",
+      "baseline_hit_rank": 3,
+      "rerank_top1": "胃肠气胀（腹胀）_默沙东诊疗手册.pdf",
+      "rerank_hit_rank": 6,
+      "top1_flipped": true
+    },
+    {
+      "question": "如何记录家庭血压和血糖？",
+      "expects": [
+        "高血压",
+        "2型糖尿病"
+      ],
+      "baseline_top1": "高血压_默沙东诊疗手册.pdf",
+      "baseline_hit_rank": 1,
+      "rerank_top1": "高血压_默沙东诊疗手册.pdf",
+      "rerank_hit_rank": 1,
+      "top1_flipped": false
+    },
+    {
+      "question": "体检发现异常后应该如何安排复查？",
+      "expects": [
+        "常见的医疗检查"
+      ],
+      "baseline_top1": "常见的医疗检查（总览）_默沙东诊疗手册.pdf",
+      "baseline_hit_rank": 1,
+      "rerank_top1": "晕厥（昏厥）_默沙东诊疗手册.pdf",
+      "rerank_hit_rank": 2,
+      "top1_flipped": true
+    },
+    {
+      "question": "每天睡几个小时合适？",
+      "expects": [
+        "睡眠概述"
+      ],
+      "baseline_top1": "失眠_默沙东诊疗手册.pdf",
+      "baseline_hit_rank": 3,
+      "rerank_top1": "睡眠概述_默沙东诊疗手册.pdf",
+      "rerank_hit_rank": 1,
+      "top1_flipped": true
+    },
+    {
+      "question": "打鼾严重是否需要就医？",
+      "expects": [
+        "打鼾"
+      ],
+      "baseline_top1": "打鼾_默沙东诊疗手册.pdf",
+      "baseline_hit_rank": 1,
+      "rerank_top1": "打鼾_默沙东诊疗手册.pdf",
+      "rerank_hit_rank": 1,
+      "top1_flipped": false
+    },
+    {
+      "question": "失眠了怎么办？",
+      "expects": [
+        "失眠"
+      ],
+      "baseline_top1": "失眠_默沙东诊疗手册.pdf",
+      "baseline_hit_rank": 1,
+      "rerank_top1": "失眠_默沙东诊疗手册.pdf",
+      "rerank_hit_rank": 1,
+      "top1_flipped": false
+    },
+    {
+      "question": "成人腹泻时应该怎么补水？",
+      "expects": [
+        "蒙脱石散"
+      ],
+      "baseline_top1": "成人腹泻_默沙东诊疗手册.pdf",
+      "baseline_hit_rank": null,
+      "rerank_top1": "中国居民膳食指南（2022）平衡膳食八准则_中国居民膳食指南.pdf",
+      "rerank_hit_rank": 9,
+      "top1_flipped": true
+    },
+    {
+      "question": "高血压患者在生活方式上要注意什么？",
+      "expects": [
+        "高血压"
+      ],
+      "baseline_top1": "高血压_默沙东诊疗手册.pdf",
+      "baseline_hit_rank": 1,
+      "rerank_top1": "高血压_默沙东诊疗手册.pdf",
+      "rerank_hit_rank": 1,
+      "top1_flipped": false
+    },
+    {
+      "question": "感冒和流感有什么区别？",
+      "expects": [
+        "流行性感冒",
+        "普通感冒"
+      ],
+      "baseline_top1": "流行性感冒（流感）_默沙东诊疗手册.pdf",
+      "baseline_hit_rank": 1,
+      "rerank_top1": "流行性感冒（流感）_默沙东诊疗手册.pdf",
+      "rerank_hit_rank": 1,
+      "top1_flipped": false
+    },
+    {
+      "question": "盐酸二甲双胍片的适应症是什么？",
+      "expects": [
+        "二甲双胍"
+      ],
+      "baseline_top1": "国药准字H20184130_盐酸二甲双胍片.pdf",
+      "baseline_hit_rank": 1,
+      "rerank_top1": "国药准字H20184130_盐酸二甲双胍片.pdf",
+      "rerank_hit_rank": 1,
+      "top1_flipped": false
+    }
+  ]
+}
