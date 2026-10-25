@@ -104,7 +104,11 @@ def compare_runs(prev: dict, curr: dict) -> dict:
         return {**base, "comparable": None,
                 "reason": "至少一轮未记录条件指纹：无法判断这轮改了什么，分数差不能归因"}
     raw = fingerprint_differences(ca, cb)
-    git = next((d for d in raw if d.startswith("git_sha:")), None)
+    # git 信息直接读两侧指纹：S4d 2026-10-25 校准后 git_sha 不再进入差异列表
+    # （仅记录不否决），不能再从 raw 里解析；过滤旧版可能存在的 git 行以兼容。
+    git = None
+    if ca.get("git_sha") != cb.get("git_sha"):
+        git = f"git_sha: {ca.get('git_sha')} → {cb.get('git_sha')}"
     diffs = [d for d in raw if not d.startswith("git_sha:")]
     if ca.get("model") != cb.get("model"):
         diffs.append(f"model: {ca.get('model')} → {cb.get('model')}")
