@@ -443,7 +443,7 @@ def main(argv=None):
     ap.add_argument("--chroma-dir", default=None,
                     help="指定 chroma 库路径用于条件指纹（只读）。worktree 里生成报告时传主库，"
                          "例如 F:/medical-assistant/backend/chroma_db；缺省用本目录 backend/chroma_db。"
-                         "注意：docs 数仍按本目录 backend/data 统计（跨 worktree 需知悉）")
+                         "显式指定时 docs/chunks 同取该库环境（W1 a5e6957 起）")
     ap.add_argument("--out-prefix", help="输出前缀（默认 acceptance_results/report_<ts>）")
     args = ap.parse_args(argv)
 
