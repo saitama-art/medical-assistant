@@ -1,0 +1,117 @@
+{
+  "runs": [
+    {
+      "id": "scorecard_first",
+      "file": "scorecard_first.json",
+      "generated_at": "2026-10-25",
+      "time_basis": "dir_date",
+      "total": 92.88,
+      "valid": true,
+      "partial": true,
+      "note": "引用完整率基于 has_source_section 字段（完整回答）",
+      "dimensions": {
+        "retrieval": 96.36,
+        "answer": 91.67,
+        "refusal": 100.0,
+        "latency": 80
+      },
+      "suites": [
+        "未记录"
+      ],
+      "sources": [],
+      "promptmeta_status": "未采集"
+    },
+    {
+      "id": "report_s4c",
+      "file": "report_s4c.json",
+      "generated_at": "2026-10-25T12:16:48",
+      "time_basis": "run",
+      "total": 94.73,
+      "valid": true,
+      "partial": true,
+      "note": "部分口径（有维度 N/A）",
+      "dimensions": {
+        "retrieval": 96.36,
+        "answer": 97.22,
+        "refusal": 100.0,
+        "latency": 80
+      },
+      "suites": [
+        "coverage",
+        "health72",
+        "scenarios"
+      ],
+      "sources": [
+        {
+          "suite": "coverage",
+          "file": "coverage_all_20261025_103152.json",
+          "n": 110
+        },
+        {
+          "suite": "scenarios",
+          "file": "scenarios_20261025_114559.json",
+          "n": 22
+        },
+        {
+          "suite": "health72",
+          "file": "health72_run4.json",
+          "n": 72
+        }
+      ],
+      "promptmeta_status": "未采集"
+    }
+  ],
+  "skipped": [],
+  "series": [
+    {
+      "key": "total",
+      "name": "总分"
+    },
+    {
+      "key": "retrieval",
+      "name": "检索"
+    },
+    {
+      "key": "answer",
+      "name": "答案质量"
+    },
+    {
+      "key": "refusal",
+      "name": "拒答健康"
+    },
+    {
+      "key": "latency",
+      "name": "时延"
+    },
+    {
+      "key": "cost",
+      "name": "成本"
+    }
+  ],
+  "matrix": [
+    {
+      "id": "scorecard_first",
+      "generated_at": "2026-10-25",
+      "total": 92.88,
+      "retrieval": 96.36,
+      "answer": 91.67,
+      "refusal": 100.0,
+      "latency": 80,
+      "cost": null
+    },
+    {
+      "id": "report_s4c",
+      "generated_at": "2026-10-25T12:16:48",
+      "total": 94.73,
+      "retrieval": 96.36,
+      "answer": 97.22,
+      "refusal": 100.0,
+      "latency": 80,
+      "cost": null
+    }
+  ],
+  "warnings": [
+    "各 run 输入套件不一致（scorecard_first=未记录；report_s4c=coverage/health72/scenarios）：分数差异可能来自口径而非系统变化，不能直接当回归/提升。",
+    "部分 run 无条件指纹（promptmeta 未采集，多为 S4a 前的历史产物）：逐维度条件校验需 S4d，面板不做自动 diff。"
+  ]
+}
