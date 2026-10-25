@@ -322,6 +322,30 @@ class TestScorecardIntegration(unittest.TestCase):
                 self.assertIsNone(data["conditions"])
                 self.assertTrue(any("条件指纹采集失败" in w for w in data["warnings"]))
 
+    def test_cli_chroma_dir_passthrough(self):
+        """--chroma-dir 必须透传给 conditions（W1 6fe261d 的跨 worktree 约定）。"""
+        import json
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as td:
+            run = Path(td) / "scen.json"
+            run.write_text(json.dumps({"records": [
+                scen(), dict(REFUSAL),
+                scen("CS-11", ("emergency",), "emergency_handled",
+                     "emergency_handled", sources=())]}, ensure_ascii=False),
+                encoding="utf-8")
+            prefix = str(Path(td) / "report")
+            with patch("acceptance.conditions.current_conditions") as cc:
+                cc.return_value = {"index_stats": {"docs": 149, "chunks": 1696}}
+                rc = rp.main(["--scenarios", str(run), "--out-prefix", prefix,
+                              "--chroma-dir", "F:/medical-assistant/backend/chroma_db"])
+            self.assertEqual(rc, 0)
+            self.assertEqual(cc.call_args.kwargs["chroma_dir"],
+                             Path("F:/medical-assistant/backend/chroma_db"))
+            data = json.loads(Path(prefix + ".json").read_text(encoding="utf-8"))
+        self.assertEqual(data["conditions"]["index_stats"]["chunks"], 1696)
+
     def test_cli_requires_some_valid_input(self):
         with self.assertRaises(SystemExit):
             rp.main([])

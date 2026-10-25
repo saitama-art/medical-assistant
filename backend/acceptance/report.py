@@ -440,6 +440,10 @@ def main(argv=None):
     ap.add_argument("--top-n", type=int, default=20, help="失败样本清单最多条数")
     ap.add_argument("--no-conditions", action="store_true",
                     help="不采集运行条件指纹（默认采集，复用 S4d conditions；失败仅警告）")
+    ap.add_argument("--chroma-dir", default=None,
+                    help="指定 chroma 库路径用于条件指纹（只读）。worktree 里生成报告时传主库，"
+                         "例如 F:/medical-assistant/backend/chroma_db；缺省用本目录 backend/chroma_db。"
+                         "注意：docs 数仍按本目录 backend/data 统计（跨 worktree 需知悉）")
     ap.add_argument("--out-prefix", help="输出前缀（默认 acceptance_results/report_<ts>）")
     args = ap.parse_args(argv)
 
@@ -476,7 +480,9 @@ def main(argv=None):
     if not args.no_conditions:
         try:
             from .conditions import current_conditions
-            rep["conditions"] = current_conditions(sorted({s["suite"] for s in sources}))
+            cond_kwargs = {"chroma_dir": Path(args.chroma_dir)} if args.chroma_dir else {}
+            rep["conditions"] = current_conditions(
+                sorted({s["suite"] for s in sources}), **cond_kwargs)
         except Exception as e:  # noqa: BLE001
             warnings.append(f"条件指纹采集失败（{type(e).__name__}: {e}）：本轮不可做条件校验")
     rep["sources"] = sources
