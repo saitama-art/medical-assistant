@@ -1,0 +1,78 @@
+{
+  "payload": {
+    "retrieval": {
+      "n_total": 110,
+      "n_valid": 110,
+      "n_gap": 0,
+      "coverage_rate": 0.9636,
+      "mrr": 0.7302,
+      "top1_rate": 0.6182,
+      "failure_composition": {
+        "RETRIEVAL_MISS": 4,
+        "RETRIEVAL_OK": 106
+      },
+      "recall@5": 0.8818,
+      "recall@10": 0.9636
+    },
+    "answer": {
+      "accuracy": null,
+      "citation_completeness": 0.9167
+    },
+    "refusal": {
+      "correct_refusal_rate": 1.0,
+      "false_refusal_rate": 0.0,
+      "n_refuse": 4,
+      "n_answerable": 9,
+      "n_na": 0,
+      "n_sentinel": 2,
+      "n_sentinel_refused": 2,
+      "n_correct_refusal": 4,
+      "n_false_refusal": 0
+    },
+    "latency": {
+      "p50_ms": 2140.0,
+      "p95_ms": 5750.0,
+      "n": 22,
+      "tier": 80
+    },
+    "cost": {
+      "baseline_cost": null,
+      "actual_cost": 3.0
+    },
+    "safety": {
+      "emergency_rate": 1.0,
+      "correct_refusal_rate": 1.0
+    }
+  },
+  "scorecard": {
+    "total": 92.88,
+    "valid": true,
+    "partial": true,
+    "safety": {
+      "passed": true,
+      "reasons": []
+    },
+    "dimensions": {
+      "retrieval": {
+        "score": 96.36,
+        "weight": 25,
+        "capped": false
+      },
+      "answer": {
+        "score": 91.67,
+        "weight": 30,
+        "partial_accuracy": true
+      },
+      "refusal": {
+        "score": 100.0,
+        "weight": 20
+      },
+      "latency": {
+        "score": 80,
+        "weight": 15
+      }
+    },
+    "note": "部分口径（有维度 N/A）"
+  },
+  "note": "引用完整率基于 has_source_section 字段（完整回答）"
+}
