@@ -13,15 +13,24 @@
     python -m acceptance.coverage --group p1b    # P1 常见症状与疾病（检索级）
     python -m acceptance.coverage --group p1a --chat   # 追加真实链路（消耗 LLM 额度）
     python -m acceptance.coverage --group p0 --out x.json
+    python -m acceptance.coverage --all-groups   # 全 8 组 + 指标汇总（阶段一接线）
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
+
+# 指标纯函数在 Evaluation/metrics.py（评估资产总目录，2026-10-25 约定）。
+# 跨目录导入：backend/ 内任何模块不得复制该文件，保持单一事实来源。
+_EVAL_DIR = Path(__file__).resolve().parents[2] / "Evaluation"
+if str(_EVAL_DIR) not in sys.path:
+    sys.path.insert(0, str(_EVAL_DIR))
+import metrics as _metrics  # noqa: E402
 
 # ---- P0 饮食营养与体重管理测试集（任务清单第三节 P0 1~20）----
 # expect_docs: 判定「已覆盖」所期望命中的文档名子串（空列表 = 已知无来源，记缺口）。
@@ -367,7 +376,27 @@ def run_coverage(do_chat: bool, group: str = "p0", client_factory=None) -> dict:
     for r in records:
         summary[r["verdict"]] = summary.get(r["verdict"], 0) + 1
     return dict(group=group_name, generated_at=datetime.now().isoformat(timespec="seconds"),
-                chat=do_chat, summary=summary, records=records)
+                chat=do_chat, summary=summary, records=records,
+                metrics=_metrics.summarize_records(records))
+
+
+def run_all_groups(do_chat: bool, client_factory=None) -> dict:
+    """全 8 组一键跑（阶段一）：每组指标 + 全组汇总。零 LLM（do_chat=False 时）。"""
+    group_reports = {}
+    for key, (group_name, _cases) in CASE_GROUPS.items():
+        print(f"\n===== {group_name} =====")
+        group_reports[key] = run_coverage(do_chat=do_chat, group=key,
+                                          client_factory=client_factory)
+    aggregated = _metrics.summarize_groups(group_reports)
+    return dict(kind="coverage-all", generated_at=datetime.now().isoformat(timespec="seconds"),
+                chat=do_chat, groups=group_reports, overall=aggregated["overall"],
+                group_metrics=aggregated["groups"])
+
+
+def _format_metrics_line(m: dict, ks=(5, 10)) -> str:
+    r = " ".join(f"R@{k}={m[f'recall@{k}']}" for k in ks if f"recall@{k}" in m)
+    return (f"n_valid={m['n_valid']} n_gap={m['n_gap']} {r} "
+            f"MRR={m['mrr']} top1={m['top1_rate']} cov={m['coverage_rate']}")
 
 
 def main(argv=None):
@@ -378,10 +407,25 @@ def main(argv=None):
                     help="测试集分组（p0 饮食营养 / p1a 运动睡眠 / p1b 症状疾病 / "
                          "pa 就医指引 / p1c 检查指标 / p2a 用药安全 / p2b 特殊人群 / "
                          "ext 补源缺口复测）")
+    ap.add_argument("--all-groups", action="store_true",
+                    help="全 8 组一键跑并输出指标汇总（阶段一接线）")
     ap.add_argument("--chat", action="store_true",
                     help="追加真实 LLM 链路判定（默认只跑零 LLM 检索级）")
     ap.add_argument("--out", help="JSON 报告路径（默认 acceptance_results/coverage_<组>_<ts>.json）")
     args = ap.parse_args(argv)
+
+    if args.all_groups:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        out = args.out or str(Path("acceptance_results") / f"coverage_all_{ts}.json")
+        report = run_all_groups(do_chat=args.chat)
+        Path(out).parent.mkdir(parents=True, exist_ok=True)
+        Path(out).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        print("\n===== 指标汇总（全 8 组）=====")
+        for key, m in report["group_metrics"].items():
+            print(f"[{key:5s}] {_format_metrics_line(m)}")
+        print(f"[ALL  ] {_format_metrics_line(report['overall'])}")
+        print(f"\n报告：{out}")
+        return 0
 
     out = args.out
     if not out:
@@ -393,6 +437,7 @@ def main(argv=None):
     report = run_coverage(do_chat=args.chat, group=args.group)
     Path(out).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\n分类汇总：{report['summary']}")
+    print(f"指标：{_format_metrics_line(report['metrics'])}")
     print(f"报告：{out}")
     return 0
 

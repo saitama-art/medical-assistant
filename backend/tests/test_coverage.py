@@ -49,5 +49,63 @@ class TestCoverageClassify(unittest.TestCase):
                          "OUTCOME:retrieval_failed")
 
 
+class TestCoverageMetricsIntegration(unittest.TestCase):
+    """阶段一接线：run_coverage / run_all_groups 输出必须带 metrics 块（打桩 client）。"""
+
+    class _FakeClient:
+        """按题目查各自期望文档的假检索（恒命中，零 IO）。"""
+
+        def __init__(self, cases_by_question):
+            self._map = cases_by_question
+
+        def retrieve(self, question):
+            expects = self._map.get(question, ["未知"])
+            # top1 文档名串联该题全部期望子串——重复题（跨组同题不同期望）也恒命中
+            return {"outcome": None,
+                    "top": [{"doc": " ".join(expects), "distance": 0.3, "content": "c"}]}
+
+        def chat(self, sid, q):
+            return 200, {"outcome": "completed"}, 1
+
+    @classmethod
+    def setUpClass(cls):
+        from acceptance.coverage import CASE_GROUPS
+        merged = {}
+        for _name, cases in CASE_GROUPS.values():
+            for c in cases:
+                # 跨组重复题（如 P2B-04/EXT-07）：期望取并集，保证打桩恒命中
+                merged.setdefault(c["question"], [])
+                for e in c["expect_docs"]:
+                    if e not in merged[c["question"]]:
+                        merged[c["question"]].append(e)
+        cls._map = merged
+
+    def _factory(self):
+        m = self._map
+        return type("Ctx", (), {"retrieve": lambda self, q: self._c.retrieve(q),
+                                "chat": lambda self, s, q: (200, {"outcome": "completed"}, 1),
+                                "_c": self._FakeClient(m)})()
+
+    def test_run_coverage_report_has_metrics(self):
+        from acceptance.coverage import run_coverage
+        rep = run_coverage(do_chat=False, group="p0", client_factory=self._factory)
+        self.assertIn("metrics", rep)
+        m = rep["metrics"]
+        self.assertEqual(m["n_valid"], 20)
+        self.assertEqual(m["recall@10"], 1.0)
+        self.assertEqual(m["recall@5"], 1.0)
+        self.assertEqual(m["mrr"], 1.0)
+
+    def test_run_all_groups_aggregates(self):
+        from acceptance.coverage import run_all_groups, CASE_GROUPS
+        rep = run_all_groups(do_chat=False, client_factory=self._factory)
+        self.assertIn("overall", rep)
+        self.assertIn("group_metrics", rep)
+        total = sum(len(cases) for _name, cases in CASE_GROUPS.values())
+        self.assertEqual(rep["overall"]["n_total"], total)
+        # 打桩恒命中 → 全组 Recall@10 = 1.0
+        self.assertEqual(rep["overall"]["recall@10"], 1.0)
+
+
 if __name__ == "__main__":
     unittest.main()
