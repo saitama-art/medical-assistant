@@ -340,10 +340,13 @@ def render_markdown(rep: dict, sources: list[dict], warnings: list[str],
     ctx = rep.get("context")
     if ctx:
         L += ["### 上下文五指标（S2）", ""]
-        L += _table(["指标", "值"], [[k, _fmt_metric(ctx[k])] for k in
-                                     ("completion_correct_rate", "constraint_retention_rate",
-                                      "backfill_correct_rate", "degrade_correct_rate",
-                                      "interference_rate")])
+        ctx_names = {"completion_correct_rate": "补全正确率",
+                     "constraint_retention_rate": "约束保留率",
+                     "backfill_correct_rate": "参数回填正确率",
+                     "degrade_correct_rate": "降级正确率",
+                     "interference_rate": "历史干扰率（0 为优）"}
+        L += _table(["指标", "值"], [[ctx_names[k], _fmt_metric(ctx[k])]
+                                     for k in ctx_names])
         L.append("")
 
     lc = rep["latency_cost"]

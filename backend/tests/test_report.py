@@ -2,16 +2,13 @@
 
 覆盖：records 归一（coverage-all 展开）、安全红线、答案质量分母、时延/成本
 blocked 纪律、组×归因交叉、失败/观察/blocked 样本分流、Markdown 渲染与 topN。
-评分卡公式属 S4b，不在此重测：聚合测试注入 scorecard_fn 桩，另设真实
-compute_scorecard 集成用例（S4b 未合入本分支时显式跳过，不静默记通过）。
+评分卡公式属 S4b，不在此重测：聚合测试注入 scorecard_fn 桩，真实
+compute_scorecard 集成与 CLI 端到端由 TestScorecardIntegration 锁定。
 """
 
-import importlib.util
 import unittest
 
 from acceptance import report as rp
-
-HAS_SCORECARD = importlib.util.find_spec("acceptance.scorecard") is not None
 
 
 def stub_scorecard(payload):
@@ -247,9 +244,8 @@ class TestBuildAndRender(unittest.TestCase):
         self.assertIn("N/A", md)
 
 
-@unittest.skipUnless(HAS_SCORECARD,
-                     "S4b scorecard.py 未合入本分支：集成用例待其提交后实跑，不计为已通过")
 class TestScorecardIntegration(unittest.TestCase):
+    """真实 S4b compute_scorecard 集成（abaeb33 合入后转硬性用例，不再跳过）。"""
     def test_real_scorecard_end_to_end(self):
         rep = rp.build_report(None, {"records": [scen(), dict(REFUSAL),
                                                  scen("CS-11", ("emergency",),
@@ -268,6 +264,33 @@ class TestScorecardIntegration(unittest.TestCase):
         rep = rp.build_report(None, {"records": [bad, dict(REFUSAL)]}, {})
         self.assertFalse(rep["scorecard"]["valid"])
         self.assertIsNone(rep["scorecard"]["total"])
+
+    def test_cli_end_to_end_writes_md_and_json(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as td:
+            run = Path(td) / "scen.json"
+            run.write_text(json.dumps({"kind": "scenarios", "records": [
+                scen(), dict(REFUSAL),
+                scen("CS-11", ("emergency",), "emergency_handled",
+                     "emergency_handled", sources=())]}, ensure_ascii=False),
+                encoding="utf-8")
+            prefix = str(Path(td) / "out" / "report")
+            rc = rp.main(["--scenarios", str(run), "--out-prefix", prefix])
+            self.assertEqual(rc, 0)
+            data = json.loads(Path(prefix + ".json").read_text(encoding="utf-8"))
+            md = Path(prefix + ".md").read_text(encoding="utf-8")
+        self.assertTrue(data["scorecard"]["valid"])
+        self.assertTrue(data["scorecard"]["partial"])  # 检索/成本 N/A
+        self.assertIsNotNone(data["scorecard"]["total"])
+        self.assertEqual(data["sources"][0]["n"], 3)
+        self.assertIn("## 七、口径声明", md)
+        self.assertIn("补全正确率", md)
+
+    def test_cli_requires_some_valid_input(self):
+        with self.assertRaises(SystemExit):
+            rp.main([])
 
 
 if __name__ == "__main__":
