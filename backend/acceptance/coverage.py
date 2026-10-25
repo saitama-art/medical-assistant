@@ -32,6 +32,8 @@ if str(_EVAL_DIR) not in sys.path:
     sys.path.insert(0, str(_EVAL_DIR))
 import metrics as _metrics  # noqa: E402
 
+from .promptmeta import prompt_meta  # noqa: E402  # S4a：报告带 Prompt/词表指纹
+
 # ---- P0 饮食营养与体重管理测试集（任务清单第三节 P0 1~20）----
 # expect_docs: 判定「已覆盖」所期望命中的文档名子串（空列表 = 已知无来源，记缺口）。
 COVERAGE_CASES = [
@@ -377,7 +379,8 @@ def run_coverage(do_chat: bool, group: str = "p0", client_factory=None) -> dict:
         summary[r["verdict"]] = summary.get(r["verdict"], 0) + 1
     return dict(group=group_name, generated_at=datetime.now().isoformat(timespec="seconds"),
                 chat=do_chat, summary=summary, records=records,
-                metrics=_metrics.summarize_records(records))
+                metrics=_metrics.summarize_records(records),
+                promptmeta=prompt_meta())
 
 
 def run_all_groups(do_chat: bool, client_factory=None) -> dict:
@@ -390,7 +393,7 @@ def run_all_groups(do_chat: bool, client_factory=None) -> dict:
     aggregated = _metrics.summarize_groups(group_reports)
     return dict(kind="coverage-all", generated_at=datetime.now().isoformat(timespec="seconds"),
                 chat=do_chat, groups=group_reports, overall=aggregated["overall"],
-                group_metrics=aggregated["groups"])
+                group_metrics=aggregated["groups"], promptmeta=prompt_meta())
 
 
 def _format_metrics_line(m: dict, ks=(5, 10)) -> str:

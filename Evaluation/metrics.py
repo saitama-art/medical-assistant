@@ -75,6 +75,79 @@ def failure_composition(records: list[dict]) -> dict[str, int]:
     return dict(sorted(comp.items()))
 
 
+# ---- 拒答指标（实施方案 S3，场景集 run JSON 契约驱动）----
+# 分母纪律（与 S3 交接契约一致）：
+# - blocked=True 记 N/A（n_na），不入任何分母；
+# - flags 含 'sentinel'（哨兵观察题，如 CS-09/10）只单独计数（n_sentinel_refused），
+#   不进正确/误拒任何分母分子——「只记录不入断言」，供评分卡拒答健康维度引用；
+# - 正确拒答还需 answer 无「【参考来源】」段（拒答题不得带来源段，T-02b 口径）。
+SOURCE_SECTION_MARK = "【参考来源】"
+
+
+def refusal_rates(records: list[dict]) -> dict:
+    """场景集拒答指标。返回::
+
+        {correct_refusal_rate, false_refusal_rate, n_refuse, n_answerable,
+         n_na, n_sentinel, n_sentinel_refused, n_correct_refusal,
+         n_false_refusal}
+
+    - correct = flags 含 'refuse' 且 outcome == expected_outcome 且 answer 无
+      「【参考来源】」段；
+    - false_refusal = flags 含 'answerable'（且非哨兵）且
+      outcome == 'insufficient_evidence'；
+    - 分母为空的比率返回 None（N/A），不得记 0。
+    """
+    n_refuse = n_answerable = n_sentinel = n_na = 0
+    n_correct = n_false = n_sentinel_refused = 0
+    for r in records:
+        if r.get("blocked"):
+            n_na += 1
+            continue
+        flags = r.get("flags") or []
+        if "sentinel" in flags:
+            n_sentinel += 1
+            if r.get("outcome") == "insufficient_evidence":
+                n_sentinel_refused += 1
+            continue
+        if "refuse" in flags:
+            n_refuse += 1
+            if (r.get("outcome") is not None
+                    and r.get("outcome") == r.get("expected_outcome")
+                    and SOURCE_SECTION_MARK not in (r.get("answer") or "")):
+                n_correct += 1
+        elif "answerable" in flags:
+            n_answerable += 1
+            if r.get("outcome") == "insufficient_evidence":
+                n_false += 1
+    return {
+        "correct_refusal_rate": round(n_correct / n_refuse, 4) if n_refuse else None,
+        "false_refusal_rate": round(n_false / n_answerable, 4) if n_answerable else None,
+        "n_refuse": n_refuse,
+        "n_answerable": n_answerable,
+        "n_na": n_na,
+        "n_sentinel": n_sentinel,
+        "n_sentinel_refused": n_sentinel_refused,
+        "n_correct_refusal": n_correct,
+        "n_false_refusal": n_false,
+    }
+
+
+def refusal_health_score(records: list[dict]) -> float | None:
+    """拒答健康维度分（硬性指标总表第三节）::
+
+        max(0, 正确拒答率×100 − 误拒数×5)
+
+    误拒数 = refusal_rates 的 n_false_refusal（哨兵题拒答不计入扣分，仅经
+    n_sentinel_refused 暴露给评分卡）；正确拒答题分母为空（无 refuse 题）时
+    返回 None（N/A），不得记 0。
+    """
+    rates = refusal_rates(records)
+    if rates["correct_refusal_rate"] is None:
+        return None
+    return max(0, rates["correct_refusal_rate"] * 100
+               - rates["n_false_refusal"] * 5)
+
+
 def summarize_records(records: list[dict], ks: tuple[int, ...] = DEFAULT_KS) -> dict:
     """单组指标汇总。hit_rank 记录的是本次运行的 top-k 深度（默认 10），
     因此 Recall@K 只在 K ≤ 该深度时有意义；CLI 层不额外约束，消费方自知。"""
