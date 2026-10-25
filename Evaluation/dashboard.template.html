@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>医疗 RAG 评估趋势面板</title>
+<style>
+  :root { color-scheme: light; }
+  .viz-root {
+    /* 配色：dataviz 参考调色板，6 个类别槽位固定顺序，明暗两套均通过校验脚本 */
+    --surface-1: #fcfcfb; --page: #f9f9f7;
+    --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series-total: #2a78d6; --series-retrieval: #eb6834; --series-answer: #1baf7a;
+    --series-refusal: #eda100; --series-latency: #e87ba4; --series-cost: #008300;
+    --good: #0ca30c; --warning: #fab219; --critical: #d03b3b;
+    --delta-up: #006300; --delta-down: #d03b3b;
+    --surface-tooltip: #fcfcfb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) { color-scheme: dark; }
+    :root:where(:not([data-theme="light"])) .viz-root {
+      --surface-1: #1a1a19; --page: #0d0d0d;
+      --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --series-total: #3987e5; --series-retrieval: #d95926; --series-answer: #199e70;
+      --series-refusal: #c98500; --series-latency: #d55181; --series-cost: #008300;
+      --delta-up: #0ca30c; --delta-down: #d03b3b;
+      --surface-tooltip: #1a1a19;
+    }
+  }
+  :root[data-theme="dark"] { color-scheme: dark; }
+  :root[data-theme="dark"] .viz-root {
+    --surface-1: #1a1a19; --page: #0d0d0d;
+    --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --series-total: #3987e5; --series-retrieval: #d95926; --series-answer: #199e70;
+    --series-refusal: #c98500; --series-latency: #d55181; --series-cost: #008300;
+    --delta-up: #0ca30c; --delta-down: #d03b3b;
+    --surface-tooltip: #1a1a19;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); }
+  .viz-root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--text-primary); max-width: 1180px; margin: 0 auto; padding: 24px 20px 48px;
+  }
+  h1 { font-size: 21px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 28px 0 10px; }
+  .sub { color: var(--text-secondary); font-size: 13px; line-height: 1.7; }
+  .card { background: var(--surface-1); border: 1px solid var(--border);
+          border-radius: 10px; padding: 16px; margin-top: 12px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center;
+              margin: 14px 0 4px; font-size: 13px; color: var(--text-secondary); }
+  .controls label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .controls .sep { flex: 1; }
+  button, .filebtn { font: inherit; font-size: 12px; color: var(--text-primary);
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 10px; cursor: pointer; }
+  .hero { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .hero .num { font-size: 44px; line-height: 1.1; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px;
+           border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; }
+  .badge.good { color: var(--good); } .badge.warn { color: var(--text-secondary); }
+  .badge.crit { color: var(--critical); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 12px;
+            color: var(--text-secondary); margin: 10px 0 0; }
+  .legend .item { display: inline-flex; align-items: center; gap: 6px; }
+  .legend svg { overflow: visible; }
+  .chartwrap { position: relative; }
+  svg.chart { width: 100%; height: auto; display: block; }
+  .grid line { stroke: var(--grid); stroke-width: 1; }
+  .axis text { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .axis line { stroke: var(--axis); }
+  .sline { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .crosshair { stroke: var(--axis); stroke-width: 1; stroke-dasharray: 3 3; }
+  .tooltip { position: absolute; pointer-events: none; background: var(--surface-tooltip);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px;
+    color: var(--text-primary); box-shadow: 0 4px 16px rgba(0,0,0,0.12); display: none;
+    min-width: 168px; z-index: 5; }
+  .tooltip .t { color: var(--text-secondary); margin-bottom: 5px; }
+  .tooltip table { border-collapse: collapse; }
+  .tooltip td { padding: 1px 0 1px 12px; font-variant-numeric: tabular-nums; }
+  .tooltip td:first-child { padding-left: 0; color: var(--text-secondary); }
+  table.data { border-collapse: collapse; width: 100%; font-size: 13px; }
+  #matrix { overflow-x: auto; }
+  table.data th, table.data td { text-align: right; padding: 6px 8px;
+    border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  table.data th:first-child, table.data td:first-child,
+  table.data th:nth-child(2), table.data td:nth-child(2) { text-align: left; }
+  table.data th { color: var(--text-secondary); font-weight: 600; }
+  .na { color: var(--text-muted); }
+  .warnbox { border-left: 3px solid var(--warning); padding: 8px 12px; margin-top: 10px;
+             font-size: 13px; color: var(--text-primary); background: var(--surface-1); }
+  .delta { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .delta.up { color: var(--delta-up); } .delta.down { color: var(--delta-down); }
+  .delta.flat { color: var(--text-muted); font-weight: 400; }
+  .hero .cmp { font-size: 15px; }
+  .reason { font-size: 13px; margin-top: 8px; color: var(--text-primary); }
+  .dimrow { display: flex; align-items: center; gap: 10px; padding: 7px 0;
+            border-bottom: 1px solid var(--grid); font-size: 13px; }
+  .dimrow:last-child { border-bottom: none; }
+  .dimrow .name { width: 76px; flex: none; color: var(--text-secondary); }
+  .dimrow .track { flex: 1; background: var(--page); border-radius: 4px; height: 12px;
+                   position: relative; min-width: 60px; }
+  .dimrow .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 4px 4px 0; }
+  .dimrow .val { width: 52px; text-align: right; font-variant-numeric: tabular-nums; flex: none; }
+  .dimrow .chg { width: 108px; text-align: right; flex: none; font-size: 12px; }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; font-size: 16px; font-weight: 600; color: var(--text-primary); }
+  .hint { font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+  .muted { color: var(--text-muted); }
+  ul.tight { margin: 6px 0; padding-left: 20px; font-size: 13px; line-height: 1.8; }
+  .src { font-size: 12px; color: var(--text-secondary); }
+  /* 打印 / 强制配色：加线型作为额外次级编码，身份不只靠颜色 */
+  @media print, (forced-colors: active) {
+    .sline.k-total { stroke-dasharray: none; }
+    .sline.k-retrieval { stroke-dasharray: 6 3; }
+    .sline.k-answer { stroke-dasharray: 2 3; }
+    .sline.k-refusal { stroke-dasharray: 9 3 2 3; }
+    .sline.k-latency { stroke-dasharray: 1 3; }
+    .sline.k-cost { stroke-dasharray: 12 4; }
+  }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <h1>医疗 RAG 评估趋势面板</h1>
+  <div class="sub">固定测试集上的测量汇总。数据源：S4b 评分卡 / S4c 报告 JSON。
+    本页为离线单文件，无外部依赖；N/A 不记 0、不插值。</div>
+
+  <div class="controls">
+    <span>系列：</span>
+    <span id="seriesToggles"></span>
+    <span class="sep"></span>
+    <label class="filebtn">追加 JSON<input id="fileInput" type="file" accept=".json" multiple hidden></label>
+    <button id="themeBtn" type="button">切换主题</button>
+  </div>
+
+  <div id="warnings"></div>
+  <div id="hero" class="card"></div>
+  <div id="changes" class="card"></div>
+
+  <h2>各维度：本轮得分与环比</h2>
+  <div class="card" id="dims"></div>
+
+  <details>
+    <summary>历史趋势（轮次多了再看曲线）</summary>
+    <div class="card">
+      <div id="legend" class="legend"></div>
+      <div class="chartwrap">
+        <svg id="chart" class="chart" viewBox="0 0 960 360" role="img"
+             aria-label="各维度得分随评估 run 的变化折线图"></svg>
+        <div id="tooltip" class="tooltip"></div>
+      </div>
+      <div class="sub">单轴 0–100 分。断点 = 该维度当轮 N/A（如成本基线未任命）或总分被安全否决。
+        悬浮查看单轮全部数值；数值以矩阵表为准。上方「系列」开关只影响本图。</div>
+    </div>
+  </details>
+
+  <h2>日期 × 维度分矩阵</h2>
+  <div class="card" id="matrix"></div>
+
+  <h2>各 run 口径与来源</h2>
+  <div class="card" id="runs"></div>
+
+  <div id="skipped"></div>
+
+  <h2>读数须知</h2>
+  <ul class="tight">
+    <li>评分卡是指标汇总视图：总分上升不等于每个维度都变好，请对照矩阵与报告失败样本。</li>
+    <li>「部分口径」= 有维度 N/A（人工正确率未核验、成本基线未任命等），加权分母随之缩小。</li>
+    <li>安全是否决项：急症拦截率或正确拒答率 &lt;100% 时总分无效，图中不画总分散点。</li>
+    <li>成本为估算口径（知识路径 3 次调用/题、token≈answer 字符/4，answer 被截断故为下限）。</li>
+    <li>跨 run 比较需条件一致（套件、Prompt/词表指纹、索引）；本面板不做自动 diff，见 S4d。</li>
+    <li>「这轮改了什么」只有三种结论：条件一致（可归因）／条件有差异（不可归因）／未记录指纹（不知道改了什么，不等于没改）。</li>
+  </ul>
+</div>
+
+<script>
+"use strict";
+const DATA = __DATA__;
+const SERIES = DATA.series;                 // [{key,name}]，固定顺序，颜色不随筛选改变
+const state = { runs: DATA.runs.slice(), visible: {}, theme: null,
+                baseline: DATA.baseline || null };
+SERIES.forEach(s => { state.visible[s.key] = true; });
+
+const $ = id => document.getElementById(id);
+const fmt = v => (v === null || v === undefined) ? "N/A" : (Math.round(v * 100) / 100).toString();
+const esc = s => String(s === null || s === undefined ? "—" : s)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const seriesColor = key => `var(--series-${key})`;
+// 每系列不同点形：次级编码，身份不只靠颜色（浅色模式部分槽位对比度 <3:1 的缓解之一）
+const SHAPES = { total: "circle", retrieval: "square", answer: "triangle",
+                 refusal: "diamond", latency: "cross", cost: "hex" };
+
+function marker(key, x, y, size, fill) {
+  const s = size || 5, c = fill || seriesColor(key);
+  const common = `fill="${c}" stroke="var(--surface-1)" stroke-width="2"`;
+  switch (SHAPES[key]) {
+    case "square":
+      return `<rect x="${x - s}" y="${y - s}" width="${2 * s}" height="${2 * s}" rx="1.5" ${common}/>`;
+    case "triangle":
+      return `<path d="M${x},${y - s - 1} L${x + s + 1},${y + s} L${x - s - 1},${y + s} Z" ${common}/>`;
+    case "diamond":
+      return `<path d="M${x},${y - s - 1} L${x + s + 1},${y} L${x},${y + s + 1} L${x - s - 1},${y} Z" ${common}/>`;
+    case "cross":
+      return `<path d="M${x - s},${y - s} L${x + s},${y + s} M${x - s},${y + s} L${x + s},${y - s}"
+              stroke="${c}" stroke-width="2.5" fill="none"/>`;
+    case "hex":
+      return `<path d="M${x - s},${y} L${x - s / 2},${y - s} L${x + s / 2},${y - s} L${x + s},${y}
+              L${x + s / 2},${y + s} L${x - s / 2},${y + s} Z" ${common}/>`;
+    default:
+      return `<circle cx="${x}" cy="${y}" r="${s}" ${common}/>`;
+  }
+}
+
+function valueOf(run, key) {
+  return key === "total" ? run.total : (run.dimensions ? run.dimensions[key] : null);
+}
+
+function derived() {
+  const warnings = [];
+  const sigs = new Set(state.runs.map(r => (r.suites || []).join("|")));
+  if (sigs.size > 1) {
+    warnings.push("各 run 输入套件不一致：" + state.runs.map(r =>
+      `${r.id}=${(r.suites || []).join("/")}`).join("；")
+      + "。分数差异可能来自口径而非系统变化。");
+  }
+  if (state.runs.some(r => r.promptmeta_status === "未采集")) {
+    warnings.push("部分 run 无条件指纹（promptmeta 未采集）：面板不做自动 diff，条件校验见 S4d。");
+  }
+  if (state.runs.some(r => r.valid === false)) {
+    warnings.push("存在安全否决/数据缺失的 run：总分记 N/A，不参与趋势连线。");
+  }
+  return { warnings };
+}
+
+function renderWarnings(list) {
+  $("warnings").innerHTML = list.map(w => `<div class="warnbox">⚠️ ${esc(w)}</div>`).join("");
+}
+
+// 与 trend.py compare_runs 同口径：条件一致才可把分数差归因到系统改动；
+// git_sha 只记录不否决（S4d 校准意见）。改此函数需同步 trend.py。
+function compareRuns(a, b) {
+  const deltas = {};
+  SERIES.forEach(s => {
+    const pa = valueOf(a, s.key), pb = valueOf(b, s.key);
+    deltas[s.key] = { prev: pa, curr: pb,
+      delta: (pa === null || pa === undefined || pb === null || pb === undefined)
+        ? null : Math.round((pb - pa) * 100) / 100 };
+  });
+  const out = { deltas, condition_diffs: [], git: null };
+  const ca = a.conditions, cb = b.conditions;
+  if (!ca || !cb) {
+    return Object.assign(out, { comparable: null,
+      reason: "至少一轮未记录条件指纹：无法判断这轮改了什么，分数差不能归因" });
+  }
+  const diffs = [];
+  const ha = (ca.promptmeta && ca.promptmeta.prompt_hashes) || {};
+  const hb = (cb.promptmeta && cb.promptmeta.prompt_hashes) || {};
+  Array.from(new Set(Object.keys(ha).concat(Object.keys(hb)))).sort().forEach(k => {
+    if (ha[k] !== hb[k]) diffs.push(`prompt[${k}]: ${ha[k]} → ${hb[k]}`);
+  });
+  if ((ca.promptmeta || {}).safety_wordlist_hash !== (cb.promptmeta || {}).safety_wordlist_hash) {
+    diffs.push("safety_wordlist 安全词表已变化");
+  }
+  if (JSON.stringify(ca.index_stats || {}) !== JSON.stringify(cb.index_stats || {})) {
+    diffs.push(`index_stats 知识库: ${JSON.stringify(ca.index_stats || {})} → ${JSON.stringify(cb.index_stats || {})}`);
+  }
+  if (JSON.stringify(ca.testset_versions || {}) !== JSON.stringify(cb.testset_versions || {})) {
+    diffs.push("testset_versions 测试集版本已变化");
+  }
+  if (ca.model !== cb.model) diffs.push(`model: ${ca.model} → ${cb.model}`);
+  const git = ca.git_sha !== cb.git_sha ? `git_sha: ${ca.git_sha} → ${cb.git_sha}` : null;
+  return Object.assign(out, { comparable: diffs.length === 0, condition_diffs: diffs, git,
+    reason: diffs.length ? "运行条件不同：分数差可能来自条件变化而非系统改动"
+                         : "运行条件一致：分数差可归因到代码/配置改动" });
+}
+
+function deltaBadge(d) {
+  if (d === null || d === undefined) return '<span class="delta flat">环比 N/A</span>';
+  const cls = d > 0 ? "up" : (d < 0 ? "down" : "flat");
+  const word = d > 0 ? "▲ 升" : (d < 0 ? "▼ 降" : "＝ 持平");
+  return `<span class="delta ${cls}">${word} ${d > 0 ? "+" : ""}${fmt(d)}</span>`;
+}
+
+function latestCompare() {
+  const n = state.runs.length;
+  return n >= 2 ? compareRuns(state.runs[n - 2], state.runs[n - 1]) : null;
+}
+
+function renderHero() {
+  const el = $("hero");
+  if (!state.runs.length) {
+    el.innerHTML = '<div class="sub">暂无数据。用「追加 JSON」选择评分卡/报告文件，或运行 ' +
+      "<code>python -m acceptance.trend</code> 重新生成本页。</div>";
+    $("changes").innerHTML = "";
+    return;
+  }
+  const latest = state.runs[state.runs.length - 1];
+  const valid = latest.valid !== false;
+  const badge = !valid ? '<span class="badge crit">🚨 安全否决 / 本轮无效</span>'
+    : (latest.partial ? '<span class="badge warn">◐ 部分口径</span>'
+                      : '<span class="badge good">✓ 全量口径</span>');
+  const cmp = latestCompare();
+  const delta = cmp ? cmp.deltas.total.delta : null;
+  const cmpHtml = cmp
+    ? `<div class="cmp">较上一轮（${esc(state.runs[state.runs.length - 2].id)}）${deltaBadge(delta)}</div>
+       <div class="reason">${cmp.comparable === true ? "✓" : "⚠️"} ${esc(cmp.reason)}</div>`
+    : '<div class="sub">只有一轮数据，暂无环比。</div>';
+  el.innerHTML = `<div class="hero"><div class="num">${valid ? fmt(latest.total) : "N/A"}</div>
+    <div><div><strong>本轮总分</strong> ${badge}${latest.is_baseline ? ' <span class="badge">基线</span>' : ""}</div>
+    <div class="sub">${esc(latest.id)}　时间 ${esc(latest.generated_at)}${latest.time_basis === "dir_date" ? "（按目录日期）" : ""}
+    　套件 ${esc((latest.suites || []).join(" / "))}　共 ${state.runs.length} 轮</div>
+    <div class="sub">${esc(latest.note)}</div></div></div>${cmpHtml}`;
+}
+
+function renderChanges() {
+  const el = $("changes"), cmp = latestCompare();
+  if (!state.runs.length) { el.innerHTML = ""; return; }
+  if (!cmp) {
+    el.innerHTML = "<strong>这轮改了什么</strong><div class='hint'>需要至少两轮数据才能对比。</div>";
+    return;
+  }
+  const prev = state.runs[state.runs.length - 2], latest = state.runs[state.runs.length - 1];
+  let body;
+  if (cmp.comparable === null) {
+    body = `<div class="reason">⚠️ 这两轮至少有一轮<strong>没有记录条件指纹</strong>，所以看不出改了什么
+      （不等于"什么都没改"）。</div>
+      <div class="hint">缺指纹的轮次：${[prev, latest].filter(r => !r.conditions).map(r => esc(r.id)).join("、")}<br>
+      让下一轮可比较：在 <code>backend/</code> 下生成报告时默认即采集条件指纹——<br>
+      <code>python -m acceptance.report --scenarios &lt;场景集.json&gt; --coverage &lt;coverage.json&gt;</code><br>
+      （只有明确加 <code>--no-conditions</code> 才不采集；基线任命见 <code>python -m acceptance.baseline</code>）</div>`;
+  } else if (cmp.condition_diffs.length) {
+    body = `<div class="reason">⚠️ 以下条件变了，分数差<strong>不能</strong>直接归因到系统改动：</div>
+      <ul class="tight">${cmp.condition_diffs.map(d => `<li>${esc(d)}</li>`).join("")}</ul>`;
+  } else {
+    body = '<div class="reason">✓ Prompt、安全词表、知识库索引、测试集版本、模型<strong>都没变</strong>。'
+      + "这轮分数差可以归因到代码/配置改动。</div>";
+  }
+  if (cmp.git) body += `<div class="hint">代码版本（仅记录，不参与可比性否决）：${esc(cmp.git)}</div>`;
+  if (state.baseline) {
+    body += `<div class="hint">当前基线：总分 ${fmt(state.baseline.total)}（任命于 ${esc(state.baseline.appointed_at)}）`
+      + (latest.is_baseline ? "；本轮就是基线所依据的 run" : "") + "。</div>";
+  }
+  if (latest.conditions_source === "baseline") {
+    body += '<div class="hint">本轮条件指纹来自 baseline.json（分数唯一匹配自动关联）。</div>';
+  }
+  el.innerHTML = `<strong>这轮改了什么</strong> <span class="hint">（${esc(prev.id)} → ${esc(latest.id)}）</span>${body}`;
+}
+
+function renderDims() {
+  const latest = state.runs[state.runs.length - 1];
+  if (!latest) { $("dims").innerHTML = ""; return; }
+  const cmp = latestCompare();
+  $("dims").innerHTML = SERIES.map(s => {
+    const v = valueOf(latest, s.key);
+    const missing = v === null || v === undefined || (s.key === "total" && latest.valid === false);
+    const d = cmp ? cmp.deltas[s.key].delta : null;
+    const bar = missing ? '<span class="na" style="font-size:12px">N/A（本轮无数据）</span>'
+      : `<div class="fill" style="width:${Math.max(0, Math.min(100, v))}%;background:${seriesColor(s.key)}"></div>`;
+    const prev = cmp ? cmp.deltas[s.key].prev : null;
+    const title = cmp ? `上一轮：${prev === null || prev === undefined ? "N/A" : fmt(prev)}　本轮：${missing ? "N/A" : fmt(v)}` : "";
+    return `<div class="dimrow" title="${esc(title)}"><span class="name">${s.name}</span>
+      <div class="track">${bar}</div>
+      <span class="val">${missing ? "N/A" : fmt(v)}</span>
+      <span class="chg">${cmp ? deltaBadge(d) : '<span class="delta flat">—</span>'}</span></div>`;
+  }).join("");
+}
+
+function renderToggles() {
+  $("seriesToggles").innerHTML = SERIES.map(s =>
+    `<label><input type="checkbox" data-key="${s.key}" ${state.visible[s.key] ? "checked" : ""}>
+     <svg width="14" height="14">${marker(s.key, 7, 7, 5)}</svg>${s.name}</label>`).join("");
+  $("seriesToggles").querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("change", () => {
+      state.visible[inp.dataset.key] = inp.checked;
+      renderChart();
+    });
+  });
+}
+
+function renderLegend() {
+  $("legend").innerHTML = SERIES.map(s =>
+    `<span class="item"><svg width="16" height="16"><line x1="1" y1="8" x2="15" y2="8"
+     stroke="${seriesColor(s.key)}" stroke-width="2"/>${marker(s.key, 8, 8, 5)}</svg> ${s.name}</span>`).join("");
+}
+
+const W = 960, H = 360, PAD = { l: 56, r: 24, t: 18, b: 46 };
+const yOf = v => PAD.t + (100 - v) / 100 * (H - PAD.t - PAD.b);
+function xOf(i, n) {
+  const inner = W - PAD.l - PAD.r;
+  return n <= 1 ? PAD.l + inner / 2 : PAD.l + inner * i / (n - 1);
+}
+
+function renderChart() {
+  const runs = state.runs, n = runs.length;
+  const svg = $("chart");
+  if (!n) { svg.innerHTML = ""; return; }
+  let g = "";
+  for (let v = 0; v <= 100; v += 20) {
+    const y = yOf(v);
+    g += `<g class="grid"><line x1="${PAD.l}" y1="${y}" x2="${W - PAD.r}" y2="${y}"/></g>`;
+    g += `<g class="axis"><text x="${PAD.l - 10}" y="${y + 4}" text-anchor="end">${v}</text></g>`;
+  }
+  const step = Math.max(1, Math.ceil(n / 10));
+  runs.forEach((r, i) => {
+    const x = xOf(i, n);
+    if (i % step === 0 || i === n - 1) {
+      const label = (r.generated_at || r.id || "").toString().slice(5, 10) || r.id;
+      g += `<g class="axis"><text x="${x}" y="${H - 22}" text-anchor="middle">${esc(label)}</text></g>`;
+    }
+    g += `<g class="axis"><line x1="${x}" y1="${H - PAD.b}" x2="${x}" y2="${H - PAD.b + 4}"/></g>`;
+  });
+
+  SERIES.filter(s => state.visible[s.key]).forEach(s => {
+    let seg = [];
+    const flush = () => {
+      if (seg.length > 1) {
+        g += `<path class="sline k-${s.key}" d="M${seg.map(p => p.join(",")).join(" L")}"
+              stroke="${seriesColor(s.key)}"/>`;
+      }
+      seg = [];
+    };
+    runs.forEach((r, i) => {
+      const v = valueOf(r, s.key);
+      if (v === null || v === undefined || (s.key === "total" && r.valid === false)) { flush(); return; }
+      seg.push([xOf(i, n).toFixed(1), yOf(v).toFixed(1)]);
+    });
+    flush();
+    runs.forEach((r, i) => {
+      const v = valueOf(r, s.key);
+      if (v === null || v === undefined || (s.key === "total" && r.valid === false)) return;
+      g += marker(s.key, xOf(i, n), yOf(v), 5);
+    });
+  });
+
+  g += `<line id="cross" class="crosshair" x1="0" y1="${PAD.t}" x2="0" y2="${H - PAD.b}" style="display:none"/>`;
+  runs.forEach((r, i) => {
+    const x = xOf(i, n);
+    g += `<rect data-i="${i}" x="${x - 22}" y="${PAD.t}" width="44" height="${H - PAD.t - PAD.b}"
+          fill="transparent"><title>${esc(r.id)}</title></rect>`;
+  });
+  svg.innerHTML = g;
+  svg.querySelectorAll("rect[data-i]").forEach(rect => {
+    rect.addEventListener("mousemove", ev => showTooltip(+rect.dataset.i, ev));
+    rect.addEventListener("mouseleave", hideTooltip);
+  });
+}
+
+function showTooltip(i, ev) {
+  const r = state.runs[i], tip = $("tooltip"), cross = $("cross");
+  const x = xOf(i, state.runs.length);
+  cross.setAttribute("x1", x); cross.setAttribute("x2", x);
+  cross.style.display = "";
+  const rows = SERIES.filter(s => state.visible[s.key]).map(s => {
+    const v = (s.key === "total" && r.valid === false) ? null : valueOf(r, s.key);
+    return `<tr><td>${s.name}</td><td>${v === null ? '<span class="na">N/A</span>' : fmt(v)}</td></tr>`;
+  }).join("");
+  tip.innerHTML = `<div class="t">${esc(r.id)}<br>${esc(r.generated_at)}${r.partial ? " · 部分口径" : ""}
+    ${r.valid === false ? " · 本轮无效" : ""}</div><table>${rows}</table>`;
+  tip.style.display = "block";
+  const wrap = document.querySelector(".chartwrap").getBoundingClientRect();
+  const px = (ev.clientX - wrap.left), py = (ev.clientY - wrap.top);
+  const w = tip.offsetWidth || 180;
+  tip.style.left = Math.max(4, Math.min(px + 16, wrap.width - w - 4)) + "px";
+  tip.style.top = Math.max(4, py - 30) + "px";
+}
+
+function hideTooltip() {
+  $("tooltip").style.display = "none";
+  const cross = $("cross");
+  if (cross) cross.style.display = "none";
+}
+
+function renderMatrix() {
+  const head = `<tr><th>run</th><th>时间</th>${SERIES.map(s => `<th>${s.name}</th>`).join("")}<th>口径</th></tr>`;
+  const body = state.runs.map(r => {
+    const cells = SERIES.map(s => {
+      const v = (s.key === "total" && r.valid === false) ? null : valueOf(r, s.key);
+      return `<td>${v === null || v === undefined ? '<span class="na">N/A</span>' : fmt(v)}</td>`;
+    }).join("");
+    const status = r.valid === false ? "🚨 无效" : (r.partial ? "◐ 部分" : "✓ 全量");
+    return `<tr><td>${esc(r.id)}</td><td>${esc(r.generated_at)}</td>${cells}<td>${status}</td></tr>`;
+  }).join("");
+  $("matrix").innerHTML = `<table class="data">${head}${body}</table>`;
+}
+
+function renderRuns() {
+  $("runs").innerHTML = state.runs.map(r => `
+    <div style="margin-bottom:14px">
+      <strong>${esc(r.id)}</strong> <span class="src">${esc(r.generated_at)}
+      　指纹 ${esc(r.promptmeta_status)}</span>
+      <div class="src">套件：${esc((r.suites || []).join(" / "))}</div>
+      ${(r.sources || []).map(s => `<div class="src">· ${esc(s.suite)}：${esc(s.file)}（n=${esc(s.n)}）</div>`).join("")}
+      ${r.note ? `<div class="src">备注：${esc(r.note)}</div>` : ""}
+    </div>`).join("") || '<div class="sub">暂无 run。</div>';
+}
+
+function renderSkipped() {
+  const list = DATA.skipped || [];
+  $("skipped").innerHTML = list.length ? `<div class="warnbox">已跳过 ${list.length} 个无法识别的文件：`
+    + list.map(s => `${esc(s.file)}（${esc(s.reason)}）`).join("；") + "</div>" : "";
+}
+
+function renderAll() {
+  renderWarnings(derived().warnings);
+  renderHero(); renderChanges(); renderDims();
+  renderLegend(); renderChart(); renderMatrix(); renderRuns(); renderSkipped();
+}
+
+// 浏览器端追加 JSON：与 trend.py 同一提取契约（scorecard.dimensions 为必需）
+function extractInBrowser(rep, name) {
+  const sc = rep && rep.scorecard;
+  if (!sc || typeof sc.dimensions !== "object") {
+    throw new Error("无 scorecard.dimensions");
+  }
+  const dims = {};
+  Object.keys(sc.dimensions).forEach(k => { dims[k] = sc.dimensions[k] && sc.dimensions[k].score; });
+  const sources = rep.sources || [];
+  const suites = sources.length ? Array.from(new Set(sources.map(s => s.suite))).sort() : ["未记录"];
+  return {
+    id: name.replace(/\.json$/i, ""), file: name,
+    generated_at: rep.generated_at || rep.appointed_at || null,
+    time_basis: rep.generated_at ? "run" : (rep.appointed_at ? "appointed" : "unknown"),
+    total: sc.total, valid: sc.valid !== false, partial: !!sc.partial,
+    note: rep.note || sc.note, dimensions: dims, suites: suites, sources: sources,
+    conditions: rep.conditions || null,
+    is_baseline: !!rep.appointed_at || /baseline\.json$/i.test(name),
+    promptmeta_status: (rep.promptmeta && Object.values(rep.promptmeta).some(Boolean))
+      || (rep.conditions && rep.conditions.promptmeta) ? "已采集" : "未采集"
+  };
+}
+
+// 基线不重复计入趋势：只作参照与条件指纹来源（与 trend.py collect_runs 同规则）
+function linkBaseline() {
+  const b = state.baseline;
+  if (!b) return;
+  const same = state.runs.filter(r => !r.conditions && r.total === b.total
+    && JSON.stringify(r.dimensions || {}) === JSON.stringify(b.dimensions || {}));
+  if (same.length === 1) {
+    same[0].conditions = b.conditions;
+    same[0].conditions_source = "baseline";
+    same[0].is_baseline = true;
+  }
+}
+
+$("fileInput").addEventListener("change", async ev => {
+  const errors = [];
+  for (const file of ev.target.files) {
+    try {
+      const rep = JSON.parse(await file.text());
+      const run = extractInBrowser(rep, file.name);
+      if (run.is_baseline) {
+        state.baseline = { id: run.id, total: run.total, appointed_at: run.generated_at,
+                           conditions: run.conditions, dimensions: run.dimensions };
+        continue;
+      }
+      run.generated_at = run.generated_at || "时间未知";
+      const at = state.runs.findIndex(r => r.id === run.id);
+      if (at >= 0) state.runs[at] = run; else state.runs.push(run);
+    } catch (e) { errors.push(file.name + "（" + e.message + "）"); }
+  }
+  linkBaseline();
+  state.runs.sort((a, b) => String(a.generated_at).localeCompare(String(b.generated_at))
+    || a.file.localeCompare(b.file));
+  renderAll();
+  if (errors.length) renderWarnings(derived().warnings.concat(["未识别：" + errors.join("；")]));
+  ev.target.value = "";
+});
+
+$("themeBtn").addEventListener("click", () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark"
+    : window.matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("evalDashTheme", root.dataset.theme); } catch (e) { /* 隐私模式忽略 */ }
+});
+try {
+  const saved = localStorage.getItem("evalDashTheme");
+  if (saved) document.documentElement.dataset.theme = saved;
+} catch (e) { /* 无存储也能完整使用 */ }
+
+renderToggles();
+renderAll();
+</script>
+</body>
+</html>

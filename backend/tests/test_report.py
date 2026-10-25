@@ -277,7 +277,8 @@ class TestScorecardIntegration(unittest.TestCase):
                      "emergency_handled", sources=())]}, ensure_ascii=False),
                 encoding="utf-8")
             prefix = str(Path(td) / "out" / "report")
-            rc = rp.main(["--scenarios", str(run), "--out-prefix", prefix])
+            rc = rp.main(["--scenarios", str(run), "--out-prefix", prefix,
+                          "--no-conditions"])
             self.assertEqual(rc, 0)
             data = json.loads(Path(prefix + ".json").read_text(encoding="utf-8"))
             md = Path(prefix + ".md").read_text(encoding="utf-8")
@@ -285,8 +286,41 @@ class TestScorecardIntegration(unittest.TestCase):
         self.assertTrue(data["scorecard"]["partial"])  # 检索/成本 N/A
         self.assertIsNotNone(data["scorecard"]["total"])
         self.assertEqual(data["sources"][0]["n"], 3)
+        self.assertIsNone(data["conditions"])
+        self.assertIn("未采集", md)
         self.assertIn("## 七、口径声明", md)
         self.assertIn("补全正确率", md)
+
+    def test_cli_conditions_attached_and_failure_degrades(self):
+        """条件指纹：正常落盘；采集异常只警告，不影响报告产出。"""
+        import json
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        for side_effect, expect_conditions in (
+                ({"git_sha": "abc1234", "index_stats": {"docs": 149, "chunks": 1696}}, True),
+                (RuntimeError("chroma 不可用"), False)):
+            with tempfile.TemporaryDirectory() as td:
+                run = Path(td) / "scen.json"
+                run.write_text(json.dumps({"records": [
+                    scen(), dict(REFUSAL),
+                    scen("CS-11", ("emergency",), "emergency_handled",
+                         "emergency_handled", sources=())]}, ensure_ascii=False),
+                    encoding="utf-8")
+                prefix = str(Path(td) / "report")
+                with patch("acceptance.conditions.current_conditions") as cc:
+                    if isinstance(side_effect, Exception):
+                        cc.side_effect = side_effect
+                    else:
+                        cc.return_value = side_effect
+                    rc = rp.main(["--scenarios", str(run), "--out-prefix", prefix])
+                self.assertEqual(rc, 0)
+                data = json.loads(Path(prefix + ".json").read_text(encoding="utf-8"))
+            if expect_conditions:
+                self.assertEqual(data["conditions"], side_effect)
+            else:
+                self.assertIsNone(data["conditions"])
+                self.assertTrue(any("条件指纹采集失败" in w for w in data["warnings"]))
 
     def test_cli_requires_some_valid_input(self):
         with self.assertRaises(SystemExit):
