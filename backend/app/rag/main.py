@@ -133,6 +133,10 @@ def agent_chat(req: AgentChatRequest, request: Request,
         # WEAK 急症风险提示原文（emergency_handled 时为空，其文案已在 answer 内）。
         # 前端用它渲染安全提醒横幅；answer 内的文字保持不变（向后兼容）。
         "risk_notice": state.risk_notice or None,
+        # 调试契约（评估体系 S1-D4）：本轮补全后的独立问题；None=未触发
+        # （急症等 N02 之前终止的路径）。仅本会话 owner 可见，前端不消费，
+        # 不落 SQLite——可观测性字段，供约束保留率等指标取数。
+        "resolved_question": state.resolved_question,
     }
 
 # 配置 CORS：白名单 + 凭证（禁止 * + credentials，见 _check_auth_config）

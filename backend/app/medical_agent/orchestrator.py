@@ -135,7 +135,9 @@ def run_agent(session_id: str, question: str) -> AgentState:
             else:
                 # 补全失败：不猜指代对象，交 N05 走"要求重述"
                 state.context_status = ContextStatus.MISSING
-            state.add_trace("N02", "decision", {"resolved": bool(resolved)},
+            state.add_trace("N02", "decision",
+                            {"resolved": bool(resolved),
+                             "resolved_len": len(state.resolved_question)},
                             node_budget_ms=node_budget)
 
     # ---- N03 紧急风险检查（补全后），取两趟中更强者 ----
@@ -302,8 +304,10 @@ RESOLVE_SYSTEM_PROMPT = """你是对话上下文整理器。用户本轮的问�
    药品名、检查名）必须原样保留在改写后的问题里，只补全指代词所指的内容，
    不得把具体问题泛化成通用问题（如「腹泻要去医院的情况」不得泛化为
    「什么情况要去医院」）；
-4. 确实无法确定指代对象时，输出 {{"question": ""}}，不要猜测；
-5. 输出格式：{{"question": "改写后的完整问题"}}"""
+4. **保留否定词与限定语**：不、没有、别、未、无以及时间/人群限定
+   （如「最近一周」「空腹」）必须原样保留，不得省略、反转或改写为反义；
+5. 确实无法确定指代对象时，输出 {{"question": ""}}，不要猜测；
+6. 输出格式：{{"question": "改写后的完整问题"}}"""
 
 RESOLVE_USER_PROMPT = """【此前的对话】
 {history}
@@ -346,8 +350,21 @@ def _try_calc_param_fill(state: AgentState) -> calculator.CalcPlan | None:
     return plan
 
 
+def _dropped_negation(raw: str, resolved: str) -> bool:
+    """改写产物是否丢弃了原句的否定词（S1-D2，程序校验先于 LLM 信任）。
+
+    「没有胃肠道反应吗」被改写成「有胃肠道反应吗」是语义反转，医疗场景
+    绝不能放行。校验不通过→调用方降级 missing 走"请重述"，不猜。
+    保守取向：宁可误判漏改（多一次重述）也不放过反转（错误医疗语义）。
+    """
+    return any(m in raw and m not in resolved for m in _NEGATION_MARKERS)
+
+
+_NEGATION_MARKERS = ("没有", "别", "不要", "未", "无")
+
+
 def _resolve_reference(state: AgentState, node_budget_ms: int) -> str | None:
-    """N02 上下文补全。失败（LLM 异常/输出非法/指代无法确定）返回 None。"""
+    """N02 上下文补全。失败（LLM 异常/输出非法/指代无法确定/丢否定词）返回 None。"""
     try:
         from langchain_core.prompts import ChatPromptTemplate
 
@@ -376,6 +393,8 @@ def _resolve_reference(state: AgentState, node_budget_ms: int) -> str | None:
         if not isinstance(question, str):
             return None
         question = question.strip()
+        if _dropped_negation(state.resolved_question, question):
+            return None
         return question or None
     except Exception:
         return None

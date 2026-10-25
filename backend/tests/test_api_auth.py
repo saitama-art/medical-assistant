@@ -53,6 +53,8 @@ def _fake_state(question):
         termination_reason=TerminationReason.COMPLETED,
         risk_notice="",
         sources=[],
+        # S1-D4 响应字段：打桩状态须与 AgentState 契约一致
+        resolved_question=question,
     )
 
 

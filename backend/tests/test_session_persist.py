@@ -64,5 +64,44 @@ class TestSessionPersistence(unittest.TestCase):
         self.assertIs(status, ContextStatus.MISSING)
 
 
+class TestHistoryAnswerStripping(unittest.TestCase):
+    """S1-D3：写回历史时剥离来源段/免责声明，保留医疗安全信息。"""
+
+    def setUp(self):
+        session._SESSIONS.clear()
+
+    def tearDown(self):
+        session._SESSIONS.clear()
+
+    def _stored_answer(self, answer: str) -> str:
+        got, _, _ = session.acquire("s-strip")
+        self.assertTrue(got)
+        session.complete("s-strip", "问", answer, got_lock=True)
+        _, history, _ = session.acquire("s-strip")
+        return history[-1][1]
+
+    def test_knowledge_answer_stripped(self):
+        answer = "正文段落\n\n【参考来源】：高血压_默沙东诊疗手册.pdf - 第1页\n\n" + \
+            session.respond.DISCLAIMER
+        self.assertEqual(self._stored_answer(answer), "正文段落")
+
+    def test_emergency_answer_kept(self):
+        # 紧急固定文案是医疗安全信息：保留；只剥免责声明
+        answer = session.respond.EMERGENCY_ANSWER + "\n\n" + session.respond.DISCLAIMER
+        stored = self._stored_answer(answer)
+        self.assertIn("120", stored)
+        self.assertNotIn(session.respond.DISCLAIMER, stored)
+
+    def test_risk_notice_kept(self):
+        answer = session.respond.RISK_NOTICE + "\n\n正文\n\n" + session.respond.DISCLAIMER
+        stored = self._stored_answer(answer)
+        self.assertIn("120", stored)
+        self.assertIn("正文", stored)
+        self.assertNotIn(session.respond.DISCLAIMER, stored)
+
+    def test_plain_answer_untouched(self):
+        self.assertEqual(self._stored_answer("闲聊话术"), "闲聊话术")
+
+
 if __name__ == "__main__":
     unittest.main()

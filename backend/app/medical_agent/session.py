@@ -38,6 +38,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .state import ContextStatus
+from . import respond
 
 # ==================== 配置（设计文档 5.8，最终收敛 config.py） ====================
 
@@ -282,6 +283,20 @@ def acquire(session_id: str) -> tuple[bool, list[tuple[str, str]], ContextStatus
     return True, history, ContextStatus.OK
 
 
+def _strip_answer_for_history(answer: str) -> str:
+    """写回历史前剥离回答的组装层固定部件：【参考来源】段与免责声明。
+
+    S1-D3（2026-10-25，评估方案 V2 用户条件 6）：完整回答（正文+来源列表+
+    免责声明，可达数 KB）原样进 5 轮窗口会膨胀 N02 改写 prompt。剥离只针对
+    固定部件；**医疗安全信息必须保留**——RISK_NOTICE（弱风险提示）、
+    EMERGENCY_ANSWER/CONSERVATIVE_MEDICAL_NOTICE 等紧急文案、正文一律不动。
+    """
+    parts = answer.split("\n\n")
+    kept = [p for p in parts
+            if p != respond.DISCLAIMER and not p.startswith("【参考来源】")]
+    return "\n\n".join(kept)
+
+
 def complete(session_id: str, question: str, answer: str, *, got_lock: bool) -> None:
     """写回本轮问答并释放锁。日志/会话写入失败不影响响应（设计文档 N12）。
 
@@ -306,7 +321,7 @@ def complete(session_id: str, question: str, answer: str, *, got_lock: bool) -> 
             # 继续写入必然挤掉最早的一轮：此后上下文不完整，必须显式标记
             entry.truncated = True
         entry.messages.append(("user", question))
-        entry.messages.append(("assistant", answer))
+        entry.messages.append(("assistant", _strip_answer_for_history(answer)))
         entry.last_active = time.monotonic()
         _save_to_disk(session_id, entry)
     except Exception as exc:  # noqa: BLE001 —— 收尾环节，不允许影响响应

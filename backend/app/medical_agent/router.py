@@ -42,12 +42,36 @@ def has_reference(text: str) -> bool:
 # 注意：「那」已在 ^ 后消费，「那种」只需匹配剩余的「种」，写「种」即可。
 FOLLOWUP_LEAD_RE = re.compile(r"^那(?:什么|哪种|种|该|要|还能|还)")
 
+# 「那…」触发排除明确完结的陈述句：自包含句「那要么明天再说。」曾命中触发，
+# 历史非空时白付一次改写调用、失败走重述（2026-10-25 S1-D1b 实测修复）。
+# 无终止符的短句（「那要不要紧」）仍视为追问。
+
+# 零代词省略追问（S1-D1）：短句（≤8 字）+ 问号收尾 + 含疑问标记。
+# 「用量呢？」「几点吃？」「空腹吃好不好？」有历史时必须触发 N02——
+# 基线实测（CS-17）不触发时残缺问句直送分类器落 unclassified。
+# 误触发代价 ≤ 一次改写调用；漏触发代价 = 落 unclassified 的安全兜底。
+_FRAGMENT_RE = re.compile(r"^[一-鿿A-Za-z0-9]{2,8}？$")
+_FRAGMENT_MARKERS = ("呢", "吗", "吧", "几", "多", "怎", "好不好", "行行")
+
 
 def has_followup_lead(text: str) -> bool:
-    """文本是否以隐性追问开头（那什么/那该/那要…），用于 N02 触发补充。"""
+    """文本是否以隐性追问开头（那什么/那该/那要…），或为零代词省略追问短句。
+
+    用于 N02 触发补充。历史非空由 N02 前置条件保证，这里只做文本级判定。
+    """
     if not isinstance(text, str):
         return False
-    return bool(FOLLOWUP_LEAD_RE.match(text.strip()))
+    s = text.strip()
+    if not s:
+        return False
+    if FOLLOWUP_LEAD_RE.match(s):
+        # 「那…」分支：陈述句终止符（。/！）排除 + 长度 ≤10。过长的
+        # 「那种保健品不用吃也行吧？」是自带主语的陈述（12 字），不触发；
+        # 宁精勿滥，漏触发有 unclassified 的安全兜底。
+        return len(s) <= 10 and not s.endswith(("。", "！", "!"))
+    if _FRAGMENT_RE.match(s) and any(m in s for m in _FRAGMENT_MARKERS):
+        return True
+    return False
 
 
 # ==================== 寒暄短路（T-04：命中时 0 次 LLM、0 次工具） ====================
