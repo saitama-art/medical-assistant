@@ -33,14 +33,19 @@ def _git_sha() -> str:
         return "unknown"
 
 
-def index_stats() -> dict:
-    """知识库统计（只读）。docs = backend/data 下 PDF 数；chunks = collection.count()。"""
+def index_stats(chroma_dir: Path | None = None) -> dict:
+    """知识库统计（只读）。docs = backend/data 下 PDF 数；chunks = collection.count()。
+
+    chroma_dir 可显式指定（W2 协调项：worktree 里跑 acceptance.report 时若按
+    默认 BACKEND_DIR/chroma_db 读的是 worktree 的库，可能不存在导致指纹失真；
+    跨 worktree 生成报告时传主库路径即可）。
+    """
     docs = len(list((BACKEND_DIR / "data").glob("*.pdf")))
     chunks = None
     try:
         import chromadb
 
-        client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+        client = chromadb.PersistentClient(path=str(chroma_dir or CHROMA_DIR))
         for coll in client.list_collections():
             name = getattr(coll, "name", coll)
             if name == "langchain":
@@ -56,13 +61,14 @@ def index_stats() -> dict:
 
 
 def current_conditions(suites: list[str], *, git_sha: str | None = None,
-                       stats: dict | None = None) -> dict:
-    """组装条件指纹。git_sha/stats 可注入（测试免 IO）。"""
+                       stats: dict | None = None,
+                       chroma_dir: Path | None = None) -> dict:
+    """组装条件指纹。git_sha/stats 可注入（测试免 IO）；chroma_dir 见 index_stats。"""
     meta = promptmeta.prompt_meta(BACKEND_DIR)
     return {
         "git_sha": git_sha if git_sha is not None else _git_sha(),
         "promptmeta": meta,
-        "index_stats": stats if stats is not None else index_stats(),
+        "index_stats": stats if stats is not None else index_stats(chroma_dir),
         "model": "deepseek-chat",
         "testset_versions": {"coverage": "v2026-10-22", "health72": "2026-10-21",
                              "scenarios": "2026-10-25"},
