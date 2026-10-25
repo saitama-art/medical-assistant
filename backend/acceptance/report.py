@@ -406,6 +406,14 @@ def render_markdown(rep: dict, sources: list[dict], warnings: list[str],
     L.append("")
     L += _table(["run", "promptmeta"],
                 [[k, "已采集" if v else "未采集"] for k, v in rep["promptmeta"].items()])
+    cond = rep.get("conditions")
+    if cond:
+        stats = cond.get("index_stats") or {}
+        L.append(f"\n运行条件指纹：已采集（git {cond.get('git_sha')}，"
+                 f"索引 docs={stats.get('docs')} chunks={stats.get('chunks')}，"
+                 f"model={cond.get('model')}）——供逐轮变更归因与 S4d 可比性校验。")
+    else:
+        L.append("\n运行条件指纹：未采集（--no-conditions 或采集失败）→ 本轮分数变化无法归因到具体改动。")
     L.append("")
     return "\n".join(L)
 
@@ -430,6 +438,8 @@ def main(argv=None):
     ap.add_argument("--baseline-cost", type=float, default=None,
                     help="成本基线（est_input_tokens 口径）；不填 = 成本维度 N/A")
     ap.add_argument("--top-n", type=int, default=20, help="失败样本清单最多条数")
+    ap.add_argument("--no-conditions", action="store_true",
+                    help="不采集运行条件指纹（默认采集，复用 S4d conditions；失败仅警告）")
     ap.add_argument("--out-prefix", help="输出前缀（默认 acceptance_results/report_<ts>）")
     args = ap.parse_args(argv)
 
@@ -460,6 +470,15 @@ def main(argv=None):
 
     rep = build_report(coverage_rep, scenario_rep, other,
                        accuracy=args.accuracy, baseline_cost=args.baseline_cost)
+    # 运行条件指纹（S4d conditions）：让本轮"在什么条件下跑的"可机检——
+    # 没有它，分数变化无法归因到具体改动。采集失败只降级警告，不影响报告产出。
+    rep["conditions"] = None
+    if not args.no_conditions:
+        try:
+            from .conditions import current_conditions
+            rep["conditions"] = current_conditions(sorted({s["suite"] for s in sources}))
+        except Exception as e:  # noqa: BLE001
+            warnings.append(f"条件指纹采集失败（{type(e).__name__}: {e}）：本轮不可做条件校验")
     rep["sources"] = sources
     rep["warnings"] = warnings
     md = render_markdown(rep, sources, warnings, top_n=args.top_n)

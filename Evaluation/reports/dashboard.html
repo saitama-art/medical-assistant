@@ -14,6 +14,7 @@
     --series-total: #2a78d6; --series-retrieval: #eb6834; --series-answer: #1baf7a;
     --series-refusal: #eda100; --series-latency: #e87ba4; --series-cost: #008300;
     --good: #0ca30c; --warning: #fab219; --critical: #d03b3b;
+    --delta-up: #006300; --delta-down: #d03b3b;
     --surface-tooltip: #fcfcfb;
   }
   @media (prefers-color-scheme: dark) {
@@ -24,6 +25,7 @@
       --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
       --series-total: #3987e5; --series-retrieval: #d95926; --series-answer: #199e70;
       --series-refusal: #c98500; --series-latency: #d55181; --series-cost: #008300;
+      --delta-up: #0ca30c; --delta-down: #d03b3b;
       --surface-tooltip: #1a1a19;
     }
   }
@@ -34,6 +36,7 @@
     --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
     --series-total: #3987e5; --series-retrieval: #d95926; --series-answer: #199e70;
     --series-refusal: #c98500; --series-latency: #d55181; --series-cost: #008300;
+    --delta-up: #0ca30c; --delta-down: #d03b3b;
     --surface-tooltip: #1a1a19;
   }
   * { box-sizing: border-box; }
@@ -89,6 +92,24 @@
   .na { color: var(--text-muted); }
   .warnbox { border-left: 3px solid var(--warning); padding: 8px 12px; margin-top: 10px;
              font-size: 13px; color: var(--text-primary); background: var(--surface-1); }
+  .delta { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .delta.up { color: var(--delta-up); } .delta.down { color: var(--delta-down); }
+  .delta.flat { color: var(--text-muted); font-weight: 400; }
+  .hero .cmp { font-size: 15px; }
+  .reason { font-size: 13px; margin-top: 8px; color: var(--text-primary); }
+  .dimrow { display: flex; align-items: center; gap: 10px; padding: 7px 0;
+            border-bottom: 1px solid var(--grid); font-size: 13px; }
+  .dimrow:last-child { border-bottom: none; }
+  .dimrow .name { width: 76px; flex: none; color: var(--text-secondary); }
+  .dimrow .track { flex: 1; background: var(--page); border-radius: 4px; height: 12px;
+                   position: relative; min-width: 60px; }
+  .dimrow .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 4px 4px 0; }
+  .dimrow .val { width: 52px; text-align: right; font-variant-numeric: tabular-nums; flex: none; }
+  .dimrow .chg { width: 108px; text-align: right; flex: none; font-size: 12px; }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; font-size: 16px; font-weight: 600; color: var(--text-primary); }
+  .hint { font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
   .muted { color: var(--text-muted); }
   ul.tight { margin: 6px 0; padding-left: 20px; font-size: 13px; line-height: 1.8; }
   .src { font-size: 12px; color: var(--text-secondary); }
@@ -119,18 +140,24 @@
 
   <div id="warnings"></div>
   <div id="hero" class="card"></div>
+  <div id="changes" class="card"></div>
 
-  <h2>维度分趋势</h2>
-  <div class="card">
-    <div id="legend" class="legend"></div>
-    <div class="chartwrap">
-      <svg id="chart" class="chart" viewBox="0 0 960 360" role="img"
-           aria-label="各维度得分随评估 run 的变化折线图"></svg>
-      <div id="tooltip" class="tooltip"></div>
+  <h2>各维度：本轮得分与环比</h2>
+  <div class="card" id="dims"></div>
+
+  <details>
+    <summary>历史趋势（轮次多了再看曲线）</summary>
+    <div class="card">
+      <div id="legend" class="legend"></div>
+      <div class="chartwrap">
+        <svg id="chart" class="chart" viewBox="0 0 960 360" role="img"
+             aria-label="各维度得分随评估 run 的变化折线图"></svg>
+        <div id="tooltip" class="tooltip"></div>
+      </div>
+      <div class="sub">单轴 0–100 分。断点 = 该维度当轮 N/A（如成本基线未任命）或总分被安全否决。
+        悬浮查看单轮全部数值；数值以矩阵表为准。上方「系列」开关只影响本图。</div>
     </div>
-    <div class="sub">单轴 0–100 分。断点 = 该维度当轮 N/A（如成本基线未任命）或总分被安全否决。
-      悬浮查看单轮全部数值；数值以下方矩阵表为准。</div>
-  </div>
+  </details>
 
   <h2>日期 × 维度分矩阵</h2>
   <div class="card" id="matrix"></div>
@@ -147,14 +174,16 @@
     <li>安全是否决项：急症拦截率或正确拒答率 &lt;100% 时总分无效，图中不画总分散点。</li>
     <li>成本为估算口径（知识路径 3 次调用/题、token≈answer 字符/4，answer 被截断故为下限）。</li>
     <li>跨 run 比较需条件一致（套件、Prompt/词表指纹、索引）；本面板不做自动 diff，见 S4d。</li>
+    <li>「这轮改了什么」只有三种结论：条件一致（可归因）／条件有差异（不可归因）／未记录指纹（不知道改了什么，不等于没改）。</li>
   </ul>
 </div>
 
 <script>
 "use strict";
-const DATA = {"runs": [{"id": "scorecard_first", "file": "scorecard_first.json", "generated_at": "2026-10-25", "time_basis": "dir_date", "total": 92.88, "valid": true, "partial": true, "note": "引用完整率基于 has_source_section 字段（完整回答）", "dimensions": {"retrieval": 96.36, "answer": 91.67, "refusal": 100.0, "latency": 80}, "suites": ["未记录"], "sources": [], "promptmeta_status": "未采集"}, {"id": "report_s4c", "file": "report_s4c.json", "generated_at": "2026-10-25T12:16:48", "time_basis": "run", "total": 94.73, "valid": true, "partial": true, "note": "部分口径（有维度 N/A）", "dimensions": {"retrieval": 96.36, "answer": 97.22, "refusal": 100.0, "latency": 80}, "suites": ["coverage", "health72", "scenarios"], "sources": [{"suite": "coverage", "file": "coverage_all_20261025_103152.json", "n": 110}, {"suite": "scenarios", "file": "scenarios_20261025_114559.json", "n": 22}, {"suite": "health72", "file": "health72_run4.json", "n": 72}], "promptmeta_status": "未采集"}], "skipped": [], "series": [{"key": "total", "name": "总分"}, {"key": "retrieval", "name": "检索"}, {"key": "answer", "name": "答案质量"}, {"key": "refusal", "name": "拒答健康"}, {"key": "latency", "name": "时延"}, {"key": "cost", "name": "成本"}], "matrix": [{"id": "scorecard_first", "generated_at": "2026-10-25", "total": 92.88, "retrieval": 96.36, "answer": 91.67, "refusal": 100.0, "latency": 80, "cost": null}, {"id": "report_s4c", "generated_at": "2026-10-25T12:16:48", "total": 94.73, "retrieval": 96.36, "answer": 97.22, "refusal": 100.0, "latency": 80, "cost": null}], "warnings": ["各 run 输入套件不一致（scorecard_first=未记录；report_s4c=coverage/health72/scenarios）：分数差异可能来自口径而非系统变化，不能直接当回归/提升。", "部分 run 无条件指纹（promptmeta 未采集，多为 S4a 前的历史产物）：逐维度条件校验需 S4d，面板不做自动 diff。"]};
+const DATA = {"runs": [{"id": "scorecard_first", "file": "scorecard_first.json", "generated_at": "2026-10-25", "time_basis": "dir_date", "total": 92.88, "valid": true, "partial": true, "note": "引用完整率基于 has_source_section 字段（完整回答）", "dimensions": {"retrieval": 96.36, "answer": 91.67, "refusal": 100.0, "latency": 80}, "suites": ["未记录"], "sources": [], "promptmeta_status": "未采集", "conditions": null, "is_baseline": false}, {"id": "report_s4c", "file": "report_s4c.json", "generated_at": "2026-10-25T12:16:48", "time_basis": "run", "total": 94.73, "valid": true, "partial": true, "note": "部分口径（有维度 N/A）", "dimensions": {"retrieval": 96.36, "answer": 97.22, "refusal": 100.0, "latency": 80}, "suites": ["coverage", "health72", "scenarios"], "sources": [{"suite": "coverage", "file": "coverage_all_20261025_103152.json", "n": 110}, {"suite": "scenarios", "file": "scenarios_20261025_114559.json", "n": 22}, {"suite": "health72", "file": "health72_run4.json", "n": 72}], "promptmeta_status": "未采集", "conditions": null, "is_baseline": false}, {"id": "report_full", "file": "report_full.json", "generated_at": "2026-10-25T12:49:29", "time_basis": "run", "total": 93.59, "valid": true, "partial": false, "note": "全量口径", "dimensions": {"retrieval": 96.36, "answer": 91.67, "refusal": 100.0, "latency": 80, "cost": 100.0}, "suites": ["coverage", "scenarios"], "sources": [{"suite": "coverage", "file": "coverage_all_20261025_103152.json", "n": 110}, {"suite": "scenarios", "file": "scenarios_20261025_120804.json", "n": 22}], "promptmeta_status": "未采集", "conditions": {"git_sha": "8995165", "promptmeta": {"hash_alg": "sha256[:12]", "prompt_hashes": {"classify": "ce19615d2bc2", "resolve": "1d4580276648", "judge": "cccfe9cb540e", "generate": "4dfc0ef32045", "rewrite": "b09bb3c51dd1"}, "safety_wordlist_hash": "84503784e9b7"}, "index_stats": {"docs": 149, "chunks": 1696}, "model": "deepseek-chat", "testset_versions": {"coverage": "v2026-10-22", "health72": "2026-10-21", "scenarios": "2026-10-25"}, "suites_executed": ["coverage", "scenarios"]}, "is_baseline": true, "conditions_source": "baseline"}], "skipped": [], "baseline": {"id": "baseline", "total": 93.59, "appointed_at": "2026-10-25T12:49:29", "conditions": {"git_sha": "8995165", "promptmeta": {"hash_alg": "sha256[:12]", "prompt_hashes": {"classify": "ce19615d2bc2", "resolve": "1d4580276648", "judge": "cccfe9cb540e", "generate": "4dfc0ef32045", "rewrite": "b09bb3c51dd1"}, "safety_wordlist_hash": "84503784e9b7"}, "index_stats": {"docs": 149, "chunks": 1696}, "model": "deepseek-chat", "testset_versions": {"coverage": "v2026-10-22", "health72": "2026-10-21", "scenarios": "2026-10-25"}, "suites_executed": ["coverage", "scenarios"]}, "dimensions": {"retrieval": 96.36, "answer": 91.67, "refusal": 100.0, "latency": 80, "cost": 100.0}}, "series": [{"key": "total", "name": "总分"}, {"key": "retrieval", "name": "检索"}, {"key": "answer", "name": "答案质量"}, {"key": "refusal", "name": "拒答健康"}, {"key": "latency", "name": "时延"}, {"key": "cost", "name": "成本"}], "matrix": [{"id": "scorecard_first", "generated_at": "2026-10-25", "total": 92.88, "retrieval": 96.36, "answer": 91.67, "refusal": 100.0, "latency": 80, "cost": null}, {"id": "report_s4c", "generated_at": "2026-10-25T12:16:48", "total": 94.73, "retrieval": 96.36, "answer": 97.22, "refusal": 100.0, "latency": 80, "cost": null}, {"id": "report_full", "generated_at": "2026-10-25T12:49:29", "total": 93.59, "retrieval": 96.36, "answer": 91.67, "refusal": 100.0, "latency": 80, "cost": 100.0}], "warnings": ["各 run 输入套件不一致（scorecard_first=未记录；report_s4c=coverage/health72/scenarios；report_full=coverage/scenarios）：分数差异可能来自口径而非系统变化，不能直接当回归/提升。", "部分 run 无条件指纹（promptmeta 未采集，多为 S4a 前的历史产物）：逐维度条件校验需 S4d，面板不做自动 diff。"], "changes": [{"id": "report_s4c", "vs": "scorecard_first", "deltas": {"total": {"prev": 92.88, "curr": 94.73, "delta": 1.85}, "retrieval": {"prev": 96.36, "curr": 96.36, "delta": 0.0}, "answer": {"prev": 91.67, "curr": 97.22, "delta": 5.55}, "refusal": {"prev": 100.0, "curr": 100.0, "delta": 0.0}, "latency": {"prev": 80, "curr": 80, "delta": 0}, "cost": {"prev": null, "curr": null, "delta": null}}, "condition_diffs": [], "git": null, "comparable": null, "reason": "至少一轮未记录条件指纹：无法判断这轮改了什么，分数差不能归因"}, {"id": "report_full", "vs": "report_s4c", "deltas": {"total": {"prev": 94.73, "curr": 93.59, "delta": -1.14}, "retrieval": {"prev": 96.36, "curr": 96.36, "delta": 0.0}, "answer": {"prev": 97.22, "curr": 91.67, "delta": -5.55}, "refusal": {"prev": 100.0, "curr": 100.0, "delta": 0.0}, "latency": {"prev": 80, "curr": 80, "delta": 0}, "cost": {"prev": null, "curr": 100.0, "delta": null}}, "condition_diffs": [], "git": null, "comparable": null, "reason": "至少一轮未记录条件指纹：无法判断这轮改了什么，分数差不能归因"}]};
 const SERIES = DATA.series;                 // [{key,name}]，固定顺序，颜色不随筛选改变
-const state = { runs: DATA.runs.slice(), visible: {}, theme: null };
+const state = { runs: DATA.runs.slice(), visible: {}, theme: null,
+                baseline: DATA.baseline || null };
 SERIES.forEach(s => { state.visible[s.key] = true; });
 
 const $ = id => document.getElementById(id);
@@ -212,11 +241,62 @@ function renderWarnings(list) {
   $("warnings").innerHTML = list.map(w => `<div class="warnbox">⚠️ ${esc(w)}</div>`).join("");
 }
 
+// 与 trend.py compare_runs 同口径：条件一致才可把分数差归因到系统改动；
+// git_sha 只记录不否决（S4d 校准意见）。改此函数需同步 trend.py。
+function compareRuns(a, b) {
+  const deltas = {};
+  SERIES.forEach(s => {
+    const pa = valueOf(a, s.key), pb = valueOf(b, s.key);
+    deltas[s.key] = { prev: pa, curr: pb,
+      delta: (pa === null || pa === undefined || pb === null || pb === undefined)
+        ? null : Math.round((pb - pa) * 100) / 100 };
+  });
+  const out = { deltas, condition_diffs: [], git: null };
+  const ca = a.conditions, cb = b.conditions;
+  if (!ca || !cb) {
+    return Object.assign(out, { comparable: null,
+      reason: "至少一轮未记录条件指纹：无法判断这轮改了什么，分数差不能归因" });
+  }
+  const diffs = [];
+  const ha = (ca.promptmeta && ca.promptmeta.prompt_hashes) || {};
+  const hb = (cb.promptmeta && cb.promptmeta.prompt_hashes) || {};
+  Array.from(new Set(Object.keys(ha).concat(Object.keys(hb)))).sort().forEach(k => {
+    if (ha[k] !== hb[k]) diffs.push(`prompt[${k}]: ${ha[k]} → ${hb[k]}`);
+  });
+  if ((ca.promptmeta || {}).safety_wordlist_hash !== (cb.promptmeta || {}).safety_wordlist_hash) {
+    diffs.push("safety_wordlist 安全词表已变化");
+  }
+  if (JSON.stringify(ca.index_stats || {}) !== JSON.stringify(cb.index_stats || {})) {
+    diffs.push(`index_stats 知识库: ${JSON.stringify(ca.index_stats || {})} → ${JSON.stringify(cb.index_stats || {})}`);
+  }
+  if (JSON.stringify(ca.testset_versions || {}) !== JSON.stringify(cb.testset_versions || {})) {
+    diffs.push("testset_versions 测试集版本已变化");
+  }
+  if (ca.model !== cb.model) diffs.push(`model: ${ca.model} → ${cb.model}`);
+  const git = ca.git_sha !== cb.git_sha ? `git_sha: ${ca.git_sha} → ${cb.git_sha}` : null;
+  return Object.assign(out, { comparable: diffs.length === 0, condition_diffs: diffs, git,
+    reason: diffs.length ? "运行条件不同：分数差可能来自条件变化而非系统改动"
+                         : "运行条件一致：分数差可归因到代码/配置改动" });
+}
+
+function deltaBadge(d) {
+  if (d === null || d === undefined) return '<span class="delta flat">环比 N/A</span>';
+  const cls = d > 0 ? "up" : (d < 0 ? "down" : "flat");
+  const word = d > 0 ? "▲ 升" : (d < 0 ? "▼ 降" : "＝ 持平");
+  return `<span class="delta ${cls}">${word} ${d > 0 ? "+" : ""}${fmt(d)}</span>`;
+}
+
+function latestCompare() {
+  const n = state.runs.length;
+  return n >= 2 ? compareRuns(state.runs[n - 2], state.runs[n - 1]) : null;
+}
+
 function renderHero() {
   const el = $("hero");
   if (!state.runs.length) {
     el.innerHTML = '<div class="sub">暂无数据。用「追加 JSON」选择评分卡/报告文件，或运行 ' +
       "<code>python -m acceptance.trend</code> 重新生成本页。</div>";
+    $("changes").innerHTML = "";
     return;
   }
   const latest = state.runs[state.runs.length - 1];
@@ -224,11 +304,70 @@ function renderHero() {
   const badge = !valid ? '<span class="badge crit">🚨 安全否决 / 本轮无效</span>'
     : (latest.partial ? '<span class="badge warn">◐ 部分口径</span>'
                       : '<span class="badge good">✓ 全量口径</span>');
+  const cmp = latestCompare();
+  const delta = cmp ? cmp.deltas.total.delta : null;
+  const cmpHtml = cmp
+    ? `<div class="cmp">较上一轮（${esc(state.runs[state.runs.length - 2].id)}）${deltaBadge(delta)}</div>
+       <div class="reason">${cmp.comparable === true ? "✓" : "⚠️"} ${esc(cmp.reason)}</div>`
+    : '<div class="sub">只有一轮数据，暂无环比。</div>';
   el.innerHTML = `<div class="hero"><div class="num">${valid ? fmt(latest.total) : "N/A"}</div>
-    <div><div><strong>最新 run：</strong>${esc(latest.id)} ${badge}</div>
-    <div class="sub">时间 ${esc(latest.generated_at)}${latest.time_basis === "dir_date" ? "（按目录日期）" : ""}
+    <div><div><strong>本轮总分</strong> ${badge}${latest.is_baseline ? ' <span class="badge">基线</span>' : ""}</div>
+    <div class="sub">${esc(latest.id)}　时间 ${esc(latest.generated_at)}${latest.time_basis === "dir_date" ? "（按目录日期）" : ""}
     　套件 ${esc((latest.suites || []).join(" / "))}　共 ${state.runs.length} 轮</div>
-    <div class="sub">${esc(latest.note)}</div></div></div>`;
+    <div class="sub">${esc(latest.note)}</div></div></div>${cmpHtml}`;
+}
+
+function renderChanges() {
+  const el = $("changes"), cmp = latestCompare();
+  if (!state.runs.length) { el.innerHTML = ""; return; }
+  if (!cmp) {
+    el.innerHTML = "<strong>这轮改了什么</strong><div class='hint'>需要至少两轮数据才能对比。</div>";
+    return;
+  }
+  const prev = state.runs[state.runs.length - 2], latest = state.runs[state.runs.length - 1];
+  let body;
+  if (cmp.comparable === null) {
+    body = `<div class="reason">⚠️ 这两轮至少有一轮<strong>没有记录条件指纹</strong>，所以看不出改了什么
+      （不等于"什么都没改"）。</div>
+      <div class="hint">缺指纹的轮次：${[prev, latest].filter(r => !r.conditions).map(r => esc(r.id)).join("、")}<br>
+      让下一轮可比较：在 <code>backend/</code> 下生成报告时默认即采集条件指纹——<br>
+      <code>python -m acceptance.report --scenarios &lt;场景集.json&gt; --coverage &lt;coverage.json&gt;</code><br>
+      （只有明确加 <code>--no-conditions</code> 才不采集；基线任命见 <code>python -m acceptance.baseline</code>）</div>`;
+  } else if (cmp.condition_diffs.length) {
+    body = `<div class="reason">⚠️ 以下条件变了，分数差<strong>不能</strong>直接归因到系统改动：</div>
+      <ul class="tight">${cmp.condition_diffs.map(d => `<li>${esc(d)}</li>`).join("")}</ul>`;
+  } else {
+    body = '<div class="reason">✓ Prompt、安全词表、知识库索引、测试集版本、模型<strong>都没变</strong>。'
+      + "这轮分数差可以归因到代码/配置改动。</div>";
+  }
+  if (cmp.git) body += `<div class="hint">代码版本（仅记录，不参与可比性否决）：${esc(cmp.git)}</div>`;
+  if (state.baseline) {
+    body += `<div class="hint">当前基线：总分 ${fmt(state.baseline.total)}（任命于 ${esc(state.baseline.appointed_at)}）`
+      + (latest.is_baseline ? "；本轮就是基线所依据的 run" : "") + "。</div>";
+  }
+  if (latest.conditions_source === "baseline") {
+    body += '<div class="hint">本轮条件指纹来自 baseline.json（分数唯一匹配自动关联）。</div>';
+  }
+  el.innerHTML = `<strong>这轮改了什么</strong> <span class="hint">（${esc(prev.id)} → ${esc(latest.id)}）</span>${body}`;
+}
+
+function renderDims() {
+  const latest = state.runs[state.runs.length - 1];
+  if (!latest) { $("dims").innerHTML = ""; return; }
+  const cmp = latestCompare();
+  $("dims").innerHTML = SERIES.map(s => {
+    const v = valueOf(latest, s.key);
+    const missing = v === null || v === undefined || (s.key === "total" && latest.valid === false);
+    const d = cmp ? cmp.deltas[s.key].delta : null;
+    const bar = missing ? '<span class="na" style="font-size:12px">N/A（本轮无数据）</span>'
+      : `<div class="fill" style="width:${Math.max(0, Math.min(100, v))}%;background:${seriesColor(s.key)}"></div>`;
+    const prev = cmp ? cmp.deltas[s.key].prev : null;
+    const title = cmp ? `上一轮：${prev === null || prev === undefined ? "N/A" : fmt(prev)}　本轮：${missing ? "N/A" : fmt(v)}` : "";
+    return `<div class="dimrow" title="${esc(title)}"><span class="name">${s.name}</span>
+      <div class="track">${bar}</div>
+      <span class="val">${missing ? "N/A" : fmt(v)}</span>
+      <span class="chg">${cmp ? deltaBadge(d) : '<span class="delta flat">—</span>'}</span></div>`;
+  }).join("");
 }
 
 function renderToggles() {
@@ -368,7 +507,8 @@ function renderSkipped() {
 
 function renderAll() {
   renderWarnings(derived().warnings);
-  renderHero(); renderLegend(); renderChart(); renderMatrix(); renderRuns(); renderSkipped();
+  renderHero(); renderChanges(); renderDims();
+  renderLegend(); renderChart(); renderMatrix(); renderRuns(); renderSkipped();
 }
 
 // 浏览器端追加 JSON：与 trend.py 同一提取契约（scorecard.dimensions 为必需）
@@ -383,11 +523,28 @@ function extractInBrowser(rep, name) {
   const suites = sources.length ? Array.from(new Set(sources.map(s => s.suite))).sort() : ["未记录"];
   return {
     id: name.replace(/\.json$/i, ""), file: name,
-    generated_at: rep.generated_at || null, time_basis: rep.generated_at ? "run" : "unknown",
+    generated_at: rep.generated_at || rep.appointed_at || null,
+    time_basis: rep.generated_at ? "run" : (rep.appointed_at ? "appointed" : "unknown"),
     total: sc.total, valid: sc.valid !== false, partial: !!sc.partial,
     note: rep.note || sc.note, dimensions: dims, suites: suites, sources: sources,
-    promptmeta_status: (rep.promptmeta && Object.values(rep.promptmeta).some(Boolean)) ? "已采集" : "未采集"
+    conditions: rep.conditions || null,
+    is_baseline: !!rep.appointed_at || /baseline\.json$/i.test(name),
+    promptmeta_status: (rep.promptmeta && Object.values(rep.promptmeta).some(Boolean))
+      || (rep.conditions && rep.conditions.promptmeta) ? "已采集" : "未采集"
   };
+}
+
+// 基线不重复计入趋势：只作参照与条件指纹来源（与 trend.py collect_runs 同规则）
+function linkBaseline() {
+  const b = state.baseline;
+  if (!b) return;
+  const same = state.runs.filter(r => !r.conditions && r.total === b.total
+    && JSON.stringify(r.dimensions || {}) === JSON.stringify(b.dimensions || {}));
+  if (same.length === 1) {
+    same[0].conditions = b.conditions;
+    same[0].conditions_source = "baseline";
+    same[0].is_baseline = true;
+  }
 }
 
 $("fileInput").addEventListener("change", async ev => {
@@ -396,11 +553,17 @@ $("fileInput").addEventListener("change", async ev => {
     try {
       const rep = JSON.parse(await file.text());
       const run = extractInBrowser(rep, file.name);
+      if (run.is_baseline) {
+        state.baseline = { id: run.id, total: run.total, appointed_at: run.generated_at,
+                           conditions: run.conditions, dimensions: run.dimensions };
+        continue;
+      }
       run.generated_at = run.generated_at || "时间未知";
       const at = state.runs.findIndex(r => r.id === run.id);
       if (at >= 0) state.runs[at] = run; else state.runs.push(run);
     } catch (e) { errors.push(file.name + "（" + e.message + "）"); }
   }
+  linkBaseline();
   state.runs.sort((a, b) => String(a.generated_at).localeCompare(String(b.generated_at))
     || a.file.localeCompare(b.file));
   renderAll();

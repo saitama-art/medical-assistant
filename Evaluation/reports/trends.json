@@ -19,7 +19,9 @@
         "未记录"
       ],
       "sources": [],
-      "promptmeta_status": "未采集"
+      "promptmeta_status": "未采集",
+      "conditions": null,
+      "is_baseline": false
     },
     {
       "id": "report_s4c",
@@ -58,10 +60,116 @@
           "n": 72
         }
       ],
-      "promptmeta_status": "未采集"
+      "promptmeta_status": "未采集",
+      "conditions": null,
+      "is_baseline": false
+    },
+    {
+      "id": "report_full",
+      "file": "report_full.json",
+      "generated_at": "2026-10-25T12:49:29",
+      "time_basis": "run",
+      "total": 93.59,
+      "valid": true,
+      "partial": false,
+      "note": "全量口径",
+      "dimensions": {
+        "retrieval": 96.36,
+        "answer": 91.67,
+        "refusal": 100.0,
+        "latency": 80,
+        "cost": 100.0
+      },
+      "suites": [
+        "coverage",
+        "scenarios"
+      ],
+      "sources": [
+        {
+          "suite": "coverage",
+          "file": "coverage_all_20261025_103152.json",
+          "n": 110
+        },
+        {
+          "suite": "scenarios",
+          "file": "scenarios_20261025_120804.json",
+          "n": 22
+        }
+      ],
+      "promptmeta_status": "未采集",
+      "conditions": {
+        "git_sha": "8995165",
+        "promptmeta": {
+          "hash_alg": "sha256[:12]",
+          "prompt_hashes": {
+            "classify": "ce19615d2bc2",
+            "resolve": "1d4580276648",
+            "judge": "cccfe9cb540e",
+            "generate": "4dfc0ef32045",
+            "rewrite": "b09bb3c51dd1"
+          },
+          "safety_wordlist_hash": "84503784e9b7"
+        },
+        "index_stats": {
+          "docs": 149,
+          "chunks": 1696
+        },
+        "model": "deepseek-chat",
+        "testset_versions": {
+          "coverage": "v2026-10-22",
+          "health72": "2026-10-21",
+          "scenarios": "2026-10-25"
+        },
+        "suites_executed": [
+          "coverage",
+          "scenarios"
+        ]
+      },
+      "is_baseline": true,
+      "conditions_source": "baseline"
     }
   ],
   "skipped": [],
+  "baseline": {
+    "id": "baseline",
+    "total": 93.59,
+    "appointed_at": "2026-10-25T12:49:29",
+    "conditions": {
+      "git_sha": "8995165",
+      "promptmeta": {
+        "hash_alg": "sha256[:12]",
+        "prompt_hashes": {
+          "classify": "ce19615d2bc2",
+          "resolve": "1d4580276648",
+          "judge": "cccfe9cb540e",
+          "generate": "4dfc0ef32045",
+          "rewrite": "b09bb3c51dd1"
+        },
+        "safety_wordlist_hash": "84503784e9b7"
+      },
+      "index_stats": {
+        "docs": 149,
+        "chunks": 1696
+      },
+      "model": "deepseek-chat",
+      "testset_versions": {
+        "coverage": "v2026-10-22",
+        "health72": "2026-10-21",
+        "scenarios": "2026-10-25"
+      },
+      "suites_executed": [
+        "coverage",
+        "scenarios"
+      ]
+    },
+    "dimensions": {
+      "retrieval": 96.36,
+      "answer": 91.67,
+      "refusal": 100.0,
+      "latency": 80,
+      "cost": 100.0
+    }
+  },
   "series": [
     {
       "key": "total",
@@ -108,10 +216,102 @@
       "refusal": 100.0,
       "latency": 80,
       "cost": null
+    },
+    {
+      "id": "report_full",
+      "generated_at": "2026-10-25T12:49:29",
+      "total": 93.59,
+      "retrieval": 96.36,
+      "answer": 91.67,
+      "refusal": 100.0,
+      "latency": 80,
+      "cost": 100.0
     }
   ],
   "warnings": [
-    "各 run 输入套件不一致（scorecard_first=未记录；report_s4c=coverage/health72/scenarios）：分数差异可能来自口径而非系统变化，不能直接当回归/提升。",
+    "各 run 输入套件不一致（scorecard_first=未记录；report_s4c=coverage/health72/scenarios；report_full=coverage/scenarios）：分数差异可能来自口径而非系统变化，不能直接当回归/提升。",
     "部分 run 无条件指纹（promptmeta 未采集，多为 S4a 前的历史产物）：逐维度条件校验需 S4d，面板不做自动 diff。"
+  ],
+  "changes": [
+    {
+      "id": "report_s4c",
+      "vs": "scorecard_first",
+      "deltas": {
+        "total": {
+          "prev": 92.88,
+          "curr": 94.73,
+          "delta": 1.85
+        },
+        "retrieval": {
+          "prev": 96.36,
+          "curr": 96.36,
+          "delta": 0.0
+        },
+        "answer": {
+          "prev": 91.67,
+          "curr": 97.22,
+          "delta": 5.55
+        },
+        "refusal": {
+          "prev": 100.0,
+          "curr": 100.0,
+          "delta": 0.0
+        },
+        "latency": {
+          "prev": 80,
+          "curr": 80,
+          "delta": 0
+        },
+        "cost": {
+          "prev": null,
+          "curr": null,
+          "delta": null
+        }
+      },
+      "condition_diffs": [],
+      "git": null,
+      "comparable": null,
+      "reason": "至少一轮未记录条件指纹：无法判断这轮改了什么，分数差不能归因"
+    },
+    {
+      "id": "report_full",
+      "vs": "report_s4c",
+      "deltas": {
+        "total": {
+          "prev": 94.73,
+          "curr": 93.59,
+          "delta": -1.14
+        },
+        "retrieval": {
+          "prev": 96.36,
+          "curr": 96.36,
+          "delta": 0.0
+        },
+        "answer": {
+          "prev": 97.22,
+          "curr": 91.67,
+          "delta": -5.55
+        },
+        "refusal": {
+          "prev": 100.0,
+          "curr": 100.0,
+          "delta": 0.0
+        },
+        "latency": {
+          "prev": 80,
+          "curr": 80,
+          "delta": 0
+        },
+        "cost": {
+          "prev": null,
+          "curr": 100.0,
+          "delta": null
+        }
+      },
+      "condition_diffs": [],
+      "git": null,
+      "comparable": null,
+      "reason": "至少一轮未记录条件指纹：无法判断这轮改了什么，分数差不能归因"
+    }
   ]
 }

@@ -25,6 +25,8 @@ import json
 import re
 from pathlib import Path
 
+from .conditions import fingerprint_differences
+
 SERIES = ("total", "retrieval", "answer", "refusal", "latency", "cost")
 SERIES_NAMES = {"total": "总分", "retrieval": "检索", "answer": "答案质量",
                 "refusal": "拒答健康", "latency": "时延", "cost": "成本"}
@@ -43,8 +45,10 @@ def extract_run(path: str | Path) -> dict:
     sc = rep.get("scorecard")
     if not isinstance(sc, dict) or not isinstance(sc.get("dimensions"), dict):
         raise ValueError("无 scorecard.dimensions，不是评分卡/报告产物")
-    generated = rep.get("generated_at")
+    generated = rep.get("generated_at") or rep.get("appointed_at")
     time_basis = "run"
+    if rep.get("appointed_at") and not rep.get("generated_at"):
+        time_basis = "appointed"
     if not generated:
         parent = p.parent.name
         if _DIR_DATE.match(parent):
@@ -55,6 +59,7 @@ def extract_run(path: str | Path) -> dict:
     sources = rep.get("sources") or []
     suites = sorted({s.get("suite", "?") for s in sources}) or ["未记录"]
     promptmeta = rep.get("promptmeta")
+    cond_pm = (rep.get("conditions") or {}).get("promptmeta")
     return {
         "id": p.stem,
         "file": p.name,
@@ -68,22 +73,79 @@ def extract_run(path: str | Path) -> dict:
         "suites": suites,
         "sources": [{"suite": s.get("suite"), "file": s.get("file"), "n": s.get("n")}
                     for s in sources],
-        "promptmeta_status": ("已采集" if promptmeta and any(promptmeta.values())
-                              else "未采集"),
+        "promptmeta_status": ("已采集" if (promptmeta and any(promptmeta.values()))
+                              or cond_pm else "未采集"),
+        # 变更归因的数据基础：report --with-conditions（默认）或 baseline.json 的 conditions
+        "conditions": rep.get("conditions"),
+        "is_baseline": bool(rep.get("appointed_at")) or p.name == "baseline.json",
     }
 
 
+def value_of(run: dict, key: str):
+    """total 取总分（安全否决时本就为 None），其余取维度分；缺数据一律 None。"""
+    return run["total"] if key == "total" else (run.get("dimensions") or {}).get(key)
+
+
+def compare_runs(prev: dict, curr: dict) -> dict:
+    """环比：各维度分数差 + 「这轮改了什么」条件差异（复用 S4d 指纹比较）。
+
+    comparable 三态：True=条件一致可直接归因；False=条件有差异，分数差不能归因；
+    None=至少一轮未记录条件指纹，**不知道改了什么**（不是"没改"）。
+    git_sha 按 S4d 校准意见只作记录，不参与可比性否决。
+    """
+    deltas = {}
+    for key in SERIES:
+        a, b = value_of(prev, key), value_of(curr, key)
+        deltas[key] = {"prev": a, "curr": b,
+                       "delta": round(b - a, 2) if a is not None and b is not None else None}
+    ca, cb = prev.get("conditions"), curr.get("conditions")
+    base = {"deltas": deltas, "condition_diffs": [], "git": None}
+    if not ca or not cb:
+        return {**base, "comparable": None,
+                "reason": "至少一轮未记录条件指纹：无法判断这轮改了什么，分数差不能归因"}
+    raw = fingerprint_differences(ca, cb)
+    git = next((d for d in raw if d.startswith("git_sha:")), None)
+    diffs = [d for d in raw if not d.startswith("git_sha:")]
+    if ca.get("model") != cb.get("model"):
+        diffs.append(f"model: {ca.get('model')} → {cb.get('model')}")
+    return {**base, "comparable": not diffs, "condition_diffs": diffs, "git": git,
+            "reason": ("运行条件不同：分数差可能来自条件变化而非系统改动"
+                       if diffs else "运行条件一致：分数差可归因到代码/配置改动")}
+
+
 def collect_runs(paths: list[str | Path]) -> dict:
-    """读多个产物 → {runs（按时间+文件名排序）, skipped}。坏文件不中断。"""
+    """读多个产物 → {runs（按时间+文件名排序）, skipped, baseline}。坏文件不中断。
+
+    baseline.json 是**基线参照与条件指纹来源**，不作为独立 run 重复计入趋势；
+    其 conditions 在「分数完全一致且唯一匹配」时关联给对应 run（如任命基线时
+    依据的 report_full），并在该 run 上标 conditions_source=baseline。
+    """
     runs, skipped = [], []
     for path in paths:
         try:
             runs.append(extract_run(path))
         except (OSError, json.JSONDecodeError, ValueError) as e:
             skipped.append({"file": Path(path).name, "reason": str(e)})
+    baselines = [r for r in runs if r["is_baseline"]]
+    runs = [r for r in runs if not r["is_baseline"]]
+    baseline_info = None
+    if baselines:
+        b = baselines[-1]
+        baseline_info = {"id": b["id"], "total": b["total"],
+                         "appointed_at": b["generated_at"], "conditions": b["conditions"],
+                         "dimensions": b["dimensions"]}
+        candidates = [r for r in runs if not r.get("conditions")
+                      and r["total"] == b["total"] and r["dimensions"] == b["dimensions"]]
+        if len(candidates) == 1:
+            candidates[0]["conditions"] = b["conditions"]
+            candidates[0]["conditions_source"] = "baseline"
+            candidates[0]["is_baseline"] = True
+        elif len(candidates) > 1:
+            skipped.append({"file": "baseline.json",
+                            "reason": "与多个 run 分数完全一致，未自动关联条件指纹（避免误归因）"})
     runs.sort(key=lambda r: (r["generated_at"] is None, r["generated_at"] or "",
                              r["file"]))
-    return {"runs": runs, "skipped": skipped}
+    return {"runs": runs, "skipped": skipped, "baseline": baseline_info}
 
 
 def build_trends(runs: list[dict]) -> dict:
@@ -105,8 +167,12 @@ def build_trends(runs: list[dict]) -> dict:
                         "逐维度条件校验需 S4d，面板不做自动 diff。")
     if any(not r["valid"] for r in runs):
         warnings.append("存在安全否决/数据缺失的 run：其总分记 N/A，不参与趋势连线。")
+    changes = []
+    for i in range(1, len(runs)):
+        changes.append({"id": runs[i]["id"], "vs": runs[i - 1]["id"],
+                        **compare_runs(runs[i - 1], runs[i])})
     return {"series": [{"key": k, "name": SERIES_NAMES[k]} for k in SERIES],
-            "matrix": matrix, "warnings": warnings}
+            "matrix": matrix, "warnings": warnings, "changes": changes}
 
 
 def discover(root: str | Path) -> list[Path]:
@@ -127,19 +193,26 @@ def render_html(payload: dict, template_path: str | Path) -> str:
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="python -m acceptance.trend",
                                  description="评分卡/报告 JSON → 趋势数据 + 离线 HTML 面板")
-    ap.add_argument("paths", nargs="*", default=["../Evaluation/reports"],
-                    help="产物文件或目录（默认 ../Evaluation/reports）")
+    ap.add_argument("paths", nargs="*", default=None,
+                    help="产物文件或目录（默认 ../Evaluation/reports，外加存在的 baseline.json）")
     ap.add_argument("--template", default="../Evaluation/dashboard.template.html")
     ap.add_argument("--out", default="../Evaluation/reports/dashboard.html")
     ap.add_argument("--trends-json", default=None, help="趋势数据输出路径（默认同 out 目录 trends.json）")
     args = ap.parse_args(argv)
 
-    files = [p for path in args.paths for p in discover(path)]
+    paths = args.paths
+    if not paths:
+        paths = ["../Evaluation/reports"]
+        # 基线带条件指纹，是「这轮改了什么」的关键输入；存在就一并纳入
+        if Path("../Evaluation/baseline.json").exists():
+            paths.append("../Evaluation/baseline.json")
+    files = [p for path in paths for p in discover(path)]
     if not files:
         ap.error("未找到任何 JSON 产物")
     collected = collect_runs(files)
     trends = build_trends(collected["runs"])
-    payload = {"runs": collected["runs"], "skipped": collected["skipped"], **trends}
+    payload = {"runs": collected["runs"], "skipped": collected["skipped"],
+               "baseline": collected["baseline"], **trends}
 
     trends_path = Path(args.trends_json) if args.trends_json else Path(args.out).parent / "trends.json"
     trends_path.parent.mkdir(parents=True, exist_ok=True)
