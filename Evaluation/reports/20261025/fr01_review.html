@@ -1,0 +1,105 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FR-01 人工抽查核对页</title><style>
+body{font-family:'Microsoft YaHei',sans-serif;background:#fff;color:#222;max-width:1100px;margin:0 auto;padding:18px 22px;font-size:10pt}
+h1{font-size:16pt}h2{font-size:12pt;margin-top:22px;border-left:4px solid #2e7d32;padding-left:8px}
+table{border-collapse:collapse;width:100%;margin-top:8px}
+td,th{border:1px solid #ccd4da;padding:5px 7px;vertical-align:top;text-align:left}
+th{background:#eef2f5}
+tr:nth-child(even){background:#fafbfc}
+.ev{color:#667;font-size:8.5pt}
+.opts label{display:block;white-space:nowrap;cursor:pointer}
+#stats{position:sticky;top:0;background:#fff8e6;border:1px solid #e5d9a8;padding:8px 12px;font-size:11pt;margin:10px 0}
+button{margin-right:8px;padding:5px 12px;font-size:10pt;cursor:pointer}
+.pass{color:#2e7d32}.fail{color:#c01c28}
+#out{width:100%;height:110px;margin-top:10px;font-size:9pt}
+.note{color:#776;background:#f7f7f7;border-left:3px solid #bbb;padding:6px 10px;font-size:9pt}
+</style></head><body>
+<h1>FR-01 人工抽查核对页（终审：用户本人）</h1>
+<div class="note">逐句点选：✅支持（片段有依据）/ ❌不支持（片段无依据，要扣分）/ ➖非医学句（过渡、就医建议、免责声明，不计分母）。
+AI 候选证据仅为定位建议，判定以你阅读原文为准。FR-01-8 的源站错字记支持并单独转评审。判定自动保存在本浏览器。</div>
+<div id="stats"></div>
+<p><button id="allYes">全部标支持（谨慎）</button><button id="clearAll">清空判定</button><button id="copyBtn">复制结果给 Claude</button></p>
+<div id="root"></div>
+<textarea id="out" placeholder="点「复制结果给 Claude」后，结果文本也会显示在这里，可手动复制"></textarea>
+<script>
+const data = [{"id": "FR-01-4", "question": "2型糖尿病患者如何控制血糖？", "rows": [{"n": 1, "sentence": "根据知识库资料，2型糖尿病患者控制血糖主要从以下几个方面入手：", "evidence": "（无匹配片段）"}, {"n": 2, "sentence": "一、生活方式是基础", "evidence": "（无匹配片段）"}, {"n": 3, "sentence": "- 饮食控制：坚持健康饮食，少吃精制碳水化合物（包括糖）、饱和脂肪和加工食品", "evidence": "2型糖尿病_默沙东诊疗手册.pdf（重合 71%）：2 型糖尿病患者需要坚持健康饮食，少吃精制碳水化合物（包括糖）、饱和脂肪和加工食品。患者还 需要锻炼身体并保持健康体重。大多数患者还需要使用药物来降低血糖水平。 2 型糖尿病在成年糖尿病患者中的占比达到 90% 左右。 …"}, {"n": 4, "sentence": "限制富含碳水化合物和脂肪的食物", "evidence": "2型糖尿病_默沙东诊疗手册.pdf（重合 100%）：不食用单糖和加工食物 补充膳食纤维 补充膳食纤维 限制富含碳水化合物和脂肪的食物（尤其是饱和脂肪） 限制富含碳水化合物和脂肪的食物（尤其是饱和脂肪） 确保摄入足够的维生素和矿物质 确保摄入足够的维生素和矿物质 限制钠的摄…"}, {"n": 5, "sentence": "限制钠的摄入（尤其合并高血压者）", "evidence": "（无匹配片段）"}, {"n": 6, "sentence": "可与营养师或糖尿病教育者共同制定饮食计划", "evidence": "（无匹配片段）"}, {"n": 7, "sentence": "- 坚持锻炼：适量锻炼（每周至少3天，总时长至少150分钟），有助于控制体重、改善血糖水平", "evidence": "2型糖尿病_默沙东诊疗手册.pdf（重合 7%）：不食用单糖和加工食物 补充膳食纤维 补充膳食纤维 限制富含碳水化合物和脂肪的食物（尤其是饱和脂肪） 限制富含碳水化合物和脂肪的食物（尤其是饱和脂肪） 确保摄入足够的维生素和矿物质 确保摄入足够的维生素和矿物质 限制钠的摄…"}, {"n": 8, "sentence": "锻炼时血糖会下降，需警惕低血糖症状", "evidence": "（无匹配片段）"}, {"n": 9, "sentence": "- 减轻体重：大多数2型糖尿病患者超重或肥胖，达到并维持正常体重有助于避免或推迟用药，也能减少并发症", "evidence": "2型糖尿病_默沙东诊疗手册.pdf（重合 11%）：不食用单糖和加工食物 补充膳食纤维 补充膳食纤维 限制富含碳水化合物和脂肪的食物（尤其是饱和脂肪） 限制富含碳水化合物和脂肪的食物（尤其是饱和脂肪） 确保摄入足够的维生素和矿物质 确保摄入足够的维生素和矿物质 限制钠的摄…"}, {"n": 10, "sentence": "- 戒烟、适量饮酒（女性每天最多一杯，男性每天最多两杯）", "evidence": "2型糖尿病_默沙东诊疗手册.pdf（重合 50%）：方法相似，重点都是静脉输注液体和 胰岛素 。 2 型糖尿病的常规治疗 糖尿病患者能从学习糖尿病知识中获益，了解饮食和运动如何影响他们的血糖水平，以及懂得如何避 免并发症的发生。在 糖尿病教育 方面接受过培训的护士或其他临…"}, {"n": 11, "sentence": "- 接受糖尿病教育：学习饮食、运动如何影响血糖，以及如何避免并发症", "evidence": "（无匹配片段）"}, {"n": 12, "sentence": "大多数患者需要口服或注射药物来降低血糖，包括胰岛素、二甲双胍、磺脲类、GLP-1受体激动剂、SGLT-2抑制剂等", "evidence": "2型糖尿病_默沙东诊疗手册.pdf（重合 53%）：迅速减肥时，医生会开处方给予额外的蛋白质和维生素并要求进行力量训练，以确保患者维持肌肉质 量并且不会发生营养不良。 您知道吗…… 您知道吗…… 2 型糖尿病的常规治疗一般会要求改变生活方式，包括减肥、控制饮食和坚持锻炼。…"}, {"n": 13, "sentence": "药物选择需结合患者其他疾病、血糖控制情况、个人偏好和费用，由医生指导", "evidence": "2型糖尿病_默沙东诊疗手册.pdf（重合 44%）：迅速减肥时，医生会开处方给予额外的蛋白质和维生素并要求进行力量训练，以确保患者维持肌肉质 量并且不会发生营养不良。 您知道吗…… 您知道吗…… 2 型糖尿病的常规治疗一般会要求改变生活方式，包括减肥、控制饮食和坚持锻炼。…"}, {"n": 14, "sentence": "许多人需要使用不止一种药物", "evidence": "2型糖尿病_默沙东诊疗手册.pdf（重合 100%）：迅速减肥时，医生会开处方给予额外的蛋白质和维生素并要求进行力量训练，以确保患者维持肌肉质 量并且不会发生营养不良。 您知道吗…… 您知道吗…… 2 型糖尿病的常规治疗一般会要求改变生活方式，包括减肥、控制饮食和坚持锻炼。…"}, {"n": 15, "sentence": "- 通常使用糖化血红蛋白检测，一般每年检测2到4次，大多数患者目标水平低于7%（部分低血糖风险较高者为7.5%～8.5%）", "evidence": "2型糖尿病_默沙东诊疗手册.pdf（重合 26%）：酌情给予他汀类药物。 足部护理 足部护理对糖尿病患者至关重要（参阅 足部护理 ）。应避免足部损伤，应该使用好的皮肤保湿剂保 持皮肤湿润。鞋子应该非常合脚，不会引起任何部位的剌激。鞋子还应该有适当的缓冲来分散站立时 的压力…"}, {"n": 16, "sentence": "- 注射胰岛素者应连续监测血糖和/或经常进行指尖血糖检测", "evidence": "2型糖尿病_默沙东诊疗手册.pdf（重合 55%）：酌情给予他汀类药物。 足部护理 足部护理对糖尿病患者至关重要（参阅 足部护理 ）。应避免足部损伤，应该使用好的皮肤保湿剂保 持皮肤湿润。鞋子应该非常合脚，不会引起任何部位的剌激。鞋子还应该有适当的缓冲来分散站立时 的压力…"}, {"n": 17, "sentence": "控制血糖的目标是尽可能接近正常范围，同时可使用药物预防并发症（如合并高血压或慢性肾脏病者使用特定降压药，酌情使用他汀类药物），并做好足部护理、按推荐接种疫苗", "evidence": "2型糖尿病_默沙东诊疗手册.pdf（重合 6%）：迅速减肥时，医生会开处方给予额外的蛋白质和维生素并要求进行力量训练，以确保患者维持肌肉质 量并且不会发生营养不良。 您知道吗…… 您知道吗…… 2 型糖尿病的常规治疗一般会要求改变生活方式，包括减肥、控制饮食和坚持锻炼。…"}, {"n": 18, "sentence": "**重要提示：本内容仅供科普参考，不能替代医生诊断", "evidence": "（无匹配片段）"}, {"n": 19, "sentence": "具体治疗方案请遵医嘱，身体不适请及时线下就医", "evidence": "（无匹配片段）"}, {"n": 20, "sentence": "【参考来源】：2型糖尿病_默沙东诊疗手册.pdf - 第1、2、4页等", "evidence": "（无匹配片段）"}, {"n": 21, "sentence": "糖尿病概述_默沙东诊疗手册.pdf - 第2、4页", "evidence": "（无匹配片段）"}, {"n": 22, "sentence": "本内容仅供健康科普参考，不构成诊断、处方或治疗建议，不能替代医生面诊", "evidence": "（无匹配片段）"}]}, {"id": "FR-01-8", "question": "幽门螺杆菌感染应该如何治疗？", "rows": [{"n": 1, "sentence": "根据知识库资料，幽门螺杆菌感染的治疗方法如下：", "evidence": "幽门螺杆菌感染_默沙东诊疗手册.pdf（重合 19%）：幽门螺杆菌 可增加胃酸生成，干扰胃部的正常抗胃酸机制并产生毒素，从而诱发溃疡形成。 长时间感染 幽门螺杆菌 可增加 胃癌 的风险。 幽门螺杆菌 感染的症状 在 幽门螺杆菌 感染引起胃炎的患者中，大多不会出现症状或并发症，…"}, {"n": 2, "sentence": "一、主要治疗方案", "evidence": "（无匹配片段）"}, {"n": 3, "sentence": "最常见的疗法是联合用药：", "evidence": "（无匹配片段）"}, {"n": 4, "sentence": "- 1种质子泵抑制剂（减少胃酸生成）+ 2种抗生素", "evidence": "（无匹配片段）"}, {"n": 5, "sentence": "- 有时还会联用次水杨酸铋", "evidence": "（无匹配片段）"}, {"n": 6, "sentence": "- 质子泵抑制剂（选其中一种）：兰索拉唑、奥美拉唑、泮托拉唑、雷贝拉唑或埃索美拉唑", "evidence": "幽门螺杆菌感染_默沙东诊疗手册.pdf（重合 49%）：幽门螺杆菌 可增加胃酸生成，干扰胃部的正常抗胃酸机制并产生毒素，从而诱发溃疡形成。 长时间感染 幽门螺杆菌 可增加 胃癌 的风险。 幽门螺杆菌 感染的症状 在 幽门螺杆菌 感染引起胃炎的患者中，大多不会出现症状或并发症，…"}, {"n": 7, "sentence": "- 抗生素（可选）：阿莫西林、克拉霉素、甲硝唑、四环素", "evidence": "幽门螺杆菌感染_默沙东诊疗手册.pdf（重合 26%）：幽门螺杆菌 可增加胃酸生成，干扰胃部的正常抗胃酸机制并产生毒素，从而诱发溃疡形成。 长时间感染 幽门螺杆菌 可增加 胃癌 的风险。 幽门螺杆菌 感染的症状 在 幽门螺杆菌 感染引起胃炎的患者中，大多不会出现症状或并发症，…"}, {"n": 8, "sentence": "三、可能的副作用", "evidence": "（无匹配片段）"}, {"n": 9, "sentence": "- 质子泵抑制剂：通常耐受良好，副作用很少或轻微，但可能导致腹泻、便秘和头痛", "evidence": "幽门螺杆菌感染_默沙东诊疗手册.pdf（重合 27%）：幽门螺杆菌 可增加胃酸生成，干扰胃部的正常抗胃酸机制并产生毒素，从而诱发溃疡形成。 长时间感染 幽门螺杆菌 可增加 胃癌 的风险。 幽门螺杆菌 感染的症状 在 幽门螺杆菌 感染引起胃炎的患者中，大多不会出现症状或并发症，…"}, {"n": 10, "sentence": "- 抗生素：均可能改变味觉并导致恶心", "evidence": "幽门螺杆菌感染_默沙东诊疗手册.pdf（重合 50%）：幽门螺杆菌 可增加胃酸生成，干扰胃部的正常抗胃酸机制并产生毒素，从而诱发溃疡形成。 长时间感染 幽门螺杆菌 可增加 胃癌 的风险。 幽门螺杆菌 感染的症状 在 幽门螺杆菌 感染引起胃炎的患者中，大多不会出现症状或并发症，…"}, {"n": 11, "sentence": "阿莫西林、克林霉素和四环素可能导致腹泻", "evidence": "幽门螺杆菌感染_默沙东诊疗手册.pdf（重合 100%）：幽门螺杆菌 可增加胃酸生成，干扰胃部的正常抗胃酸机制并产生毒素，从而诱发溃疡形成。 长时间感染 幽门螺杆菌 可增加 胃癌 的风险。 幽门螺杆菌 感染的症状 在 幽门螺杆菌 感染引起胃炎的患者中，大多不会出现症状或并发症，…"}, {"n": 12, "sentence": "- 次水杨酸铋：可能导致便秘，以及舌头和粪便发黑", "evidence": "幽门螺杆菌感染_默沙东诊疗手册.pdf（重合 56%）：幽门螺杆菌 可增加胃酸生成，干扰胃部的正常抗胃酸机制并产生毒素，从而诱发溃疡形成。 长时间感染 幽门螺杆菌 可增加 胃癌 的风险。 幽门螺杆菌 感染的症状 在 幽门螺杆菌 感染引起胃炎的患者中，大多不会出现症状或并发症，…"}, {"n": 13, "sentence": "四、治疗后必须复查", "evidence": "（无匹配片段）"}, {"n": 14, "sentence": "医生通常会在治疗结束后4周左右重做呼气试验、大便检查或内镜，以确认治疗成功", "evidence": "幽门螺杆菌感染_默沙东诊疗手册.pdf（重合 50%）：幽门螺杆菌 可增加胃酸生成，干扰胃部的正常抗胃酸机制并产生毒素，从而诱发溃疡形成。 长时间感染 幽门螺杆菌 可增加 胃癌 的风险。 幽门螺杆菌 感染的症状 在 幽门螺杆菌 感染引起胃炎的患者中，大多不会出现症状或并发症，…"}, {"n": 15, "sentence": "**如果幽门螺杆菌未根除，应重复治疗", "evidence": "幽门螺杆菌感染_默沙东诊疗手册.pdf（重合 82%）：幽门螺杆菌 可增加胃酸生成，干扰胃部的正常抗胃酸机制并产生毒素，从而诱发溃疡形成。 长时间感染 幽门螺杆菌 可增加 胃癌 的风险。 幽门螺杆菌 感染的症状 在 幽门螺杆菌 感染引起胃炎的患者中，大多不会出现症状或并发症，…"}, {"n": 16, "sentence": "如果感染完全根除，消化性溃疡在3年内复发的几率低于10%", "evidence": "幽门螺杆菌感染_默沙东诊疗手册.pdf（重合 90%）：粪便发黑。 医生通常会在治疗结束后 4 周左右重做呼气试验、大便检查或内镜，以确认治疗成功。 如果 幽门螺杆菌 未根除，应重复治疗。 幽门螺杆菌 感染的预后 如果 幽门螺杆菌 感染完全根除，消化性溃疡在 3 年内复发的几…"}, {"n": 17, "sentence": "如果未完全根除，复发几率高于50%", "evidence": "（无匹配片段）"}, {"n": 18, "sentence": "免责提示： 本内容仅供科普参考，不能替代医生诊断", "evidence": "（无匹配片段）"}, {"n": 19, "sentence": "具体用药方案需由医生根据个人情况制定，身体不适请及时线下就医", "evidence": "（无匹配片段）"}, {"n": 20, "sentence": "【参考来源】：幽门螺杆菌感染_默沙东诊疗手册.pdf - 第1、2页", "evidence": "幽门螺杆菌感染_默沙东诊疗手册.pdf（重合 4%）：幽门螺杆菌感染 知识类别：疾病与健康知识 资料来源：默沙东诊疗手册·大众版（病人教育资料，逐字转载） 来源 URL：https://www.msdmanuals.cn/home/digestive-disorders/g…"}, {"n": 21, "sentence": "国药准字H10970299_氟康唑片.pdf - 第1页", "evidence": "国药准字H10970299_氟康唑片.pdf（重合 58%）：文档：国药准字H10970299_氟康唑片 【用法用量】 受损患者可能需要更长 时间  – 慢性萎缩型 念珠菌病  50mg，每天一次 14天  – 慢性皮肤粘 膜念珠菌病  50mg至100mg， 每 天一次  最长2…"}, {"n": 22, "sentence": "慢性阻塞性肺疾病（COPD）_默沙东诊疗手册.pdf - 第5页", "evidence": "（无匹配片段）"}, {"n": 23, "sentence": "本内容仅供健康科普参考，不构成诊断、处方或治疗建议，不能替代医生面诊", "evidence": "（无匹配片段）"}]}];
+const storeKey = 'fr01-review-v1';
+let marks = {};
+try { marks = JSON.parse(localStorage.getItem(storeKey) || '{}'); } catch (e) { marks = {}; }
+function save() { try { localStorage.setItem(storeKey, JSON.stringify(marks)); } catch (e) {} }
+
+function render() {
+  const root = document.getElementById('root');
+  root.innerHTML = '';
+  data.forEach(s => {
+    const sec = document.createElement('section');
+    sec.innerHTML = `<h2>${s.id}：${s.question}</h2>`;
+    const tbl = document.createElement('table');
+    tbl.innerHTML = '<tr><th style="width:36px">#</th><th>医学陈述句</th><th>候选证据（AI 初筛）</th><th style="width:190px">判定</th></tr>';
+    s.rows.forEach(r => {
+      const key = s.id + '-' + r.n;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.n}</td><td>${r.sentence}</td><td class="ev">${r.evidence}</td>
+        <td class="opts">
+          <label><input type="radio" name="${key}" value="yes" ${marks[key]==='yes'?'checked':''}>✅支持</label>
+          <label><input type="radio" name="${key}" value="no" ${marks[key]==='no'?'checked':''}>❌不支持</label>
+          <label><input type="radio" name="${key}" value="na" ${marks[key]==='na'?'checked':''}>➖非医学句</label>
+        </td>`;
+      tbl.appendChild(tr);
+    });
+    sec.appendChild(tbl);
+    root.appendChild(sec);
+  });
+  root.querySelectorAll('input[type=radio]').forEach(el => {
+    el.addEventListener('change', e => {
+      marks[e.target.name] = e.target.value;
+      save(); stats();
+    });
+  });
+  stats();
+}
+
+function stats() {
+  let yes=0, no=0, na=0, total=0;
+  data.forEach(s => s.rows.forEach(r => {
+    total++;
+    const v = marks[s.id + '-' + r.n];
+    if (v==='yes') yes++; else if (v==='no') no++; else if (v==='na') na++;
+  }));
+  const judged = yes+no;
+  const rate = judged ? (100*yes/judged).toFixed(1) : '—';
+  const pass = judged && (yes/judged) >= 0.85;
+  document.getElementById('stats').innerHTML =
+    `已判定 ${yes+no+na}/${total}　✅ ${yes}　❌ ${no}　➖ ${na}　` +
+    `<b>支持率 ${rate}%</b>　` +
+    (judged ? (pass ? '<span class="pass">≥0.85，FR-01 通过</span>' : '<span class="fail">未达 0.85</span>') : '');
+}
+
+function summaryText() {
+  let yes=0,no=0,na=0; const bad=[];
+  data.forEach(s => s.rows.forEach(r => {
+    const v = marks[s.id+'-'+r.n];
+    if (v==='yes') yes++; else if (v==='no') { no++; bad.push(`${s.id}#${r.n} ${r.sentence}`); } else if (v==='na') na++;
+  }));
+  const judged = yes+no;
+  const rate = judged ? (100*yes/judged).toFixed(1) : '—';
+  return `FR-01 人工抽查结果（本人终审）\n支持 ${yes} / 不支持 ${no} / 非医学句 ${na}\n支持率 ${rate}%（通过线 ≥85%）\n不支持句：\n${bad.join('\n') || '（无）'}`;
+}
+
+document.getElementById('allYes').onclick = () => {
+  data.forEach(s => s.rows.forEach(r => { marks[s.id+'-'+r.n]='yes'; }));
+  save(); render();
+};
+document.getElementById('clearAll').onclick = () => {
+  if (!confirm('清空全部判定？')) return;
+  marks = {}; save(); render();
+};
+document.getElementById('copyBtn').onclick = async () => {
+  const text = summaryText();
+  document.getElementById('out').value = text;
+  try { await navigator.clipboard.writeText(text); alert('结果已复制，可直接粘贴给 Claude'); }
+  catch (e) { alert('已生成在下方文本框，请手动复制'); }
+};
+render();
+</script></body></html>
