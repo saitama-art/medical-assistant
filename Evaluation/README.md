@@ -2,6 +2,8 @@
 
 本目录是项目评估体系的**内容与工具统一出口**（2026-10-25 确立约定）：
 
+固定测试数据集与共享测试 fixtures 统一放根目录 `testing/`；本目录只承接评估、优化及其产出。
+
 | 位置 | 内容 | 说明 |
 |---|---|---|
 | `metrics.py` | 检索指标纯函数（Recall@K/MRR/top1/失败构成） | 零依赖 CLI：`python Evaluation/metrics.py <run.json>...`；S3 接线 coverage 时经 sys.path 导入（路径 `Evaluation/`，注意跨目录） |

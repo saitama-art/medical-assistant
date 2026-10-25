@@ -18,6 +18,7 @@ import subprocess
 from pathlib import Path
 
 from . import promptmeta
+from .datasets import dataset_version
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 CHROMA_DIR = BACKEND_DIR / "chroma_db"
@@ -74,8 +75,9 @@ def current_conditions(suites: list[str], *, git_sha: str | None = None,
         "promptmeta": meta,
         "index_stats": stats if stats is not None else index_stats(chroma_dir),
         "model": "deepseek-chat",
-        "testset_versions": {"coverage": "v2026-10-22", "health72": "2026-10-21",
-                             "scenarios": "2026-10-25"},
+        "testset_versions": {"coverage": "v2026-10-22",
+                             "health72": dataset_version("health72"),
+                             "scenarios": dataset_version("scenarios")},
         "suites_executed": sorted(suites),
     }
 

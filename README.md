@@ -32,11 +32,13 @@ medical-assistant/
 │   │   ├── medical_agent/   # 主 Agent：orchestrator / router / safety / session / subagents
 │   │   └── rag/             # RAG：chain / service / ingest / chapter_split
 │   ├── acceptance/          # 真实 LLM 验收 harness（python -m acceptance）
-│   ├── tests/               # 单元测试（123 个，FakeLLM/纯规则，无网络）
+│   ├── tests/               # 单元测试（407 个，FakeLLM/纯规则，无网络）
 │   ├── scripts/             # calibrate_threshold.py（Step 0b 校准脚本）
 │   ├── data/                # 知识库 PDF（79 份）
 │   └── chroma_db/           # 向量索引（gitignore，见第 6 节）
 ├── frontend/                # React 前端（Create React App）
+├── testing/                 # 测试数据集与共享 fixtures（见 testing/README.md）
+├── Evaluation/              # 指标、优化实验、评分卡与评估报告
 └── docs/                    # 需求/设计/进度/阈值校准报告
 ```
 
@@ -153,9 +155,11 @@ python -m app.rag.ingest
    【参考来源】与免责声明的完整回答。
 3. 输入「胸口压榨样疼痛，大汗淋漓，持续不缓解」→ 应返回立即拨打 120 的
    紧急提示（emergency_handled）。
-4. 单测：`cd backend; python -m unittest discover -s tests -p "test_*.py"`（123 个）。
+4. 单测：`cd backend; python -m unittest discover -s tests -p "test_*.py"`（407 个）。
 5. 真实 LLM 验收（需 API Key，约数分钟）：`cd backend; python -m acceptance`
    （结果写入 `backend/acceptance_results/`，不影响索引）。
+6. 测试数据导航：固定数据集和共享 fixtures 见 [`testing/README.md`](testing/README.md)；
+   评估与优化资产见 [`Evaluation/README.md`](Evaluation/README.md)。
 
 ## 8. 常见启动错误
 

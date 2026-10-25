@@ -1,0 +1,39 @@
+{
+  "name": "fr01",
+  "version": "2026-10-20",
+  "description": "FR-01 引用支持率诊断样本（8 题）",
+  "cases": [
+    {
+      "question": "盐酸二甲双胍片的适应症是什么？",
+      "expect_keyword": "二甲双胍"
+    },
+    {
+      "question": "阿莫西林主要用于治疗哪些感染？",
+      "expect_keyword": "阿莫西林"
+    },
+    {
+      "question": "高血压患者在生活方式上要注意什么？",
+      "expect_keyword": "高血压"
+    },
+    {
+      "question": "2型糖尿病患者如何控制血糖？",
+      "expect_keyword": "2型糖尿病"
+    },
+    {
+      "question": "血常规检查主要看哪些指标？",
+      "expect_keyword": "实验室"
+    },
+    {
+      "question": "失眠怎么办，如何改善睡眠？",
+      "expect_keyword": "失眠"
+    },
+    {
+      "question": "服用多种药物时需要注意什么？",
+      "expect_keyword": "相互作用"
+    },
+    {
+      "question": "幽门螺杆菌感染应该如何治疗？",
+      "expect_keyword": "幽门螺杆菌"
+    }
+  ]
+}

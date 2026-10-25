@@ -1,5 +1,7 @@
 """FR-01 引用支持率诊断样本与记录逻辑。
 
+题稿与版本：根目录 testing/datasets/fr01.json。
+
 口径说明（对齐设计 T-16 / 开发进度 2026-10-16 条目）：
 - 官方 FR-01 验收 = 人工核对，引用支持率 ≥0.85；本模块产出的是**诊断数据**，
   自动指标（8-gram 字符重合，T-16-lite）只用于定位问题，不表述为真实正确率。
@@ -8,19 +10,13 @@
   「未召回 / 召回但判定拒答 / 生成但引用不支持」三类原因。
 """
 
+from .datasets import load_dataset
 from .support import char_ngram_support
 
-FR01_SAMPLES = [
-    # (question, 期望命中的文档关键词)
-    ("盐酸二甲双胍片的适应症是什么？", "二甲双胍"),
-    ("阿莫西林主要用于治疗哪些感染？", "阿莫西林"),
-    ("高血压患者在生活方式上要注意什么？", "高血压"),
-    ("2型糖尿病患者如何控制血糖？", "2型糖尿病"),
-    ("血常规检查主要看哪些指标？", "实验室"),
-    ("失眠怎么办，如何改善睡眠？", "失眠"),
-    ("服用多种药物时需要注意什么？", "相互作用"),
-    ("幽门螺杆菌感染应该如何治疗？", "幽门螺杆菌"),
-]
+_DATASET = load_dataset("fr01")
+# 保留既有 (question, expect_keyword) 元组接口，调用方无需修改。
+FR01_SAMPLES = [(case["question"], case["expect_keyword"])
+                for case in _DATASET["cases"]]
 
 
 def run_fr01_sample(ctx, question, expect_kw):
