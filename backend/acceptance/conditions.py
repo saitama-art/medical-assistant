@@ -76,8 +76,9 @@ def fingerprint_differences(a: dict, b: dict) -> list[str]:
     suites_executed 不参与比较（它是这次跑了哪些套件的事实，不是系统条件）。
     """
     diffs = []
-    if a.get("git_sha") != b.get("git_sha"):
-        diffs.append(f"git_sha: {a.get('git_sha')} → {b.get('git_sha')}")
+    # 2026-10-25 校准（用户确认转优化实战后落地）：git_sha **仅记录不否决**。
+    # 原口径把 git_sha 列入否决项 → 每次优化提交后都无法前后对比，实战不可用。
+    # 真正影响指标可比性的条件仍是 Prompt/词表/索引/测试集版本。
     pa, pb = a.get("promptmeta") or {}, b.get("promptmeta") or {}
     ha, hb = pa.get("prompt_hashes", {}), pb.get("prompt_hashes", {})
     for key in sorted(set(ha) | set(hb)):

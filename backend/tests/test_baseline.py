@@ -54,9 +54,9 @@ class TestFingerprintDifferences(unittest.TestCase):
     def test_same_conditions_empty(self):
         self.assertEqual(fingerprint_differences(_cond(), _cond()), [])
 
-    def test_git_diff_detected(self):
-        d = fingerprint_differences(_cond(), _cond(sha="def456"))
-        self.assertTrue(any("git_sha" in x for x in d))
+    def test_git_diff_recorded_not_vetoed(self):
+        # 校准（2026-10-25）：git_sha 仅记录不否决——否则优化提交后无法前后对比
+        self.assertEqual(fingerprint_differences(_cond(), _cond(sha="def456")), [])
 
     def test_prompt_diff_detected(self):
         d = fingerprint_differences(_cond(), _cond(ph="h2"))
