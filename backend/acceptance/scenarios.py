@@ -184,6 +184,9 @@ def run_scenarios(client_factory=None) -> dict:
             sources=[s.get("document") for s in (body.get("sources") or [])],
             top1=_top1_doc(body),
             answer=(body.get("answer") or "")[:400],
+            # 引用完整率的取数字段：必须基于**完整回答**计算——answer 摘录 400 字
+            # 截断会把末尾的来源段截掉，据此算出的"引用完整率"是截断假象。
+            has_source_section="【参考来源】" in (body.get("answer") or ""),
             ms=ms, blocked=blocked,
         )
         rec["verdict"] = verdict_of(case, rec)
