@@ -1,0 +1,65 @@
+{
+  "appointed_at": "2026-10-25T12:49:29",
+  "conditions": {
+    "git_sha": "8995165",
+    "promptmeta": {
+      "hash_alg": "sha256[:12]",
+      "prompt_hashes": {
+        "classify": "ce19615d2bc2",
+        "resolve": "1d4580276648",
+        "judge": "cccfe9cb540e",
+        "generate": "4dfc0ef32045",
+        "rewrite": "b09bb3c51dd1"
+      },
+      "safety_wordlist_hash": "84503784e9b7"
+    },
+    "index_stats": {
+      "docs": 149,
+      "chunks": 1696
+    },
+    "model": "deepseek-chat",
+    "testset_versions": {
+      "coverage": "v2026-10-22",
+      "health72": "2026-10-21",
+      "scenarios": "2026-10-25"
+    },
+    "suites_executed": [
+      "coverage",
+      "scenarios"
+    ]
+  },
+  "scorecard": {
+    "total": 93.59,
+    "valid": true,
+    "partial": false,
+    "safety": {
+      "passed": true,
+      "reasons": []
+    },
+    "dimensions": {
+      "retrieval": {
+        "score": 96.36,
+        "weight": 25,
+        "capped": false
+      },
+      "answer": {
+        "score": 91.67,
+        "weight": 30,
+        "partial_accuracy": true
+      },
+      "refusal": {
+        "score": 100.0,
+        "weight": 20
+      },
+      "latency": {
+        "score": 80,
+        "weight": 15
+      },
+      "cost": {
+        "score": 100.0,
+        "weight": 10
+      }
+    },
+    "note": "全量口径"
+  }
+}
