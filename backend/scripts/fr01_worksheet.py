@@ -35,16 +35,47 @@ def split_sentences(answer: str) -> list[str]:
     return [s.strip() for s in re.split(r"[。！？!?；\n]", answer) if len(s.strip()) >= 12]
 
 
+def _keywords(sentence: str) -> set[str]:
+    """从句中抽取候选检索关键词（连续中文/字母数字子串，2~6 字），剔除通用词。
+    用于弥补纯 n-gram 字面重合的不足——FR-01 终审实证：「质子泵」「次水杨酸铋」
+    「50%」这类关键词命中能定位到 n-gram 匹配不上的正确证据段。"""
+    kws: set[str] = set()
+    for tok in re.findall(r"[A-Za-z0-9%]+|[一-鿿]{2,}", sentence):
+        if re.fullmatch(r"[A-Za-z0-9%]+", tok):
+            if len(tok) >= 2:
+                kws.add(tok)
+        else:
+            for n in (6, 4, 3, 2):
+                for i in range(0, max(0, len(tok) - n + 1)):
+                    kws.add(tok[i:i + n])
+    stop = {"患者", "可以", "需要", "如果", "通常", "治疗", "应该", "注意", "一种",
+            "可能", "哪些", "进行", "使用", "建议", "常见", "情况", "为主", "以上",
+            "以下", "这个", "就是", "以及", "或者", "主要", "一般", "方面", "相关"}
+    return {k for k in kws if k not in stop}
+
+
 def best_chunk(sentence: str, chunks):
+    """返回最多 2 个候选 (chunk, 说明) ——关键词命中数优先、n-gram 重合度次序。
+
+    旧版只按 n-gram 字面重合选 1 个，匹配不上就写"无匹配片段"，会把用户误导成
+    "无证据"。现在：关键词命中>0 的给 top-2；命中为 0 也不写"无证据"，而是
+    提示"请人工核对 top-10 原文"。
+    """
     s_ngrams = _ngrams(sentence, 8)
-    if not s_ngrams:
-        return None, 0.0
-    best, best_score = None, 0.0
+    kws = _keywords(sentence)
+    # IDF-lite：出现在半数以上片段里的词（如疾病名本身）没有定位价值，剔除，
+    # 只留"有区分度"的关键词——否则每个片段都命中几十个通用词，候选还是定位到
+    # 文档开头而非答案段。
+    df = {k: sum(1 for c in chunks if k in c.content) for k in kws}
+    specific = {k for k in kws if df[k] <= max(1, len(chunks) // 2)}
+    scored = []
     for c in chunks:
-        overlap = len(s_ngrams & _ngrams(c.content, 8)) / len(s_ngrams)
-        if overlap > best_score:
-            best, best_score = c, overlap
-    return best, best_score
+        hits = sum(1 for k in specific if k in c.content)
+        overlap = (len(s_ngrams & _ngrams(c.content, 8)) / len(s_ngrams)) if s_ngrams else 0.0
+        scored.append((hits, overlap, c))
+    scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+    top = [(c, f"区分词{h}个/重合{ov:.0%}") for h, ov, c in scored[:2] if h > 0 or ov > 0]
+    return top
 
 
 def main() -> None:
@@ -68,13 +99,16 @@ def main() -> None:
         lines.append("| # | 回答中的医学陈述句 | 候选证据（AI 初筛） | 判定 |")
         lines.append("|---|---|---|---|")
         for n, sent in enumerate(split_sentences(answer), 1):
-            chunk, score = best_chunk(sent, r.chunks)
-            if chunk is None:
-                evidence = "（无匹配片段）"
+            candidates = best_chunk(sent, r.chunks)
+            if not candidates:
+                evidence = "未定位直接片段，请人工核对 top-10 原文（不等于无证据）"
             else:
-                doc = os.path.basename(chunk.document)[:30]
-                excerpt = chunk.content[:110].replace("\n", " ").replace("|", "／")
-                evidence = f"{doc}（重合 {score:.0%}）：{excerpt}…"
+                parts = []
+                for chunk, note in candidates:
+                    doc = os.path.basename(chunk.document)[:26]
+                    excerpt = chunk.content[:90].replace("\n", " ").replace("|", "／")
+                    parts.append(f"{doc}（{note}）：{excerpt}…")
+                evidence = " ／ ".join(parts)
             lines.append(f"| {n} | {sent} | {evidence} | ☐✅ ☐❌ ☐➖ |")
     out = BACKEND.parent / "Evaluation" / "reports" / datetime.now().strftime("%Y%m%d")
     out.mkdir(parents=True, exist_ok=True)
