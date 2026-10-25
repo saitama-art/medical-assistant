@@ -18,6 +18,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from .promptmeta import prompt_meta  # S4a：报告带 Prompt/词表指纹
+
 # ---- 冻结测试集（12 领域 × 6 题；2026-10-21 经确认冻结，改动需重新确认）----
 HEALTH72 = [
     # A 营养、饮食与体重管理
@@ -146,7 +148,8 @@ def run(do_chat: bool) -> dict:
         print(case["id"], rec.get("outcome") or "-",
               rec["top_docs"][0]["doc"] if rec["top_docs"] else "EMPTY")
     return dict(group="HEALTH72", frozen="2026-10-21", generated_at=datetime.now().isoformat(timespec="seconds"),
-                chat=do_chat, n=len(records), records=records)
+                chat=do_chat, n=len(records), records=records,
+                promptmeta=prompt_meta())
 
 
 def main(argv=None):
