@@ -268,5 +268,40 @@ class TestT03LiveAcceptanceGaps(unittest.TestCase):
             EmergencyLevel.STRONG)
 
 
+class TestMedicationContext(unittest.TestCase):
+    """「服药后/用药后」急症语境词（2026-10-25 CS-13 暴露补）。
+
+    场景集 CS-13「服药后出现皮疹且呼吸困难」曾落 unclassified：单组命中急症词
+    「呼吸困难」但无语境词/求助语，未升级 STRONG。T-03 同类题靠「怎么办」求助语
+    兜底，本句无求助语即漏——语境词补「服药后/用药后」。
+    保守边界：语境词只对已命中急症词的句子升级；无急症词的服药后陈述不受影响。
+    """
+
+    def test_cs13_exact_case_now_strong(self):
+        hit = safety.check_emergency("服药后出现皮疹且呼吸困难")
+        self.assertIs(hit.level, EmergencyLevel.STRONG)
+        self.assertIn(hit.rule_id, ("acute_context", "help_subject"))
+
+    def test_after_medication_with_other_acute_terms(self):
+        self.assertIs(
+            safety.check_emergency("用药后喘不上气").level, EmergencyLevel.STRONG)
+
+    def test_no_acute_term_still_no_trigger(self):
+        # 无急症词命中时「服药后」不得升级（语境词只在急症词命中后起作用）
+        self.assertIs(
+            safety.check_emergency("服药后血压控制得很稳定").rule_id, "no_acute_term")
+        self.assertIs(
+            safety.check_emergency("长期服药后有点头晕").rule_id, "no_acute_term")
+
+    def test_medication_meta_question_still_weak(self):
+        # 元问题语境不因「说明书/这个药」单独出现而升级（T-03c 口径不回退）；
+        # 注意：一旦叠加语境词（如「服药后」），按 safety.py 头部既有约定
+        # 「求助主体/急症语境排在元问题标记之前」判 STRONG——保守优先，属设计。
+        hit = safety.check_emergency("说明书提到可能呼吸困难吗")
+        self.assertIsNot(hit.level, EmergencyLevel.STRONG)
+        hit2 = safety.check_emergency("这个药会不会导致呼吸困难")
+        self.assertIsNot(hit2.level, EmergencyLevel.STRONG)
+
+
 if __name__ == "__main__":
     unittest.main()
