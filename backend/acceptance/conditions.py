@@ -39,8 +39,12 @@ def index_stats(chroma_dir: Path | None = None) -> dict:
     chroma_dir 可显式指定（W2 协调项：worktree 里跑 acceptance.report 时若按
     默认 BACKEND_DIR/chroma_db 读的是 worktree 的库，可能不存在导致指纹失真；
     跨 worktree 生成报告时传主库路径即可）。
+    显式传入时 **docs 也随库定位**（chroma_dir.parent/data，即主库 backend/data），
+    否则 docs 会按本目录数 PDF——worktree 里没有这些 PDF 会得 0，
+    形成"看起来正常的错误值"（W2 实测发现）。
     """
-    docs = len(list((BACKEND_DIR / "data").glob("*.pdf")))
+    docs_dir = (chroma_dir.parent / "data") if chroma_dir else (BACKEND_DIR / "data")
+    docs = len(list(docs_dir.glob("*.pdf")))
     chunks = None
     try:
         import chromadb
