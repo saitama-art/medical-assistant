@@ -186,6 +186,27 @@ def _collection_distance_metric(vector_store) -> str | None:
 
 # ==================== 证据判定（N08） ====================
 
+# 判定上下文去重上限（每文档至多 2 段，保持原排名顺序）。
+# 2026-10-25 O2 归因实证（scripts/diag_sentinel.py A/B 实验）：CS-09「孕期常见不适
+# 有哪些一般处理原则？」的 top-10 中，孕期用药占 5 段、孕期自我保健 3 段、孕期母体
+# 变化 3 段——答案段（rank 7 孕期母体变化的"胃灼热/尿频处理"）明明在 top-k 内，
+# 却被同主题药物安全内容淹没，第 3 段判 not_answerable。按文档去重到 6 段后判定
+# 通过；每文档只留 1 段又会把 rank 7 挤掉（过度去重）。故取每文档 ≤2 段：
+# 既保留同文档相邻的答案段，又压住单文档刷屏造成的判定干扰。
+# 注意：只作用于**判定输入**，不改变召回、不改 Prompt、不改来源展示。
+_JUDGE_PER_DOC_MAX = 2
+
+
+def _dedupe_for_judge(chunks: list[RetrievedChunk]) -> list[RetrievedChunk]:
+    """判定上下文按文档去重（每文档至多 _JUDGE_PER_DOC_MAX 段，保原排名）。"""
+    by_doc: dict[str, list[RetrievedChunk]] = {}
+    for c in chunks:
+        by_doc.setdefault(c.document or "", []).append(c)
+    out: list[RetrievedChunk] = []
+    for cs in by_doc.values():
+        out.extend(cs[:_JUDGE_PER_DOC_MAX])
+    return out
+
 
 def judge_evidence(
     question: str,
@@ -223,7 +244,7 @@ def judge_evidence(
             judgement.reason = f"no_usable_chunks:{retrieval.outcome.value if retrieval.outcome else 'none'}"
             return judgement
 
-        chunks = retrieval.chunks
+        chunks = _dedupe_for_judge(retrieval.chunks)
         judgement.top1_distance = chunks[0].distance
 
         # —— 第 1 段：距离粗筛（未校准时禁用） ——
@@ -251,7 +272,14 @@ def judge_evidence(
             return judgement
 
         # —— 第 3 段：模型判定"片段是否包含回答所问的依据" ——
+        # 先用按文档去重的聚焦子集判（O2：CS-09 证明同文档刷屏会带偏判定）；
+        # 若聚焦子集未获认可且与原集不同，**回退全量片段再判一次**——去重可能把
+        # 某些文档的第 3+ 段答案挤掉（CS-15/CS-17 回归实证），回退保证不劣于
+        # 原全量行为：只会改善、不会回退。两次都不过才 insufficient。
         answerable, quote = _judge_by_llm(question, chunks, llm)
+        if not answerable and len(chunks) != len(retrieval.chunks):
+            chunks = retrieval.chunks
+            answerable, quote = _judge_by_llm(question, chunks, llm)
         judgement.stage3_answerable = answerable
         judgement.supporting_quote = quote
         if not answerable:
