@@ -32,7 +32,7 @@ medical-assistant/
 │   │   ├── medical_agent/   # 主 Agent：orchestrator / router / safety / session / subagents
 │   │   └── rag/             # RAG：chain / service / ingest / chapter_split
 │   ├── acceptance/          # 真实 LLM 验收 harness（python -m acceptance）
-│   ├── tests/               # 单元测试（407 个，FakeLLM/纯规则，无网络）
+│   ├── tests/               # 单元测试（417 个，FakeLLM/纯规则，无网络）
 │   ├── scripts/             # calibrate_threshold.py（Step 0b 校准脚本）
 │   ├── data/                # 知识库 PDF（79 份）
 │   └── chroma_db/           # 向量索引（gitignore，见第 6 节）
@@ -117,6 +117,45 @@ npm run build      # 生产构建（产物在 frontend/build/）
 - 页面：http://localhost:3000
 - API 文档：http://127.0.0.1:8000/docs
 
+### Docker（GPU-ready，端口 8080）
+
+需要 Docker Desktop、WSL2 和支持容器 GPU 的 NVIDIA 驱动。项目根目录必须已有 `.env`；
+Compose 会保留现有 `app.db`、Chroma、上传文件和会话文件，**不要重建 Chroma**。
+
+当前 Compose 默认离线加载 `BAAI/bge-small-zh`。首次使用空的 `hf_cache` 卷时，先把本机
+已有的同名模型缓存复制进去（不要换成其他 embedding 模型）：
+
+```powershell
+docker run --rm `
+  -v medical-assistant_hf_cache:/cache `
+  -v "${env:USERPROFILE}\.cache\huggingface\hub\models--BAAI--bge-small-zh:/source:ro" `
+  python:3.11-slim `
+  python -c "import shutil; shutil.copytree('/source', '/cache/hub/models--BAAI--bge-small-zh', dirs_exist_ok=True)"
+```
+
+构建两个镜像并启动（当前 Compose/Buildx 需要显式允许构建期 host 网络）：
+
+```powershell
+docker buildx bake -f docker-compose.yml --allow=network.host --load
+docker compose up -d
+docker compose ps
+```
+
+- 页面：http://localhost:8080
+- OpenAPI JSON：http://localhost:8080/api/openapi.json
+- 后端只暴露在 Compose 内网；Nginx 将 `/api/` 转发到后端。
+- `backend/data`、`backend/chroma_db`、`backend/uploads`、`backend/session_data`
+  使用 bind mount；Hugging Face 缓存使用 `medical-assistant_hf_cache` 命名卷。
+- 当前 embedding 仍固定使用 CPU；CUDA 镜像和 `gpus: all` 只是为后续 GPU 工作提供基础，
+  不包含 vLLM。
+- 本机 HTTP 部署设置 `SESSION_COOKIE_SECURE=false`；HTTPS 部署必须改回 `true`。
+
+验证 GPU：
+
+```powershell
+docker compose exec backend python -c "import torch; print(torch.cuda.is_available())"
+```
+
 ## 6. 知识库索引
 
 - 代码使用的索引目录：`backend/chroma_db/`（gitignore，不入库）。
@@ -155,10 +194,12 @@ python -m app.rag.ingest
    【参考来源】与免责声明的完整回答。
 3. 输入「胸口压榨样疼痛，大汗淋漓，持续不缓解」→ 应返回立即拨打 120 的
    紧急提示（emergency_handled）。
-4. 单测：`cd backend; python -m unittest discover -s tests -p "test_*.py"`（407 个）。
+4. 单测：`cd backend; python -m unittest discover -s tests -p "test_*.py"`（417 个）。
 5. 真实 LLM 验收（需 API Key，约数分钟）：`cd backend; python -m acceptance`
    （结果写入 `backend/acceptance_results/`，不影响索引）。
 6. 测试数据导航：固定数据集和共享 fixtures 见 [`testing/README.md`](testing/README.md)；
+   覆盖矩阵与缺口见 [`testing/coverage_report.md`](testing/coverage_report.md)；
+   黄金种子审核见 [`testing/golden_review.md`](testing/golden_review.md)；
    评估与优化资产见 [`Evaluation/README.md`](Evaluation/README.md)。
 
 ## 8. 常见启动错误

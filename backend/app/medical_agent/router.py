@@ -1,8 +1,7 @@
 """意图识别（N04）与条件路由（N05）。
 
 意图识别：寒暄规则短路 → LLM 结构化分类 → 类别/置信校验。
-任何失败（异常、超时、输出非法、置信不足、预算不足未启动）都归入
-UNCLASSIFIABLE，**不得猜最接近的一类**（设计文档 4.1 第 5 条）。
+合法的业务未知、低置信度与模型执行失败分别表达；任何路径都不得猜最接近的一类。
 
 条件路由：category + emergency + context_status → Route 的确定性映射表
 （设计文档 2.2），无任何判断空间。
@@ -11,18 +10,25 @@ UNCLASSIFIABLE，**不得猜最接近的一类**（设计文档 4.1 第 5 条）
 from __future__ import annotations
 
 import json
+import math
 import re
 
+from . import complex_handler
+from . import config as _cfg
 from .state import (
     ContextStatus,
     EmergencyLevel,
+    IntentAssessment,
+    NodeResult,
+    NodeStatus,
     QuestionCategory,
     Route,
+    UnresolvedKind,
 )
 
 # ==================== 配置（设计文档 5.8，最终收敛 config.py） ====================
 
-CATEGORY_CONFIDENCE_MIN = 0.6
+CATEGORY_CONFIDENCE_MIN = _cfg.CATEGORY_CONFIDENCE_MIN
 
 # 追问指代标记：命中任一即认为本句依赖上文，需要上下文补全 / 重述判定
 REFERENCE_WORDS: tuple[str, ...] = (
@@ -135,53 +141,85 @@ knowledge 与 triage 的分界（最常见混淆点，2026-10-21 按 72 题覆�
 1. 只输出 JSON 对象，不要输出解释、前后缀或 markdown 代码块；
 2. confidence 是 0 到 1 之间的数，表示你对分类的把握；不确定时给出低置信度；
 3. 举棋不定时宁可输出 unclassifiable，也不要猜最接近的一类；
-4. 输出格式：{{"category": "knowledge|triage|emergency|chitchat|unclassifiable", "confidence": 0.0~1.0}}"""
+4. unresolved 只能取 none、missing_input、context_required、intent_conflict：
+   信息完整为 none；必要信息缺失为 missing_input；必须依赖未提供的上下文为
+   context_required；多个意图冲突且不能确定主任务为 intent_conflict；
+5. missing_inputs 仅列出缺失参数名，不得猜测或编造参数值；其他情况输出空数组；
+6. 输出格式：{{"category": "knowledge|triage|emergency|chitchat|unclassifiable",
+   "confidence": 0.0~1.0, "unresolved": "none", "missing_inputs": []}}"""
 
 CLASSIFY_USER_PROMPT = "用户问题：{question}"
+CLASSIFY_REPAIR_PROMPT = """
+
+上一次输出未通过结构或字段校验。请只重新输出符合上述 Schema 的合法 JSON 对象，
+不要解释错误，不要增加字段，不要猜测缺失参数。"""
 
 
-def classify(question: str, *, llm) -> tuple[QuestionCategory, float]:
-    """LLM 结构化分类。
-
-    Returns:
-        (category, confidence)。任何失败都返回 (UNCLASSIFIABLE, 0.0)，
-        调用方（编排器 N04）不捕获异常——本函数把异常全部吞掉。
-    """
+def classify(
+    question: str, *, llm, repair: bool = False,
+) -> NodeResult[IntentAssessment]:
+    """执行一次 N04 分类；业务判断与调用/解析失败使用不同状态。"""
     if is_greeting(question):
-        return QuestionCategory.CHITCHAT, 1.0
+        return NodeResult(
+            NodeStatus.OK,
+            IntentAssessment(QuestionCategory.CHITCHAT, 1.0),
+        )
+
+    from langchain_core.prompts import ChatPromptTemplate
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", CLASSIFY_SYSTEM_PROMPT + (CLASSIFY_REPAIR_PROMPT if repair else "")),
+        ("human", CLASSIFY_USER_PROMPT),
+    ])
+    messages = prompt.format_messages(question=question)
     try:
-        from langchain_core.prompts import ChatPromptTemplate
-
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", CLASSIFY_SYSTEM_PROMPT),
-            ("human", CLASSIFY_USER_PROMPT),
-        ])
-        messages = prompt.format_messages(question=question)
         response = llm.invoke(messages)
-        content = getattr(response, "content", None)
-        if not isinstance(content, str):
-            return QuestionCategory.UNCLASSIFIABLE, 0.0
+    except Exception as exc:
+        return complex_handler.exception_result(exc)
 
+    content = getattr(response, "content", None)
+    if not isinstance(content, str):
+        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="content_not_text")
+    try:
         payload = _parse_json_object(content)
-        raw_category = str(payload.get("category", "")).strip().lower()
-        try:
-            category = QuestionCategory(raw_category)
-        except ValueError:
-            return QuestionCategory.UNCLASSIFIABLE, 0.0
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="json_invalid")
 
-        confidence = payload.get("confidence")
-        if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
-            confidence = 0.0
-        confidence = max(0.0, min(1.0, float(confidence)))
+    raw_category = payload.get("category")
+    if not isinstance(raw_category, str):
+        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="category_invalid")
+    try:
+        category = QuestionCategory(raw_category.strip().lower())
+    except ValueError:
+        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="category_invalid")
 
-        if category is QuestionCategory.UNCLASSIFIABLE:
-            return QuestionCategory.UNCLASSIFIABLE, confidence
-        if confidence < CATEGORY_CONFIDENCE_MIN:
-            return QuestionCategory.UNCLASSIFIABLE, confidence
-        return category, confidence
-    except Exception:
-        # 超时、连接错误、输出无法解析……一律归入 unclassifiable（N04 失败语义）
-        return QuestionCategory.UNCLASSIFIABLE, 0.0
+    confidence = payload.get("confidence")
+    if (
+        isinstance(confidence, bool)
+        or not isinstance(confidence, (int, float))
+        or not math.isfinite(confidence)
+        or not 0.0 <= confidence <= 1.0
+    ):
+        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="confidence_invalid")
+
+    raw_unresolved = payload.get("unresolved", UnresolvedKind.NONE.value)
+    if not isinstance(raw_unresolved, str):
+        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="unresolved_invalid")
+    try:
+        unresolved = UnresolvedKind(raw_unresolved.strip().lower())
+    except ValueError:
+        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="unresolved_invalid")
+
+    raw_missing = payload.get("missing_inputs", [])
+    if not isinstance(raw_missing, list) or not all(
+        isinstance(item, str) and item.strip() for item in raw_missing
+    ):
+        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="missing_inputs_invalid")
+    missing_inputs = tuple(dict.fromkeys(item.strip() for item in raw_missing))
+    return NodeResult(
+        NodeStatus.OK,
+        IntentAssessment(category, float(confidence), unresolved, missing_inputs),
+    )
 
 
 def _parse_json_object(text: str) -> dict:
@@ -207,8 +245,11 @@ def decide_route(
     # 1. 强紧急：实际已在 N01/N03 拦截，此处是防御性冗余
     if emergency_level is EmergencyLevel.STRONG:
         return Route.EMERGENCY
-    # 2. 上下文缺失且仍含未消解指代：不得猜测指代对象（FR-06 边界）
-    if context_status is ContextStatus.MISSING and has_reference(resolved_question):
+    # 2. 上下文不可用且仍是显式/隐性追问：不得猜测指代对象（FR-06 边界）
+    if (
+        context_status in (ContextStatus.MISSING, ContextStatus.DEGRADED_NO_HISTORY)
+        and (has_reference(resolved_question) or has_followup_lead(resolved_question))
+    ):
         return Route.CONTEXT_MISSING
     # 3~6. 按类别走表；不存在"默认进知识库问答"的分支
     if category is QuestionCategory.CHITCHAT:

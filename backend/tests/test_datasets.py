@@ -35,6 +35,21 @@ class TestVersionedDatasets(unittest.TestCase):
         self.assertEqual([case["question"] for case in fr01_cases()],
                          [question for question, _keyword in FR01_SAMPLES])
 
+    def test_real_world_events_remain_reviewable_route_drafts(self):
+        payload = load_dataset("real_world_events")
+        cases = payload["cases"]
+        self.assertEqual(payload["review_status"], "draft")
+        self.assertEqual(payload["execution_status"], "not_run")
+        self.assertEqual(len(cases), 36)
+        self.assertEqual(len({case["id"] for case in cases}), len(cases))
+        self.assertTrue(all(case["expected_route"] in {"knowledge", "triage", "emergency"}
+                            for case in cases))
+        self.assertTrue(all("unclassified" in case["forbidden_outcomes"] for case in cases))
+        self.assertTrue(all("expected_answer" not in case for case in cases))
+        for case in cases:
+            if case["expected_route"] == "emergency":
+                self.assertEqual(case["expected_outcome"], "emergency_handled")
+
     def test_conditions_take_versions_from_dataset_loader(self):
         versions = {"health72": "health-test", "scenarios": "scenarios-test"}
         with patch("acceptance.conditions.promptmeta.prompt_meta", return_value={}), \

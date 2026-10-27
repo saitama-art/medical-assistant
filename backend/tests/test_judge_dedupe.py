@@ -3,7 +3,7 @@
 import unittest
 
 from app.rag import service
-from app.medical_agent.state import RetrievedChunk, RetrievalResult
+from app.medical_agent.state import NodeStatus, RetrievedChunk, RetrievalResult
 
 
 def _c(doc, text, dist=0.3):
@@ -50,9 +50,11 @@ class TestJudgeUsesDedupedContext(unittest.TestCase):
         original = service._judge_by_llm
         service._judge_by_llm = fake_judge
         try:
-            j = service.judge_evidence("孕期常见不适有哪些一般处理原则？", retrieval)
+            result = service.judge_evidence("孕期常见不适有哪些一般处理原则？", retrieval)
         finally:
             service._judge_by_llm = original
+        self.assertIs(result.status, NodeStatus.OK)
+        j = result.value
         got = captured["chunks"]
         self.assertEqual(len(got), 2 + 2 + 2)  # 去重后每文档至多 2 段
         # 原 rank 7（C 文档第 2 段，答案段）必须仍在判定上下文中——去重不能把答案段挤掉
@@ -65,10 +67,11 @@ class TestJudgeUsesDedupedContext(unittest.TestCase):
         original = service._judge_by_llm
         service._judge_by_llm = lambda q, ch, llm=None, extra_instruction="": (False, "")
         try:
-            j = service.judge_evidence("完全无关的问题", retrieval)
+            result = service.judge_evidence("完全无关的问题", retrieval)
         finally:
             service._judge_by_llm = original
-        self.assertFalse(j.sufficient)
+        self.assertIs(result.status, NodeStatus.OK)
+        self.assertFalse(result.value.sufficient)
 
 
 class TestFullFallbackOnFocusedFailure(unittest.TestCase):
@@ -95,12 +98,53 @@ class TestFullFallbackOnFocusedFailure(unittest.TestCase):
         original = service._judge_by_llm
         service._judge_by_llm = fake_judge
         try:
-            j = service.judge_evidence("孕期常见不适有哪些一般处理原则？", retrieval)
+            result = service.judge_evidence("孕期常见不适有哪些一般处理原则？", retrieval)
         finally:
             service._judge_by_llm = original
+        self.assertIs(result.status, NodeStatus.OK)
         self.assertEqual(len(calls), 2)  # 聚焦一次 + 全量回退一次
         self.assertLess(calls[0], calls[1])
-        self.assertTrue(j.sufficient)
+        self.assertTrue(result.value.sufficient)
+
+
+class TestJudgeExecutionFailures(unittest.TestCase):
+    def test_timeout_is_not_business_insufficient(self):
+        class _Timeout:
+            def invoke(self, messages):
+                raise TimeoutError("judge timeout")
+
+        retrieval = RetrievalResult(outcome=None, chunks=[_c("A.pdf", "依据")])
+        result = service.judge_evidence("问题", retrieval, llm=_Timeout())
+        self.assertIs(result.status, NodeStatus.TIMEOUT)
+        self.assertFalse(result.value.sufficient)
+        self.assertEqual(result.detail, "TimeoutError")
+
+    def test_invalid_json_is_invalid_output(self):
+        class _Message:
+            content = "not-json"
+
+        class _Invalid:
+            def invoke(self, messages):
+                return _Message()
+
+        retrieval = RetrievalResult(outcome=None, chunks=[_c("A.pdf", "依据")])
+        result = service.judge_evidence("问题", retrieval, llm=_Invalid())
+        self.assertIs(result.status, NodeStatus.INVALID_OUTPUT)
+        self.assertFalse(result.value.sufficient)
+
+    def test_unverifiable_quote_remains_conservative_business_result(self):
+        retrieval = RetrievalResult(outcome=None, chunks=[_c("A.pdf", "真实依据")])
+        original = service._judge_by_llm
+        service._judge_by_llm = (
+            lambda q, ch, llm=None, extra_instruction="": (True, "编造引文")
+        )
+        try:
+            result = service.judge_evidence("问题", retrieval)
+        finally:
+            service._judge_by_llm = original
+        self.assertIs(result.status, NodeStatus.OK)
+        self.assertFalse(result.value.sufficient)
+        self.assertEqual(result.value.reason, "stage2_quote_not_found")
 
 
 if __name__ == "__main__":

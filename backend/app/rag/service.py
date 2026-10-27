@@ -6,7 +6,7 @@
 失败语义（与 N07 / N08 / N10 的分工一一对应）：
 
     retrieve_with_scores   不因检索/模型失败而抛异常，归一为 outcome = RETRIEVAL_ERROR / EMPTY_RESULT
-    judge_evidence         不抛异常，任何异常一律判为 insufficient（保守降级，设计文档 5.5 / 4.1）
+    judge_evidence         返回 NodeResult；业务证据不足与模型执行失败分开表达
     generate_answer        会抛 RagServiceError，由调用方映射为 GENERATION_ERROR
 
 配置项暂放在本模块顶部。设计文档 5.8 要求它们最终收敛到 `backend/app/config.py`；
@@ -21,10 +21,13 @@ import time
 
 from ..medical_agent.state import (
     EvidenceJudgement,
+    NodeResult,
+    NodeStatus,
     RetrievalOutcome,
     RetrievalResult,
     RetrievedChunk,
     Source,
+    exception_result,
 )
 from .chain import get_llm, get_medical_prompt, get_vector_store
 
@@ -35,6 +38,14 @@ class RagServiceError(RuntimeError):
     消息里只放机器可读的短标识（如 generate_failed:TimeoutError），
     不得把异常原文交给用户——用户可见文案一律取自 respond.py 的常量表。
     """
+
+
+class EvidenceJudgeError(RuntimeError):
+    """单次判定调用的结构化失败，不携带用户问题或异常原文。"""
+
+    def __init__(self, result: NodeResult):
+        super().__init__(result.detail)
+        self.result = result
 
 
 # ==================== 配置（设计文档 5.4 / 5.5 / 5.8） ====================
@@ -216,11 +227,12 @@ def judge_evidence(
     threshold: float | None = None,
     metric: str | None = None,
     judge: str | None = None,
-) -> EvidenceJudgement:
-    """三段证据判定。**不抛异常**：任何异常一律判为 insufficient。
+    repair: bool = False,
+) -> NodeResult[EvidenceJudgement]:
+    """三段证据判定。OK 内的 sufficient=False 才是业务证据不足。
 
-    段序为「第 1 段 → 第 3 段 → 第 2 段」：第 3 段（模型判定）产出 supporting_quote，
-    第 2 段（逐字校验）才有东西可校验。第 1 段先跑，不过就不调模型，省一次 LLM 调用。
+    模型超时、服务异常和结构化输出失败使用 NodeStatus 表达，不再伪装成
+    知识库无依据。段序为「第 1 段 → 第 3 段 → 第 2 段」。
 
     最终判定：第 1 段（若启用）∧ 第 2 段 ∧ 第 3 段（若 judge 含 llm）全部通过才 sufficient。
 
@@ -231,7 +243,7 @@ def judge_evidence(
         threshold / metric / judge: 覆盖模块级配置，仅供测试与后续 config.py 接入。
 
     Returns:
-        EvidenceJudgement。reason 只含机器可读标识，不含用户原文。
+        NodeResult[EvidenceJudgement]。reason 只含机器可读标识，不含用户原文。
     """
     threshold = EVIDENCE_THRESHOLD if threshold is None else threshold
     metric = EVIDENCE_THRESHOLD_METRIC if metric is None else metric
@@ -239,10 +251,13 @@ def judge_evidence(
 
     judgement = EvidenceJudgement(distance_metric=retrieval.distance_metric)
 
+    def ok() -> NodeResult[EvidenceJudgement]:
+        return NodeResult(NodeStatus.OK, judgement)
+
     try:
         if not has_usable_chunks(retrieval):
             judgement.reason = f"no_usable_chunks:{retrieval.outcome.value if retrieval.outcome else 'none'}"
-            return judgement
+            return ok()
 
         chunks = _dedupe_for_judge(retrieval.chunks)
         judgement.top1_distance = chunks[0].distance
@@ -256,7 +271,7 @@ def judge_evidence(
             )
             if not judgement.stage1_gate1:
                 judgement.reason = f"stage1_rejected:{gate1_note}:distance={judgement.top1_distance}"
-                return judgement
+                return ok()
         else:
             judgement.stage1_gate1 = None  # None = 本段未启用，不是"通过"
 
@@ -266,25 +281,34 @@ def judge_evidence(
                 # 两段都不可用：无判定能力，保守判不足。
                 # 该组合本应在启动自检时就被拒绝，见 assert_evidence_judge_available()。
                 judgement.reason = f"no_usable_judge:{gate1_note}"
-                return judgement
+                return ok()
             judgement.sufficient = True
             judgement.reason = f"stage1_passed:gate1={gate1_note}"
-            return judgement
+            return ok()
 
         # —— 第 3 段：模型判定"片段是否包含回答所问的依据" ——
         # 先用按文档去重的聚焦子集判（O2：CS-09 证明同文档刷屏会带偏判定）；
         # 若聚焦子集未获认可且与原集不同，**回退全量片段再判一次**——去重可能把
         # 某些文档的第 3+ 段答案挤掉（CS-15/CS-17 回归实证），回退保证不劣于
         # 原全量行为：只会改善、不会回退。两次都不过才 insufficient。
-        answerable, quote = _judge_by_llm(question, chunks, llm)
+        repair_instruction = (
+            "上一次输出未通过 JSON 或字段校验。请只输出合法 JSON；answerable 必须是布尔值，"
+            "supporting_quote 必须是字符串，answerable=false 时引文必须为空。"
+            if repair else ""
+        )
+        answerable, quote = _judge_by_llm(
+            question, chunks, llm, extra_instruction=repair_instruction,
+        )
         if not answerable and len(chunks) != len(retrieval.chunks):
             chunks = retrieval.chunks
-            answerable, quote = _judge_by_llm(question, chunks, llm)
+            answerable, quote = _judge_by_llm(
+                question, chunks, llm, extra_instruction=repair_instruction,
+            )
         judgement.stage3_answerable = answerable
         judgement.supporting_quote = quote
         if not answerable:
             judgement.reason = "stage3_not_answerable"
-            return judgement
+            return ok()
 
         # —— 第 2 段：引用真实性（逐字校验） ——
         judgement.stage2_quote_verified = _verify_quote(quote, chunks)
@@ -305,22 +329,27 @@ def judge_evidence(
                 judgement.stage2_quote_verified = _verify_quote(quote2, chunks)
         if not judgement.stage2_quote_verified:
             judgement.reason = "stage2_quote_not_found"
-            return judgement
+            return ok()
 
         judgement.sufficient = True
         judgement.reason = (
             f"stage1_{gate1_note}" if not gate1_enabled else f"all_stages_passed:gate1={gate1_note}"
         )
-        return judgement
+        return ok()
 
-    except Exception as exc:
-        # 判定环节任何异常 → 一律 insufficient（设计文档 4.1、5.5）。
-        # 宁可判"证据不足"给出固定文案，也不能放行到 N10 去生成。
+    except EvidenceJudgeError as exc:
         judgement.sufficient = False
         judgement.stage2_quote_verified = False
         judgement.supporting_quote = None
-        judgement.reason = f"judge_error:{type(exc).__name__}"
-        return judgement
+        judgement.reason = f"judge_error:{exc.result.detail}"
+        return NodeResult(exc.result.status, judgement, exc.result.detail)
+    except Exception as exc:
+        result = exception_result(exc)
+        judgement.sufficient = False
+        judgement.stage2_quote_verified = False
+        judgement.supporting_quote = None
+        judgement.reason = f"judge_error:{result.detail}"
+        return NodeResult(result.status, judgement, result.detail)
 
 
 def _resolve_gate1(threshold, metric, collection_metric) -> tuple[bool, str]:
@@ -381,11 +410,10 @@ def _judge_by_llm(question: str, chunks: list[RetrievedChunk], llm=None,
         (answerable, supporting_quote)
 
     Raises:
-        Exception: 调用失败或输出无法解析。由 judge_evidence 统一兜成 insufficient。
+        EvidenceJudgeError: 调用失败或输出无效，由 judge_evidence 转为 NodeResult。
     """
     from langchain_core.prompts import ChatPromptTemplate
 
-    llm = llm or get_llm()
     system = JUDGE_SYSTEM_PROMPT + (f"\n\n补充要求：{extra_instruction}" if extra_instruction else "")
     prompt = ChatPromptTemplate.from_messages([
         ("system", system),
@@ -395,19 +423,34 @@ def _judge_by_llm(question: str, chunks: list[RetrievedChunk], llm=None,
         question=question,
         context=_format_chunks(chunks),
     )
-    response = llm.invoke(messages)
+    try:
+        llm = llm or get_llm()
+        response = llm.invoke(messages)
+    except Exception as exc:
+        raise EvidenceJudgeError(exception_result(exc)) from exc
+
     content = getattr(response, "content", None)
     if not isinstance(content, str):
-        raise RuntimeError("判定模型返回内容不是文本")
+        raise EvidenceJudgeError(
+            NodeResult(NodeStatus.INVALID_OUTPUT, detail="content_not_text")
+        )
+    try:
+        payload = _parse_json_object(content)
+    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise EvidenceJudgeError(
+            NodeResult(NodeStatus.INVALID_OUTPUT, detail="json_invalid")
+        ) from exc
 
-    payload = _parse_json_object(content)
     answerable = payload.get("answerable")
-    if not isinstance(answerable, bool):
-        raise RuntimeError("判定模型未返回布尔型 answerable")
-
     quote = payload.get("supporting_quote")
-    if not isinstance(quote, str):
-        quote = ""
+    if not isinstance(answerable, bool) or not isinstance(quote, str):
+        raise EvidenceJudgeError(
+            NodeResult(NodeStatus.INVALID_OUTPUT, detail="judge_fields_invalid")
+        )
+    if not answerable and quote.strip():
+        raise EvidenceJudgeError(
+            NodeResult(NodeStatus.INVALID_OUTPUT, detail="unexpected_quote")
+        )
     return answerable, (quote.strip() or None)
 
 
@@ -441,6 +484,11 @@ def _verify_quote(quote: str | None, chunks: list[RetrievedChunk]) -> bool:
         if stripped in _strip_whitespace(content):
             return True
     return False
+
+
+def verify_quote(quote: str | None, chunks: list[RetrievedChunk]) -> bool:
+    """供 Worker 后校验复用的确定性引文核验入口。"""
+    return _verify_quote(quote, chunks)
 
 
 def _strip_whitespace(text: str) -> str:
@@ -554,5 +602,6 @@ __all__ = [
     "judge_evidence",
     "generate_answer",
     "extract_sources",
+    "verify_quote",
     "assert_evidence_judge_available",
 ]

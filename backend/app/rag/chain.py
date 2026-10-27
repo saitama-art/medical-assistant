@@ -109,7 +109,7 @@ def get_vector_store():
                 from langchain_chroma import Chroma
 
                 vector_store = Chroma(
-                    persist_directory=r"F:\medical-assistant\backend\chroma_db",
+                    persist_directory=os.environ.get("CHROMA_PERSIST_DIR") or str(Path(__file__).resolve().parents[2] / "chroma_db"),
                     embedding_function=get_embedding()
                 )
                 _vector_store = vector_store

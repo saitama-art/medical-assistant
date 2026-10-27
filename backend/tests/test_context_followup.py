@@ -13,7 +13,7 @@ import json as _json
 import unittest
 
 from app.medical_agent.router import has_followup_lead, has_reference, classify
-from app.medical_agent.state import QuestionCategory
+from app.medical_agent.state import NodeStatus, QuestionCategory, ResolutionStatus
 from tests.test_medical_agent_step4 import FakeLLM
 
 
@@ -96,27 +96,31 @@ class TestConstraintRetentionStage1(unittest.TestCase):
         # 无否定词的正常改写：raw 用普通指代追问，产物应原样采用。
         out = self._run_resolve("盐酸二甲双胍片的用法用量是什么？",
                                 raw="它的用法用量呢？")
-        self.assertEqual(out, "盐酸二甲双胍片的用法用量是什么？")
+        self.assertIs(out.status, NodeStatus.OK)
+        self.assertEqual(out.value.question, "盐酸二甲双胍片的用法用量是什么？")
 
     def test_negation_dropped_rejected(self):
         # D2 修复：改写产物丢了「没有」（语义反转）→ 拒绝采用，返回 None，
         # 调用方（N02）据此降级 missing 走"请重述"，不猜。
         out = self._run_resolve("盐酸二甲双胍片有胃肠道反应吗？")
-        self.assertIsNone(out)
+        self.assertIs(out.status, NodeStatus.INVALID_OUTPUT)
 
     def test_negation_kept_accepted(self):
         # 否定词原样保留的改写产物正常采用。
         out = self._run_resolve("盐酸二甲双胍片没有胃肠道反应吗？")
-        self.assertEqual(out, "盐酸二甲双胍片没有胃肠道反应吗？")
+        self.assertIs(out.status, NodeStatus.OK)
+        self.assertIs(out.value.status, ResolutionStatus.RESOLVED)
+        self.assertEqual(out.value.question, "盐酸二甲双胍片没有胃肠道反应吗？")
 
 
 class TestClassifyUnchanged(unittest.TestCase):
     """触发器扩面不得波及分类器：寒暄短路与失败语义原样。"""
 
     def test_greeting_shortcut(self):
-        cat, conf = classify("你好", llm=None)
-        self.assertIs(cat, QuestionCategory.CHITCHAT)
-        self.assertEqual(conf, 1.0)
+        result = classify("你好", llm=None)
+        self.assertIs(result.status, NodeStatus.OK)
+        self.assertIs(result.value.category, QuestionCategory.CHITCHAT)
+        self.assertEqual(result.value.confidence, 1.0)
 
 
 class TestResolvedQuestionField(unittest.TestCase):
@@ -188,6 +192,22 @@ class TestResolvedQuestionField(unittest.TestCase):
         try:
             body = self._post(client).json()
             self.assertIn("resolved_question", body)
+            self.assertIn("error_code", body)
+            self.assertIn("error_node", body)
+        finally:
+            self._cleanup()
+
+    def test_structured_error_fields_are_safe_machine_values(self):
+        from app.medical_agent.state import AgentError, AgentErrorKind
+
+        state = self._state("它有什么副作用？")
+        state.error = AgentError("N02", AgentErrorKind.MODEL_TIMEOUT)
+        client = self._client(state)
+        try:
+            body = self._post(client).json()
+            self.assertEqual(body["error_code"], "model_timeout")
+            self.assertEqual(body["error_node"], "N02")
+            self.assertNotIn("resolver timeout", str(body))
         finally:
             self._cleanup()
 

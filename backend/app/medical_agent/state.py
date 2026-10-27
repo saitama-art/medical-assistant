@@ -11,7 +11,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 
 # ==================== 枚举 ====================
@@ -53,6 +53,44 @@ class ContextStatus(str, Enum):
     OK = "ok"
     MISSING = "missing"
     DEGRADED_NO_HISTORY = "degraded_no_history"
+
+
+class NodeStatus(str, Enum):
+    """模型节点的执行状态；OK 不代表业务上可回答或可执行。"""
+
+    OK = "ok"
+    TIMEOUT = "timeout"
+    UNAVAILABLE = "unavailable"
+    INVALID_OUTPUT = "invalid_output"
+    BUDGET_BLOCKED = "budget_blocked"
+
+
+class ResolutionStatus(str, Enum):
+    """N02 的业务解析结果，与模型调用是否成功分开表达。"""
+
+    RESOLVED = "resolved"
+    CONTEXT_REQUIRED = "context_required"
+
+
+class UnresolvedKind(str, Enum):
+    """N04 识别出的未解决业务问题，不授予任何执行权限。"""
+
+    NONE = "none"
+    MISSING_INPUT = "missing_input"
+    CONTEXT_REQUIRED = "context_required"
+    INTENT_CONFLICT = "intent_conflict"
+
+
+class AgentErrorKind(str, Enum):
+    """可安全写入 trace/API 的机器错误类型，不包含异常原文。"""
+
+    MODEL_TIMEOUT = "model_timeout"
+    MODEL_UNAVAILABLE = "model_unavailable"
+    MODEL_OUTPUT_INVALID = "model_output_invalid"
+    MODEL_CONSTRAINT_VIOLATION = "model_constraint_violation"
+    WORKER_RESULT_INVALID = "worker_result_invalid"
+    SAFETY_REJECTED = "safety_rejected"
+    BUDGET_BLOCKED = "budget_blocked"
 
 
 class RetrievalOutcome(str, Enum):
@@ -97,6 +135,9 @@ class TerminationReason(str, Enum):
     MAX_ROUNDS_REACHED = "max_rounds_reached"
     REPEATED_CALL_BLOCKED = "repeated_call_blocked"
     BUDGET_EXHAUSTED = "budget_exhausted"
+    CLARIFICATION_REQUIRED = "clarification_required"
+    PROCESSING_FAILED = "processing_failed"
+    SAFETY_REJECTED = "safety_rejected"
 
 
 class SubagentStatus(str, Enum):
@@ -114,9 +155,68 @@ class SubagentStatus(str, Enum):
     ARGUMENT_INVALID = "argument_invalid"    # 参数校验不通过（未执行）
     REPEATED_CALL_BLOCKED = "repeated_call_blocked"
     MAX_ROUNDS_REACHED = "max_rounds_reached"
+    PROCESSING_FAILED = "processing_failed"
+    SAFETY_REJECTED = "safety_rejected"
 
 
 # ==================== 记录结构 ====================
+
+
+T = TypeVar("T")
+
+
+@dataclass(frozen=True)
+class NodeResult(Generic[T]):
+    """N02/N04/N08 的统一节点出口。detail 只能是安全机器标识。"""
+
+    status: NodeStatus
+    value: T | None = None
+    detail: str = ""
+
+
+def exception_result(exc: Exception) -> NodeResult:
+    """把调用边界异常映射为安全状态，不保留异常消息或堆栈。"""
+    name = type(exc).__name__
+    normalized = name.lower().replace("_", "")
+    if isinstance(exc, TimeoutError) or "timeout" in normalized or "timedout" in normalized:
+        return NodeResult(NodeStatus.TIMEOUT, detail=name)
+    return NodeResult(NodeStatus.UNAVAILABLE, detail=name)
+
+
+@dataclass(frozen=True)
+class AgentError:
+    """请求级结构化错误；最终出口仍由 TerminationReason 表达。"""
+
+    node: str
+    kind: AgentErrorKind
+    detail: str = ""
+
+
+@dataclass(frozen=True)
+class ResolutionResult:
+    status: ResolutionStatus
+    question: str = ""
+
+
+@dataclass(frozen=True)
+class IntentAssessment:
+    """N04 的原始业务评估；低置信度不得篡改 category。"""
+
+    category: QuestionCategory
+    confidence: float
+    unresolved: UnresolvedKind = UnresolvedKind.NONE
+    missing_inputs: tuple[str, ...] = ()
+
+
+@dataclass
+class RecoveryState:
+    """单请求恢复预算。摘要和计数均不得包含用户原文。"""
+
+    attempts: dict[str, int] = field(default_factory=dict)
+    call_digests: set[str] = field(default_factory=set)
+    repair_total: int = 0
+    clarified: bool = False
+    worker_launched: bool = False
 
 
 @dataclass
@@ -215,6 +315,8 @@ class SubagentResult:
     """
 
     status: SubagentStatus
+    spec_id: str = ""
+    resolved_question: str = ""
     answer: str = ""
     sources: list[Source] = field(default_factory=list)
     evidence: EvidenceJudgement | None = None
@@ -223,6 +325,8 @@ class SubagentResult:
     tool_calls: list[ToolCallRecord] = field(default_factory=list)
     trace: list[TraceRecord] = field(default_factory=list)
     detail: str = ""
+    error: AgentError | None = None
+    side_effects: tuple[str, ...] = ()
 
 
 @dataclass
@@ -263,6 +367,7 @@ class AgentState:
     emergency: EmergencyHit = field(default_factory=EmergencyHit)
     category: QuestionCategory | None = None
     category_confidence: float = 0.0
+    intent_assessment: IntentAssessment | None = None
     route: Route | None = None
 
     # —— 工具与证据 ——
@@ -279,8 +384,10 @@ class AgentState:
 
     # —— 控制与追踪 ——
     budget: BudgetState = field(default_factory=BudgetState)
+    recovery: RecoveryState = field(default_factory=RecoveryState)
+    task_spec_id: str = ""
     termination_reason: TerminationReason | None = None
-    error: str = ""
+    error: AgentError | None = None
     trace: list[TraceRecord] = field(default_factory=list)
 
     def add_trace(

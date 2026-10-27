@@ -1,0 +1,51 @@
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+
+# Python environments and caches
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/*.egg-info/
+**/.venv/
+**/venv/
+
+# Frontend dependencies and build output
+**/node_modules/
+frontend/build/
+frontend/dist/
+
+# Runtime data is mounted separately and must not enter images
+backend/data/
+backend/chroma_db/
+backend/uploads/
+backend/session_data/
+backend/test_chroma/
+
+# Model caches
+**/.cache/
+**/models/
+
+# Non-runtime project materials
+.git/
+**/.git/
+.vscode/
+.idea/
+docs/
+testing/
+Evaluation/
+docker-compose.yml.bak
+
+# Logs and temporary files
+**/*.log
+**/tmp/
+**/temp/
+.DS_Store
+Thumbs.db

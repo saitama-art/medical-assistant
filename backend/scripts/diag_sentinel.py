@@ -36,7 +36,9 @@ def main() -> None:
             print(f"  [{i:2d}] {mark} {doc[:46]}  d={c.distance:.3f}")
         for i, c in enumerate(r.chunks[:3], 1):
             print(f"  --- top{i} 正文前 300 字：{c.content[:300]!r}")
-        j = service.judge_evidence(q, r)
+        result = service.judge_evidence(q, r)
+        print("  判定节点状态:", result.status.value)
+        j = result.value
         print("  判定：sufficient=", j.sufficient,
               " stage3=", j.stage3_answerable,
               " stage2=", j.stage2_quote_verified,

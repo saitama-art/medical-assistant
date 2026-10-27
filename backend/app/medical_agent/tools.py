@@ -60,6 +60,7 @@ class ToolSpec:
     description: str
     validator: Callable[[dict], dict]
     handler: Callable[..., Any]
+    side_effects: tuple[str, ...] = ()
 
 
 @dataclass
@@ -132,6 +133,7 @@ def _search_medical_kb(question: str, k: int) -> RetrievalResult:
     return service.retrieve_with_scores(question, k=k)
 
 
+RETRIEVAL_TOOL = "search_medical_kb"
 TOOL_REGISTRY: dict[str, ToolSpec] = {}
 
 
@@ -143,7 +145,7 @@ def register(spec: ToolSpec) -> ToolSpec:
 
 
 register(ToolSpec(
-    name="search_medical_kb",
+    name=RETRIEVAL_TOOL,
     description="在已收录的医学资料中检索与问题相关的片段，返回片段及其距离。",
     validator=_validate_search_args,
     handler=_search_medical_kb,
@@ -341,6 +343,7 @@ __all__ = [
     "ToolSpec",
     "ToolInvocation",
     "TOOL_REGISTRY",
+    "RETRIEVAL_TOOL",
     "MAX_TOOL_ROUNDS",
     "MIN_USABLE_BUDGET_MS",
     "register",

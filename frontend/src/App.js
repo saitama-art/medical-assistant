@@ -13,6 +13,9 @@ const OUTCOME_META = {
   empty_knowledge_base: { text: '知识库无内容', cls: 'badge-muted' },
   budget_exhausted: { text: '超时', cls: 'badge-muted' },
   generation_failed: { text: '生成失败', cls: 'badge-muted' },
+  clarification_required: { text: '需要澄清', cls: 'badge-muted' },
+  processing_failed: { text: '处理失败', cls: 'badge-muted' },
+  safety_rejected: { text: '安全拦截', cls: 'badge-emergency' },
 };
 // 与后端 rag/service.py MAX_QUESTION_LEN 对齐（N06 校验口径，测试 T-07）
 const MAX_QUESTION_LEN = 500;

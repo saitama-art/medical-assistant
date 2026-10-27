@@ -1,2 +1,51 @@
 services:
-  
+  backend:
+    image: medical-assistant-backend:latest
+    build:
+      context: .
+      network: host
+      dockerfile: backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      APP_DB_PATH: /app/backend/data/app.db
+      CHROMA_PERSIST_DIR: /app/backend/chroma_db
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      UPLOAD_DIR: /app/backend/uploads
+      SESSION_PERSIST_DIR: /app/backend/session_data
+      SESSION_COOKIE_SECURE: "false"
+      SESSION_COOKIE_SAMESITE: lax
+      CORS_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+    volumes:
+      - ./backend/data:/app/backend/data
+      - ./backend/chroma_db:/app/backend/chroma_db
+      - ./backend/uploads:/app/backend/uploads
+      - ./backend/session_data:/app/backend/session_data
+      - hf_cache:/root/.cache/huggingface
+    expose:
+      - "8000"
+    gpus: all
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/openapi.json', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 180s
+    restart: unless-stopped
+
+  frontend:
+    image: medical-assistant-frontend:latest
+    build:
+      context: .
+      network: host
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  hf_cache:

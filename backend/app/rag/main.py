@@ -130,6 +130,12 @@ def agent_chat(req: AgentChatRequest, request: Request,
         "sources": orchestrator.display_sources(state),
         "category": state.category.value if state.category else None,
         "outcome": state.termination_reason.value if state.termination_reason else None,
+        "error_code": (
+            state.error.kind.value if getattr(state, "error", None) else None
+        ),
+        "error_node": (
+            state.error.node if getattr(state, "error", None) else None
+        ),
         # WEAK 急症风险提示原文（emergency_handled 时为空，其文案已在 answer 内）。
         # 前端用它渲染安全提醒横幅；answer 内的文字保持不变（向后兼容）。
         "risk_notice": state.risk_notice or None,

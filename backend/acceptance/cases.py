@@ -206,7 +206,14 @@ def _t14b(ctx):
 
     llm = get_llm(timeout=10)
     for i, (q, expect) in enumerate(CLASSIFY_BATTERY, 1):
-        cat, conf = classify(q, llm=llm)
+        result = classify(q, llm=llm)
+        if result.value is None:
+            yield dict(id=f"T-14b-{i}", group="T-14b", kind="pass_fail",
+                       question=f"{q}（期望 {expect}）", ms=0, ok=False,
+                       outcome=result.status.value)
+            continue
+        cat = result.value.category
+        conf = result.value.confidence
         ok = cat.value == expect
         yield dict(id=f"T-14b-{i}", group="T-14b", kind="pass_fail",
                    question=f"{q}（期望 {expect}）", ms=0, ok=ok,
@@ -217,15 +224,15 @@ def _t14b(ctx):
 def _t15(ctx):
     # 计算路径是确定性规则短路（0 LLM、0 检索）：BMI/标准体重/换算/缺参追问
     cases = [
-        ("T-15-1", "我身高170，体重65公斤，BMI是多少？", ["22.5", "正常范围"]),
-        ("T-15-2", "我身高175，标准体重是多少？", ["70.0kg"]),
-        ("T-15-3", "65kg等于多少斤", ["130.0", "斤"]),
-        ("T-15-4", "BMI", ["身高", "体重"]),
+        ("T-15-1", "我身高170，体重65公斤，BMI是多少？", ["22.5", "正常范围"], "completed"),
+        ("T-15-2", "我身高175，标准体重是多少？", ["70.0kg"], "completed"),
+        ("T-15-3", "65kg等于多少斤", ["130.0", "斤"], "completed"),
+        ("T-15-4", "BMI", ["身高", "体重"], "clarification_required"),
     ]
-    for cid, q, expects in cases:
+    for cid, q, expects, expected_outcome in cases:
         code, body, ms = ctx.chat(f"t15-{cid}", q)
         answer = body.get("answer") or ""
-        ok = (code == 200 and body.get("outcome") == "completed"
+        ok = (code == 200 and body.get("outcome") == expected_outcome
               and all(e in answer for e in expects))
         yield dict(id=cid, group="T-15", kind="pass_fail", question=q, ms=ms,
                    ok=ok, outcome=body.get("outcome"), answer=_clip(answer))

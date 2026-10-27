@@ -74,6 +74,14 @@ UNCLASSIFIABLE_REPLY = (
     "请补充说明您想了解的内容，例如具体的药名、症状或想查的资料，我再试着回答。"
 )
 
+CLARIFICATION_REPLY = (
+    "我还需要一些信息才能继续。请补充或明确您想了解的具体问题，"
+    "不要只使用“它”“那个”等指代。"
+)
+
+PROCESSING_ERROR = "本次请求未能完成处理，请稍后重试。"
+SAFETY_REJECTED_REPLY = "当前任务不符合本助手的安全执行范围，因此未予执行。"
+
 # 就医指引：只给通用方向，不指定具体科室（见需求待确认 9）。
 TRIAGE_GUIDANCE = (
     "这里只能给出一般性的就医方向，不能替代医生判断。\n"
@@ -139,5 +147,8 @@ TERMINATION_TEXTS: dict[TerminationReason, str] = {
     TerminationReason.MAX_ROUNDS_REACHED: ROUNDS_EXCEEDED_REPLY,
     TerminationReason.REPEATED_CALL_BLOCKED: REPEATED_CALL_REPLY,
     TerminationReason.BUDGET_EXHAUSTED: BUDGET_EXHAUSTED_REPLY,
+    TerminationReason.CLARIFICATION_REQUIRED: CLARIFICATION_REPLY,
+    TerminationReason.PROCESSING_FAILED: PROCESSING_ERROR,
+    TerminationReason.SAFETY_REJECTED: SAFETY_REJECTED_REPLY,
 }
 # COMPLETED 不在本表中：它返回的是生成的回答正文，没有固定文案。

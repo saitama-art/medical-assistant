@@ -12,7 +12,7 @@ import json
 import unittest
 
 from app.medical_agent import calculator, orchestrator, respond, session
-from app.medical_agent.state import TerminationReason
+from app.medical_agent.state import Route, TerminationReason
 
 from tests.test_medical_agent_step4 import FakeLLM, _fresh_session, _run
 from app.rag import service
@@ -131,12 +131,14 @@ class TestCalcIntegration(unittest.TestCase):
     def test_missing_params_ask(self):
         llm = FakeLLM(raise_on_invoke=True)
         state, calls = _run(_fresh_session(), "BMI", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.CLARIFICATION_REQUIRED)
         self.assertEqual(state.answer_text, respond.CALC_NEED_HEIGHT_WEIGHT)
         self.assertEqual(calls["retrieval"], 0)
 
     def test_invalid_params_no_fake_result(self):
         llm = FakeLLM(raise_on_invoke=True)
         state, _ = _run(_fresh_session(), "我身高300，体重65公斤，BMI是多少？", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.CLARIFICATION_REQUIRED)
         self.assertEqual(state.answer_text, respond.CALC_NEED_HEIGHT_WEIGHT)
         self.assertNotIn("BMI = **", state.answer_text)
 
@@ -170,9 +172,11 @@ class TestCalcIntegration(unittest.TestCase):
         state, calls = _run(_fresh_session(),
                             "我身高170，体重80公斤，BMI是多少？有什么危害", llm, ok)
         self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
+        self.assertIs(state.route, Route.KNOWLEDGE)
         self.assertEqual(calls["retrieval"], 1)  # 剩余问题走了知识检索
         self.assertIn("BMI = **27.7**", state.answer_text)
         self.assertIn("超重危害的解释", state.answer_text)
+        self.assertIn(respond.DISCLAIMER, state.answer_text)
 
 
 class TestCalcParamFill(unittest.TestCase):

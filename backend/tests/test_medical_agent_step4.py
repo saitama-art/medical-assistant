@@ -18,7 +18,10 @@ from app.medical_agent.state import (
     AgentState,
     ContextStatus,
     EmergencyLevel,
+    AgentErrorKind,
     EvidenceJudgement,
+    NodeResult,
+    NodeStatus,
     QuestionCategory,
     RetrievedChunk,
     RetrievalOutcome,
@@ -118,6 +121,13 @@ class TestRouter(unittest.TestCase):
         self.assertIs(
             router.decide_route(QuestionCategory.KNOWLEDGE, none,
                                 ContextStatus.MISSING, "那它的副作用呢"), Route.CONTEXT_MISSING)
+        self.assertIs(
+            router.decide_route(QuestionCategory.KNOWLEDGE, none,
+                                ContextStatus.MISSING, "用量呢？"), Route.CONTEXT_MISSING)
+        self.assertIs(
+            router.decide_route(QuestionCategory.KNOWLEDGE, none,
+                                ContextStatus.DEGRADED_NO_HISTORY, "它怎么吃？"),
+            Route.CONTEXT_MISSING)
         # 2b. 上下文缺失但无指代 → 正常按类别走
         self.assertIs(
             router.decide_route(QuestionCategory.KNOWLEDGE, none,
@@ -129,69 +139,128 @@ class TestRouter(unittest.TestCase):
         self.assertIs(router.decide_route(QuestionCategory.TRIAGE, none, ContextStatus.OK, "x"), Route.TRIAGE)
         self.assertIs(router.decide_route(QuestionCategory.KNOWLEDGE, none, ContextStatus.OK, "x"), Route.KNOWLEDGE)
 
-    def test_classify_failure_goes_unclassifiable(self):
+    def test_classify_failure_is_not_business_unknown(self):
         class _Boom:
             def invoke(self, messages):
                 raise RuntimeError("network down")
 
-        cat, conf = router.classify("whatever", llm=_Boom())
-        self.assertIs(cat, QuestionCategory.UNCLASSIFIABLE)
-        self.assertEqual(conf, 0.0)
+        result = router.classify("whatever", llm=_Boom())
+        self.assertIs(result.status, NodeStatus.UNAVAILABLE)
+        self.assertIsNone(result.value)
 
 
 class TestT05IntentFailureModes(unittest.TestCase):
-    """T-05（意图识别异常，设计文档第六部分）：分类器异常 / 超时 / 非法枚举 /
-    置信不足 / 环节预算不足未启动 → 全部落 unclassifiable，**无一进入检索**，
-    回答为固定"无法处理 + 请补充说明"文案。②~⑤为确定性用例（①与②同走
-    classify 异常吞噬路径，router 层已有用例）；⑥语义模糊输入需真实 LLM，
-    在验收脚本中覆盖。
+    """N04 业务未知、澄清、技术失败与预算分别终止，且均不得进入检索。"""
 
-    期望（设计文档）：六种情形全部落 unclassifiable、无一进入检索、
-    模糊输入不被强行归入某一类。
-    """
-
-    def _assert_unclassified_no_retrieval(self, state, calls):
-        self.assertIs(state.termination_reason, TerminationReason.UNCLASSIFIED)
+    def _assert_no_retrieval(self, state, calls, reason, body):
+        self.assertIs(state.termination_reason, reason)
         self.assertEqual(calls["retrieval"], 0)
-        # 固定文案，不含来源段 / 免责声明 / 风险提示（无 weak 信号时）
-        self.assertEqual(state.answer_text.strip(), respond.UNCLASSIFIABLE_REPLY.strip())
-        # trace 里有 N04 决策记录（T-15 追踪完整性）
+        self.assertEqual(state.answer_text.strip(), body.strip())
         self.assertIn("N04", [t.node for t in state.trace])
 
-    def test_timeout_goes_unclassifiable(self):
-        """② 分类器超时（TimeoutError 与连接错误同走异常吞噬路径）。"""
-
+    def test_timeout_is_processing_failed(self):
         class _TimeoutLLM:
+            def __init__(self):
+                self.calls = 0
+
             def invoke(self, messages):
+                self.calls += 1
                 raise TimeoutError("classify llm timeout")
 
-        state, calls = _run(_fresh_session(), "二甲双胍怎么用", _TimeoutLLM(),
-                            RetrievalResult(outcome=RetrievalOutcome.SUFFICIENT, chunks=[_chunk("x")]))
-        self._assert_unclassified_no_retrieval(state, calls)
+        llm = _TimeoutLLM()
+        state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm, None)
+        self._assert_no_retrieval(
+            state, calls, TerminationReason.PROCESSING_FAILED, respond.PROCESSING_ERROR,
+        )
+        self.assertIs(state.error.kind, AgentErrorKind.MODEL_TIMEOUT)
+        self.assertEqual(state.error.node, "N04")
+        self.assertIsNone(state.category)
+        self.assertEqual(llm.calls, 1)  # 超时不做同请求慢调用重试
 
-    def test_illegal_enum_goes_unclassifiable(self):
-        """③ 模型输出非法枚举值：不得猜最接近的一类。"""
+    def test_service_unavailable_is_distinct_from_timeout(self):
+        class _DownLLM:
+            def invoke(self, messages):
+                raise RuntimeError("network down")
+
+        state, calls = _run(_fresh_session(), "二甲双胍怎么用", _DownLLM(), None)
+        self._assert_no_retrieval(
+            state, calls, TerminationReason.PROCESSING_FAILED, respond.PROCESSING_ERROR,
+        )
+        self.assertIs(state.error.kind, AgentErrorKind.MODEL_UNAVAILABLE)
+
+    def test_illegal_enum_repairs_once_then_fails(self):
         llm = FakeLLM(classify={"category": "banana", "confidence": 0.95})
-        state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm,
-                            RetrievalResult(outcome=RetrievalOutcome.SUFFICIENT, chunks=[_chunk("x")]))
-        self._assert_unclassified_no_retrieval(state, calls)
+        state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm, None)
+        self._assert_no_retrieval(
+            state, calls, TerminationReason.PROCESSING_FAILED, respond.PROCESSING_ERROR,
+        )
+        self.assertIs(state.error.kind, AgentErrorKind.MODEL_OUTPUT_INVALID)
+        self.assertEqual(llm.calls, 2)
+        self.assertEqual(state.recovery.repair_total, 1)
 
-    def test_low_confidence_goes_unclassifiable(self):
-        """④ confidence < CATEGORY_CONFIDENCE_MIN(0.6)：即使类别看似明确也归入 unclassifiable。"""
+    def test_invalid_output_can_succeed_after_one_repair(self):
+        class _RepairOnceLLM(FakeLLM):
+            def __init__(self):
+                super().__init__(classify={"category": "triage", "confidence": 0.9})
+                self.classify_calls = 0
+
+            def invoke(self, messages):
+                system = "".join(
+                    getattr(m, "content", "") or "" for m in messages
+                    if getattr(m, "type", "") == "system"
+                )
+                if "意图分类器" in system:
+                    self.classify_calls += 1
+                    self.calls += 1
+                    if self.classify_calls == 1:
+                        return _FakeMessage('{"category": "banana", "confidence": 0.9}')
+                    return _FakeMessage(
+                        '{"category": "triage", "confidence": 0.9,'
+                        ' "unresolved": "none", "missing_inputs": []}'
+                    )
+                return super().invoke(messages)
+
+        llm = _RepairOnceLLM()
+        state, calls = _run(_fresh_session(), "持续性头痛应该挂什么科", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
+        self.assertEqual(state.answer_text, respond.TRIAGE_GUIDANCE)
+        self.assertEqual(llm.classify_calls, 2)
+        self.assertEqual(state.recovery.repair_total, 1)
+        self.assertEqual(calls["retrieval"], 0)
+
+    def test_intent_conflict_clarifies_without_worker(self):
+        llm = FakeLLM(classify={
+            "category": "knowledge", "confidence": 0.95,
+            "unresolved": "intent_conflict", "missing_inputs": [],
+        })
+        state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm, None)
+        self._assert_no_retrieval(
+            state, calls, TerminationReason.CLARIFICATION_REQUIRED,
+            respond.CLARIFICATION_REPLY,
+        )
+        self.assertEqual(llm.calls, 1)
+
+    def test_low_confidence_clarifies_without_forcing_category(self):
         llm = FakeLLM(classify={"category": "knowledge", "confidence": 0.35})
-        state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm,
-                            RetrievalResult(outcome=RetrievalOutcome.SUFFICIENT, chunks=[_chunk("x")]))
-        self._assert_unclassified_no_retrieval(state, calls)
+        state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm, None)
+        self._assert_no_retrieval(
+            state, calls, TerminationReason.CLARIFICATION_REQUIRED,
+            respond.CLARIFICATION_REPLY,
+        )
+        self.assertIs(state.category, QuestionCategory.KNOWLEDGE)
+        self.assertEqual(state.category_confidence, 0.35)
+        self.assertEqual(llm.calls, 1)
 
-    def test_non_numeric_confidence_goes_unclassifiable(self):
-        """④b confidence 缺失/非数值（如 "high"）：按 0.0 处理，同归 unclassifiable。"""
+    def test_non_numeric_confidence_is_invalid_output(self):
         llm = FakeLLM(classify={"category": "knowledge", "confidence": "high"})
-        state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm,
-                            RetrievalResult(outcome=RetrievalOutcome.SUFFICIENT, chunks=[_chunk("x")]))
-        self._assert_unclassified_no_retrieval(state, calls)
+        state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm, None)
+        self._assert_no_retrieval(
+            state, calls, TerminationReason.PROCESSING_FAILED, respond.PROCESSING_ERROR,
+        )
+        self.assertIs(state.error.kind, AgentErrorKind.MODEL_OUTPUT_INVALID)
+        self.assertEqual(llm.calls, 2)
 
     def test_classify_skipped_when_node_budget_unusable(self):
-        """⑤ 环节预算不足未启动 N04：不调用 LLM（防假动作），直接 unclassifiable。"""
         calls = {"retrieval": 0}
 
         def fake_retrieve(question, k=service.DEFAULT_TOP_K):
@@ -201,27 +270,24 @@ class TestT05IntentFailureModes(unittest.TestCase):
         real_node_budget = orchestrator._node_budget
 
         def fake_node_budget(state, node_ms):
-            # 只掐掉 N04 分类环节预算，其余环节保持真实分配
             if node_ms == orchestrator.BUDGET_CLASSIFY_MS:
                 return None
             return real_node_budget(state, node_ms)
 
-        llm = FakeLLM(raise_on_invoke=True)  # 走到 LLM 即失败
+        llm = FakeLLM(raise_on_invoke=True)
         with patch.object(orchestrator, "_node_budget", fake_node_budget), \
              patch.object(orchestrator, "get_llm", lambda timeout=35: llm), \
              patch.object(knowledge, "get_llm", lambda timeout=35: llm), \
              patch.object(service, "retrieve_with_scores", fake_retrieve):
             state = orchestrator.run_agent(_fresh_session(), "二甲双胍怎么用")
 
+        self._assert_no_retrieval(
+            state, calls, TerminationReason.BUDGET_EXHAUSTED,
+            respond.BUDGET_EXHAUSTED_REPLY,
+        )
         self.assertEqual(llm.calls, 0)
-        self.assertEqual(calls["retrieval"], 0)
-        self.assertIs(state.termination_reason, TerminationReason.UNCLASSIFIED)
-        self.assertEqual(state.category, QuestionCategory.UNCLASSIFIABLE)
-        # N04 留有预算跳过记录（T-15 追踪完整性）
-        n04_budget_traces = [t for t in state.trace
-                             if t.node == "N04" and t.event == "budget"
-                             and t.detail.get("skipped")]
-        self.assertEqual(len(n04_budget_traces), 1)
+        self.assertIsNone(state.category)
+        self.assertIs(state.error.kind, AgentErrorKind.BUDGET_BLOCKED)
 
 
 class TestChestPainScenarios(unittest.TestCase):
@@ -531,8 +597,8 @@ class TestOrchestratorContext(unittest.TestCase):
         state, calls = _run(sid, "那它的副作用呢", llm, None)
         self.assertIs(state.termination_reason, TerminationReason.CONTEXT_MISSING)
         self.assertEqual(calls["retrieval"], 0)
-        # N04 仍会尝试一次分类（失败归入 unclassifiable），但 N05 优先级 2 覆盖为要求重述
-        self.assertLessEqual(llm.calls, 1)
+        # 上下文缺失在 N04 前终止，不浪费分类调用，也不可能进入检索。
+        self.assertEqual(llm.calls, 0)
 
     def test_triage_route_returns_guidance_without_tool(self):
         llm = FakeLLM(classify={"category": "triage", "confidence": 0.9})
@@ -540,6 +606,239 @@ class TestOrchestratorContext(unittest.TestCase):
         self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
         self.assertEqual(state.answer_text, respond.TRIAGE_GUIDANCE)
         self.assertEqual(calls["retrieval"], 0)
+
+
+class TestContextFailureSemantics(unittest.TestCase):
+    def _seeded_session(self):
+        sid = _fresh_session()
+        session.complete(sid, "二甲双胍有什么不良反应？", "常见不良反应。", got_lock=True)
+        return sid
+
+    def test_legal_unresolved_reference_is_context_missing(self):
+        llm = FakeLLM(
+            resolve='{"question": ""}',
+            classify={"category": "knowledge", "confidence": 0.95},
+        )
+        state, calls = _run(self._seeded_session(), "它怎么吃？", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.CONTEXT_MISSING)
+        self.assertEqual(calls["retrieval"], 0)
+        self.assertEqual(llm.calls, 1)
+        self.assertIsNone(state.error)
+
+    def test_resolver_can_succeed_after_one_format_repair(self):
+        class _RepairResolver(FakeLLM):
+            def __init__(self):
+                super().__init__(classify={"category": "triage", "confidence": 0.9})
+                self.resolve_calls = 0
+
+            def invoke(self, messages):
+                system = "".join(
+                    getattr(m, "content", "") or "" for m in messages
+                    if getattr(m, "type", "") == "system"
+                )
+                if "对话上下文整理器" in system:
+                    self.resolve_calls += 1
+                    self.calls += 1
+                    if self.resolve_calls == 1:
+                        return _FakeMessage("not-json")
+                    return _FakeMessage('{"question": "二甲双胍需要挂什么科？"}')
+                return super().invoke(messages)
+
+        llm = _RepairResolver()
+        state, calls = _run(self._seeded_session(), "它要挂什么科？", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
+        self.assertEqual(state.resolved_question, "二甲双胍需要挂什么科？")
+        self.assertEqual(llm.resolve_calls, 2)
+        self.assertEqual(state.recovery.repair_total, 1)
+        self.assertEqual(calls["retrieval"], 0)
+
+    def test_resolver_timeout_is_not_context_missing(self):
+        class _ResolveTimeout(FakeLLM):
+            def invoke(self, messages):
+                self.calls += 1
+                system = "".join(
+                    getattr(m, "content", "") or "" for m in messages
+                    if getattr(m, "type", "") == "system"
+                )
+                if "对话上下文整理器" in system:
+                    raise TimeoutError("resolver timeout")
+                return super().invoke(messages)
+
+        llm = _ResolveTimeout(classify={"category": "knowledge", "confidence": 0.95})
+        state, calls = _run(self._seeded_session(), "它怎么吃？", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.PROCESSING_FAILED)
+        self.assertIs(state.error.kind, AgentErrorKind.MODEL_TIMEOUT)
+        self.assertEqual(state.error.node, "N02")
+        self.assertEqual(calls["retrieval"], 0)
+        self.assertEqual(llm.calls, 1)
+
+    def test_dropped_negation_is_constraint_violation_after_one_repair(self):
+        llm = FakeLLM(resolve='{"question": "二甲双胍有胃肠道反应吗？"}')
+        state, calls = _run(
+            self._seeded_session(), "它没有胃肠道反应吗？", llm, None,
+        )
+        self.assertIs(state.termination_reason, TerminationReason.PROCESSING_FAILED)
+        self.assertIs(state.error.kind, AgentErrorKind.MODEL_CONSTRAINT_VIOLATION)
+        self.assertEqual(llm.calls, 2)
+        self.assertEqual(calls["retrieval"], 0)
+
+    def test_resolver_budget_is_not_business_unknown(self):
+        sid = self._seeded_session()
+        llm = FakeLLM(raise_on_invoke=True)
+        real_node_budget = orchestrator._node_budget
+
+        def fake_node_budget(state, node_ms):
+            if node_ms == orchestrator.BUDGET_FOLLOWUP_MS:
+                return None
+            return real_node_budget(state, node_ms)
+
+        with patch.object(orchestrator, "_node_budget", fake_node_budget), \
+             patch.object(orchestrator, "get_llm", lambda timeout=35: llm):
+            state = orchestrator.run_agent(sid, "它怎么吃？")
+        self.assertIs(state.termination_reason, TerminationReason.BUDGET_EXHAUSTED)
+        self.assertIs(state.error.kind, AgentErrorKind.BUDGET_BLOCKED)
+        self.assertEqual(llm.calls, 0)
+
+    def test_implicit_followup_with_missing_history_asks_for_context(self):
+        llm = FakeLLM(raise_on_invoke=True)
+        with patch.object(
+            session, "acquire", return_value=(False, [], ContextStatus.MISSING),
+        ):
+            state, calls = _run(_fresh_session(), "用量呢？", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.CONTEXT_MISSING)
+        self.assertEqual(llm.calls, 0)
+        self.assertEqual(calls["retrieval"], 0)
+
+    def test_degraded_history_cannot_delegate_unresolved_reference(self):
+        llm = FakeLLM(raise_on_invoke=True)
+        with patch.object(
+            session, "acquire",
+            return_value=(False, [], ContextStatus.DEGRADED_NO_HISTORY),
+        ):
+            state, calls = _run(_fresh_session(), "它怎么吃？", llm, None)
+        self.assertIs(state.termination_reason, TerminationReason.CONTEXT_MISSING)
+        self.assertIn(respond.NO_HISTORY_NOTICE, state.answer_text)
+        self.assertEqual(llm.calls, 0)
+        self.assertEqual(calls["retrieval"], 0)
+
+
+class TestKnowledgeJudgeFailureSemantics(unittest.TestCase):
+    def _retrieval(self):
+        return RetrievalResult(outcome=None, chunks=[_chunk("依据片段")])
+
+    def test_judge_timeout_is_processing_failed(self):
+        class _JudgeTimeout(FakeLLM):
+            def invoke(self, messages):
+                system = "".join(
+                    getattr(m, "content", "") or "" for m in messages
+                    if getattr(m, "type", "") == "system"
+                )
+                if "证据充分性判定器" in system:
+                    self.calls += 1
+                    raise TimeoutError("judge timeout")
+                return super().invoke(messages)
+
+        llm = _JudgeTimeout(classify={"category": "knowledge", "confidence": 0.95})
+        state, calls = _run(
+            _fresh_session(), "二甲双胍的适应症", llm, self._retrieval(),
+        )
+        self.assertIs(state.termination_reason, TerminationReason.PROCESSING_FAILED)
+        self.assertIs(state.error.kind, AgentErrorKind.MODEL_TIMEOUT)
+        self.assertEqual(state.error.node, "N08")
+        self.assertEqual(state.answer_text, respond.PROCESSING_ERROR)
+        self.assertEqual(calls["retrieval"], 1)
+        self.assertEqual(llm.calls, 2)  # 分类 + 判定；超时不重试
+
+    def test_judge_service_error_is_not_insufficient_evidence(self):
+        class _JudgeDown(FakeLLM):
+            def invoke(self, messages):
+                system = "".join(
+                    getattr(m, "content", "") or "" for m in messages
+                    if getattr(m, "type", "") == "system"
+                )
+                if "证据充分性判定器" in system:
+                    self.calls += 1
+                    raise RuntimeError("service down")
+                return super().invoke(messages)
+
+        llm = _JudgeDown(classify={"category": "knowledge", "confidence": 0.95})
+        state, _ = _run(
+            _fresh_session(), "二甲双胍的适应症", llm, self._retrieval(),
+        )
+        self.assertIs(state.termination_reason, TerminationReason.PROCESSING_FAILED)
+        self.assertIs(state.error.kind, AgentErrorKind.MODEL_UNAVAILABLE)
+        self.assertNotIn(respond.EVIDENCE_INSUFFICIENT, state.answer_text)
+
+    def test_invalid_judge_output_repairs_once_then_fails(self):
+        llm = FakeLLM(
+            classify={"category": "knowledge", "confidence": 0.95},
+            judge={"answerable": "yes", "supporting_quote": ""},
+        )
+        state, calls = _run(
+            _fresh_session(), "二甲双胍的适应症", llm, self._retrieval(),
+        )
+        self.assertIs(state.termination_reason, TerminationReason.PROCESSING_FAILED)
+        self.assertIs(state.error.kind, AgentErrorKind.MODEL_OUTPUT_INVALID)
+        self.assertEqual(state.error.node, "N08")
+        self.assertEqual(llm.calls, 3)  # 分类 1 + 判定 2
+        self.assertEqual(state.recovery.repair_total, 1)
+        self.assertEqual(calls["retrieval"], 1)
+
+    def test_n04_and_n08_share_one_repair_budget(self):
+        class _SharedBudgetLLM(FakeLLM):
+            def __init__(self):
+                super().__init__(
+                    classify={"category": "knowledge", "confidence": 0.95},
+                    judge={"answerable": "invalid", "supporting_quote": ""},
+                )
+                self.classify_calls = 0
+
+            def invoke(self, messages):
+                system = "".join(
+                    getattr(m, "content", "") or "" for m in messages
+                    if getattr(m, "type", "") == "system"
+                )
+                if "意图分类器" in system:
+                    self.classify_calls += 1
+                    self.calls += 1
+                    if self.classify_calls == 1:
+                        return _FakeMessage('{"category": "invalid", "confidence": 0.9}')
+                    return _FakeMessage(
+                        '{"category": "knowledge", "confidence": 0.95,'
+                        ' "unresolved": "none", "missing_inputs": []}'
+                    )
+                return super().invoke(messages)
+
+        llm = _SharedBudgetLLM()
+        state, _ = _run(
+            _fresh_session(), "二甲双胍的适应症", llm, self._retrieval(),
+        )
+        self.assertIs(state.termination_reason, TerminationReason.PROCESSING_FAILED)
+        self.assertEqual(state.error.node, "N08")
+        self.assertEqual(llm.calls, 3)  # N04 两次 + N08 一次；N08 不得再修复
+        self.assertEqual(state.recovery.repair_total, 1)
+
+    def test_judge_budget_is_not_insufficient_evidence(self):
+        llm = FakeLLM(
+            classify={"category": "knowledge", "confidence": 0.95},
+            judge={"answerable": True, "supporting_quote": "依据片段"},
+        )
+        real_node_budget = knowledge._node_budget
+
+        def fake_node_budget(state, node_ms):
+            if node_ms == knowledge.BUDGET_JUDGE_MS:
+                return None
+            return real_node_budget(state, node_ms)
+
+        with patch.object(knowledge, "_node_budget", fake_node_budget):
+            state, _ = _run(
+                _fresh_session(), "二甲双胍的适应症", llm, self._retrieval(),
+            )
+        self.assertIs(state.termination_reason, TerminationReason.BUDGET_EXHAUSTED)
+        self.assertIs(state.error.kind, AgentErrorKind.BUDGET_BLOCKED)
+        self.assertEqual(state.error.node, "N08")
+        self.assertEqual(llm.calls, 1)  # 仅分类，判定未启动
+        self.assertNotIn(respond.EVIDENCE_INSUFFICIENT, state.answer_text)
 
 
 class TestDelegation(unittest.TestCase):
@@ -558,9 +857,15 @@ class TestDelegation(unittest.TestCase):
             tool_rounds=1, tool_calls=[record], trace=trace,
         )
         llm = FakeLLM(classify={"category": "knowledge", "confidence": 0.9})
+
+        def fake_run(spec, permit, *, recovery):
+            result.spec_id = spec.spec_id
+            result.resolved_question = spec.inputs["question"]
+            return result
+
         with patch.object(orchestrator, "get_llm", lambda timeout=35: llm), \
              patch.object(knowledge, "run") as mock_run:
-            mock_run.return_value = result
+            mock_run.side_effect = fake_run
             state = orchestrator.run_agent(_fresh_session(), "高血压的正常范围")
 
         # 父校验：status → 终止原因 + 固定文案
@@ -572,21 +877,59 @@ class TestDelegation(unittest.TestCase):
         self.assertEqual(state.tool_calls[0].seq, 1)
         self.assertIn("N07", [t.node for t in state.trace])
 
-    def test_subagent_receives_only_question_and_deadline(self):
-        """上下文隔离：子 Agent 只拿到问题与 deadline，不拿会话历史。"""
+    def test_subagent_receives_task_spec_without_history(self):
+        """Worker 获得 Task Spec + permit + 恢复计数，不获得会话历史。"""
         llm = FakeLLM(classify={"category": "knowledge", "confidence": 0.9})
+
+        def fake_run(spec, permit, *, recovery):
+            chunk = RetrievedChunk(content="依据", document="d.pdf", page=1)
+            return SubagentResult(
+                status=SubagentStatus.OK,
+                spec_id=spec.spec_id,
+                resolved_question=spec.inputs["question"],
+                answer="答",
+                sources=[Source(document="d.pdf", page=1)],
+                evidence=EvidenceJudgement(
+                    sufficient=True, stage2_quote_verified=True,
+                    stage3_answerable=True, supporting_quote="依据",
+                ),
+                retrieval=RetrievalResult(chunks=[chunk]),
+                tool_rounds=1,
+            )
+
         with patch.object(orchestrator, "get_llm", lambda timeout=35: llm), \
              patch.object(knowledge, "run") as mock_run:
-            mock_run.return_value = SubagentResult(
-                status=SubagentStatus.OK, answer="答",
-                sources=[Source(document="d.pdf", page=1)], tool_rounds=1,
-            )
-            orchestrator.run_agent(_fresh_session(), "二甲双胍怎么吃")
+            mock_run.side_effect = fake_run
+            state = orchestrator.run_agent(_fresh_session(), "二甲双胍怎么吃")
 
+        self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
         mock_run.assert_called_once()
         call = mock_run.call_args
-        self.assertEqual(call.args[0], "二甲双胍怎么吃")
-        self.assertIsInstance(call.kwargs["deadline"], float)
+        spec, permit = call.args
+        self.assertEqual(spec.inputs, {"question": "二甲双胍怎么吃"})
+        self.assertNotIn("history", spec.inputs)
+        self.assertIsInstance(permit.deadline, float)
+        self.assertIs(call.kwargs["recovery"], state.recovery)
+
+    def test_parent_rejects_malformed_ok_result(self):
+        llm = FakeLLM(classify={"category": "knowledge", "confidence": 0.9})
+
+        def fake_run(spec, permit, *, recovery):
+            return SubagentResult(
+                status=SubagentStatus.OK,
+                spec_id=spec.spec_id,
+                resolved_question=spec.inputs["question"],
+                answer="",
+            )
+
+        with patch.object(orchestrator, "get_llm", lambda timeout=35: llm), \
+             patch.object(knowledge, "run") as mock_run:
+            mock_run.side_effect = fake_run
+            state = orchestrator.run_agent(_fresh_session(), "二甲双胍怎么吃")
+
+        self.assertIs(state.termination_reason, TerminationReason.PROCESSING_FAILED)
+        self.assertIs(state.error.kind, AgentErrorKind.WORKER_RESULT_INVALID)
+        self.assertEqual(state.answer_text, respond.PROCESSING_ERROR)
 
     def test_launch_budget_blocks_delegation(self):
         """启动预算不足：不调用子 Agent（防"假动作"），直接预算终止。

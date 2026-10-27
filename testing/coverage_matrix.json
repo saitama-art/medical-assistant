@@ -1,0 +1,789 @@
+{
+  "name": "medical_assistant_coverage_matrix",
+  "version": "2026-10-25",
+  "description": "V1.0 必需测试场景分母；40 槽位，医疗领域每域至少 6 条，系统能力按风险设最小数。",
+  "policy": {
+    "stable_design_target": 0.9,
+    "critical_design_target": 1.0,
+    "draft_counts_toward_stable": false,
+    "coverage_is_not_pass_rate": true,
+    "execution_coverage": "not_measured_without_run_manifest",
+    "rules": [
+      "分母来自需求与风险审查，不根据现有答案倒推或随分数临时删槽位。",
+      "稳定覆盖只计算冻结数据集和已存在的自动化测试；draft 只进入含草稿设计覆盖。",
+      "watch 可算设计资产，但不算验收通过；没有 run manifest 就不报告执行覆盖率。",
+      "单元测试文件映射表示人工追踪关系，完整测试仍需统一 discover 执行。",
+      "代码分支覆盖率、医学知识覆盖率与本矩阵分开报告。"
+    ]
+  },
+  "slots": [
+    {
+      "id": "MED-01",
+      "layer": "medical_domain",
+      "title": "A 营养饮食体重",
+      "requirements": [
+        "F2",
+        "F3"
+      ],
+      "risk": "normal",
+      "min_cases": 6,
+      "cases": [
+        "health72:A01",
+        "health72:A02",
+        "health72:A03",
+        "health72:A04",
+        "health72:A05",
+        "health72:A06"
+      ],
+      "unit_tests": [],
+      "next_action": "保持固定集回归。"
+    },
+    {
+      "id": "MED-02",
+      "layer": "medical_domain",
+      "title": "B 运动睡眠",
+      "requirements": [
+        "F2",
+        "F3"
+      ],
+      "risk": "normal",
+      "min_cases": 6,
+      "cases": [
+        "health72:B01",
+        "health72:B02",
+        "health72:B03",
+        "health72:B04",
+        "health72:B05",
+        "health72:B06"
+      ],
+      "unit_tests": [],
+      "next_action": "保持固定集回归。"
+    },
+    {
+      "id": "MED-03",
+      "layer": "medical_domain",
+      "title": "C 慢病管理",
+      "requirements": [
+        "F2",
+        "F3"
+      ],
+      "risk": "normal",
+      "min_cases": 6,
+      "cases": [
+        "health72:C01",
+        "health72:C02",
+        "health72:C03",
+        "health72:C04",
+        "health72:C05",
+        "health72:C06"
+      ],
+      "unit_tests": [],
+      "next_action": "保持固定集回归。"
+    },
+    {
+      "id": "MED-04",
+      "layer": "medical_domain",
+      "title": "D 症状就医",
+      "requirements": [
+        "F2",
+        "F3"
+      ],
+      "risk": "normal",
+      "min_cases": 6,
+      "cases": [
+        "health72:D01",
+        "health72:D02",
+        "health72:D03",
+        "health72:D04",
+        "health72:D05",
+        "health72:D06"
+      ],
+      "unit_tests": [],
+      "next_action": "保持固定集回归。"
+    },
+    {
+      "id": "MED-05",
+      "layer": "medical_domain",
+      "title": "E 体检指标",
+      "requirements": [
+        "F2",
+        "F3"
+      ],
+      "risk": "normal",
+      "min_cases": 6,
+      "cases": [
+        "health72:E01",
+        "health72:E02",
+        "health72:E03",
+        "health72:E04",
+        "health72:E05",
+        "health72:E06"
+      ],
+      "unit_tests": [],
+      "next_action": "保持固定集回归。"
+    },
+    {
+      "id": "MED-06",
+      "layer": "medical_domain",
+      "title": "F 用药安全",
+      "requirements": [
+        "F2",
+        "F3"
+      ],
+      "risk": "normal",
+      "min_cases": 6,
+      "cases": [
+        "health72:F01",
+        "health72:F02",
+        "health72:F03",
+        "health72:F04",
+        "health72:F05",
+        "health72:F06"
+      ],
+      "unit_tests": [],
+      "next_action": "保持固定集回归。"
+    },
+    {
+      "id": "MED-07",
+      "layer": "medical_domain",
+      "title": "G 特殊人群",
+      "requirements": [
+        "F2",
+        "F3"
+      ],
+      "risk": "normal",
+      "min_cases": 6,
+      "cases": [
+        "health72:G01",
+        "health72:G02",
+        "health72:G03",
+        "health72:G04",
+        "health72:G05",
+        "health72:G06"
+      ],
+      "unit_tests": [],
+      "next_action": "保持固定集回归。"
+    },
+    {
+      "id": "MED-08",
+      "layer": "medical_domain",
+      "title": "H 传染病",
+      "requirements": [
+        "F2",
+        "F3"
+      ],
+      "risk": "normal",
+      "min_cases": 6,
+      "cases": [
+        "health72:H01",
+        "health72:H02",
+        "health72:H03",
+        "health72:H04",
+        "health72:H05",
+        "health72:H06"
+      ],
+      "unit_tests": [],
+      "next_action": "保持固定集回归。"
+    },
+    {
+      "id": "MED-09",
+      "layer": "medical_domain",
+      "title": "I 消化常见",
+      "requirements": [
+        "F2",
+        "F3"
+      ],
+      "risk": "normal",
+      "min_cases": 6,
+      "cases": [
+        "health72:I01",
+        "health72:I02",
+        "health72:I03",
+        "health72:I04",
+        "health72:I05",
+        "health72:I06"
+      ],
+      "unit_tests": [],
+      "next_action": "保持固定集回归。"
+    },
+    {
+      "id": "MED-10",
+      "layer": "medical_domain",
+      "title": "J 心脑血管",
+      "requirements": [
+        "F2",
+        "F3"
+      ],
+      "risk": "high",
+      "min_cases": 6,
+      "cases": [
+        "health72:J01",
+        "health72:J02",
+        "health72:J03",
+        "health72:J04",
+        "health72:J05",
+        "health72:J06"
+      ],
+      "unit_tests": [],
+      "next_action": "保持固定集回归。"
+    },
+    {
+      "id": "MED-11",
+      "layer": "medical_domain",
+      "title": "K 预防筛查",
+      "requirements": [
+        "F2",
+        "F3"
+      ],
+      "risk": "normal",
+      "min_cases": 6,
+      "cases": [
+        "health72:K01",
+        "health72:K02",
+        "health72:K03",
+        "health72:K04",
+        "health72:K05",
+        "health72:K06"
+      ],
+      "unit_tests": [],
+      "next_action": "保持固定集回归。"
+    },
+    {
+      "id": "MED-12",
+      "layer": "medical_domain",
+      "title": "L 心理其他",
+      "requirements": [
+        "F2",
+        "F3"
+      ],
+      "risk": "normal",
+      "min_cases": 6,
+      "cases": [
+        "health72:L01",
+        "health72:L02",
+        "health72:L03",
+        "health72:L04",
+        "health72:L05",
+        "health72:L06"
+      ],
+      "unit_tests": [],
+      "next_action": "保持固定集回归。"
+    },
+    {
+      "id": "MED-13",
+      "layer": "medical_domain",
+      "title": "动物与昆虫伤害",
+      "requirements": [
+        "F4",
+        "F6"
+      ],
+      "risk": "high",
+      "min_cases": 6,
+      "cases": [
+        "real_world_events:RW-001",
+        "real_world_events:RW-002",
+        "real_world_events:RW-003",
+        "real_world_events:RW-004",
+        "real_world_events:RW-005",
+        "real_world_events:RW-006"
+      ],
+      "unit_tests": [],
+      "next_action": "完成路由与医学安全终审，接入执行器并实跑后才能转稳定覆盖。"
+    },
+    {
+      "id": "MED-14",
+      "layer": "medical_domain",
+      "title": "外伤与烧烫伤",
+      "requirements": [
+        "F4",
+        "F6"
+      ],
+      "risk": "high",
+      "min_cases": 6,
+      "cases": [
+        "real_world_events:RW-007",
+        "real_world_events:RW-008",
+        "real_world_events:RW-009",
+        "real_world_events:RW-010",
+        "real_world_events:RW-011",
+        "real_world_events:RW-012"
+      ],
+      "unit_tests": [],
+      "next_action": "完成路由与医学安全终审，接入执行器并实跑后才能转稳定覆盖。"
+    },
+    {
+      "id": "MED-15",
+      "layer": "medical_domain",
+      "title": "中毒与环境暴露",
+      "requirements": [
+        "F4",
+        "F6"
+      ],
+      "risk": "critical",
+      "min_cases": 6,
+      "cases": [
+        "real_world_events:RW-013",
+        "real_world_events:RW-014",
+        "real_world_events:RW-015",
+        "real_world_events:RW-016",
+        "real_world_events:RW-017",
+        "real_world_events:RW-018"
+      ],
+      "unit_tests": [],
+      "next_action": "完成路由与医学安全终审，接入执行器并实跑后才能转稳定覆盖。"
+    },
+    {
+      "id": "MED-16",
+      "layer": "medical_domain",
+      "title": "眼耳鼻喉与口腔突发事件",
+      "requirements": [
+        "F4",
+        "F6"
+      ],
+      "risk": "high",
+      "min_cases": 6,
+      "cases": [
+        "real_world_events:RW-019",
+        "real_world_events:RW-020",
+        "real_world_events:RW-021",
+        "real_world_events:RW-022",
+        "real_world_events:RW-023",
+        "real_world_events:RW-024"
+      ],
+      "unit_tests": [],
+      "next_action": "完成路由与医学安全终审，接入执行器并实跑后才能转稳定覆盖。"
+    },
+    {
+      "id": "MED-17",
+      "layer": "medical_domain",
+      "title": "心理健康危机",
+      "requirements": [
+        "F4",
+        "F6"
+      ],
+      "risk": "critical",
+      "min_cases": 6,
+      "cases": [
+        "real_world_events:RW-025",
+        "real_world_events:RW-026",
+        "real_world_events:RW-027",
+        "real_world_events:RW-028",
+        "real_world_events:RW-029",
+        "real_world_events:RW-030"
+      ],
+      "unit_tests": [],
+      "next_action": "完成路由与医学安全终审，接入执行器并实跑后才能转稳定覆盖。"
+    },
+    {
+      "id": "MED-18",
+      "layer": "medical_domain",
+      "title": "孕产、性健康与生殖健康",
+      "requirements": [
+        "F2",
+        "F3",
+        "F6"
+      ],
+      "risk": "high",
+      "min_cases": 6,
+      "cases": [
+        "health72:G03",
+        "health72:G04",
+        "health72:G05",
+        "real_world_events:RW-031",
+        "real_world_events:RW-032",
+        "real_world_events:RW-033",
+        "real_world_events:RW-034",
+        "real_world_events:RW-035",
+        "real_world_events:RW-036"
+      ],
+      "unit_tests": [],
+      "next_action": "现有 3 条稳定 + 6 条草稿；终审并实跑，补齐知识库证据与就医指引。"
+    },
+    {
+      "id": "SYS-01",
+      "layer": "system_capability",
+      "title": "正常知识路由",
+      "requirements": [
+        "F4"
+      ],
+      "risk": "normal",
+      "min_cases": 4,
+      "cases": [
+        "scenarios:CS-01",
+        "scenarios:CS-02",
+        "scenarios:CS-03",
+        "scenarios:CS-04"
+      ],
+      "unit_tests": [],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-02",
+      "layer": "system_capability",
+      "title": "证据不足拒答",
+      "requirements": [
+        "F3",
+        "F6"
+      ],
+      "risk": "high",
+      "min_cases": 4,
+      "cases": [
+        "scenarios:CS-05",
+        "scenarios:CS-06",
+        "scenarios:CS-07",
+        "scenarios:CS-08"
+      ],
+      "unit_tests": [],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-03",
+      "layer": "system_capability",
+      "title": "误拒答哨兵",
+      "requirements": [
+        "F3",
+        "F6"
+      ],
+      "risk": "high",
+      "min_cases": 2,
+      "cases": [
+        "scenarios:CS-09",
+        "scenarios:CS-10"
+      ],
+      "unit_tests": [],
+      "next_action": "当前为 watch；补硬断言与实跑结果后才算验收通过。"
+    },
+    {
+      "id": "SYS-04",
+      "layer": "system_capability",
+      "title": "急症识别与固定安全响应",
+      "requirements": [
+        "F4",
+        "F6"
+      ],
+      "risk": "critical",
+      "min_cases": 3,
+      "cases": [
+        "scenarios:CS-11",
+        "scenarios:CS-12",
+        "scenarios:CS-13"
+      ],
+      "unit_tests": [
+        "backend/tests/test_medical_agent.py",
+        "backend/tests/test_emergency_negation_scope.py"
+      ],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-05",
+      "layer": "system_capability",
+      "title": "模糊输入与无历史降级",
+      "requirements": [
+        "F4",
+        "F6"
+      ],
+      "risk": "normal",
+      "min_cases": 1,
+      "cases": [
+        "scenarios:CS-21"
+      ],
+      "unit_tests": [
+        "backend/tests/test_context_followup.py"
+      ],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-06",
+      "layer": "system_capability",
+      "title": "寒暄短路",
+      "requirements": [
+        "F4"
+      ],
+      "risk": "normal",
+      "min_cases": 2,
+      "cases": [],
+      "unit_tests": [
+        "backend/tests/test_medical_agent_step4.py",
+        "backend/tests/test_context_followup.py"
+      ],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-07",
+      "layer": "system_capability",
+      "title": "健康计算与缺参追问",
+      "requirements": [
+        "F4",
+        "F5"
+      ],
+      "risk": "normal",
+      "min_cases": 1,
+      "cases": [],
+      "unit_tests": [
+        "backend/tests/test_calculator.py"
+      ],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-08",
+      "layer": "system_capability",
+      "title": "分类异常、非法输出与低置信降级",
+      "requirements": [
+        "F4",
+        "F8"
+      ],
+      "risk": "high",
+      "min_cases": 1,
+      "cases": [],
+      "unit_tests": [
+        "backend/tests/test_medical_agent_step4.py"
+      ],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-09",
+      "layer": "system_capability",
+      "title": "多轮显式指代",
+      "requirements": [
+        "F4",
+        "F7"
+      ],
+      "risk": "normal",
+      "min_cases": 1,
+      "cases": [
+        "scenarios:CS-14"
+      ],
+      "unit_tests": [],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-10",
+      "layer": "system_capability",
+      "title": "多轮隐性回指与零代词省略",
+      "requirements": [
+        "F4",
+        "F7"
+      ],
+      "risk": "normal",
+      "min_cases": 2,
+      "cases": [
+        "scenarios:CS-15",
+        "scenarios:CS-17"
+      ],
+      "unit_tests": [],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-11",
+      "layer": "system_capability",
+      "title": "历史参数回填",
+      "requirements": [
+        "F4",
+        "F5"
+      ],
+      "risk": "normal",
+      "min_cases": 1,
+      "cases": [
+        "scenarios:CS-16"
+      ],
+      "unit_tests": [],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-12",
+      "layer": "system_capability",
+      "title": "否定与时间限定保留",
+      "requirements": [
+        "F4",
+        "F6"
+      ],
+      "risk": "high",
+      "min_cases": 2,
+      "cases": [
+        "scenarios:CS-18",
+        "scenarios:CS-19"
+      ],
+      "unit_tests": [],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-13",
+      "layer": "system_capability",
+      "title": "话题切换与历史干扰",
+      "requirements": [
+        "F4",
+        "F7"
+      ],
+      "risk": "high",
+      "min_cases": 1,
+      "cases": [
+        "scenarios:CS-20"
+      ],
+      "unit_tests": [],
+      "next_action": "补“高血压→狗咬伤”等真实切换，并将 watch 转 lock。"
+    },
+    {
+      "id": "SYS-14",
+      "layer": "system_capability",
+      "title": "引用支持与证据去重",
+      "requirements": [
+        "F3",
+        "F6"
+      ],
+      "risk": "high",
+      "min_cases": 4,
+      "cases": [
+        "fr01:FR-01-1",
+        "fr01:FR-01-2",
+        "fr01:FR-01-3",
+        "fr01:FR-01-4",
+        "fr01:FR-01-5",
+        "fr01:FR-01-6",
+        "fr01:FR-01-7",
+        "fr01:FR-01-8"
+      ],
+      "unit_tests": [
+        "backend/tests/test_judge_dedupe.py"
+      ],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-15",
+      "layer": "system_capability",
+      "title": "检索指标与失败样本定位",
+      "requirements": [
+        "F2",
+        "F8"
+      ],
+      "risk": "normal",
+      "min_cases": 2,
+      "cases": [],
+      "unit_tests": [
+        "backend/tests/test_coverage.py",
+        "backend/tests/test_report.py"
+      ],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-16",
+      "layer": "system_capability",
+      "title": "账号、密码与登录态",
+      "requirements": [
+        "F7",
+        "F8"
+      ],
+      "risk": "high",
+      "min_cases": 2,
+      "cases": [],
+      "unit_tests": [
+        "backend/tests/test_auth.py",
+        "backend/tests/test_api_auth.py"
+      ],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-17",
+      "layer": "system_capability",
+      "title": "用户数据与权限隔离",
+      "requirements": [
+        "F6",
+        "F7"
+      ],
+      "risk": "critical",
+      "min_cases": 2,
+      "cases": [],
+      "unit_tests": [
+        "backend/tests/test_auth.py",
+        "backend/tests/test_api_auth.py"
+      ],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-18",
+      "layer": "system_capability",
+      "title": "会话与消息本地持久化",
+      "requirements": [
+        "F7",
+        "F8"
+      ],
+      "risk": "normal",
+      "min_cases": 2,
+      "cases": [],
+      "unit_tests": [
+        "backend/tests/test_session_persist.py",
+        "backend/tests/test_api_auth.py"
+      ],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-19",
+      "layer": "system_capability",
+      "title": "前端登录、会话与来源渲染",
+      "requirements": [
+        "F7"
+      ],
+      "risk": "normal",
+      "min_cases": 2,
+      "cases": [],
+      "unit_tests": [
+        "frontend/src/App.test.js::shows login page and rejects invalid credentials",
+        "frontend/src/App.test.js::loads owned conversations and answer history"
+      ],
+      "next_action": "保持有效前端测试；后续补会话删除和首问标题持久化。"
+    },
+    {
+      "id": "SYS-20",
+      "layer": "system_capability",
+      "title": "前端错误与网络失败展示",
+      "requirements": [
+        "F7",
+        "F8"
+      ],
+      "risk": "high",
+      "min_cases": 2,
+      "cases": [],
+      "unit_tests": [
+        "frontend/src/App.test.js::shows login page and rejects invalid credentials",
+        "frontend/src/App.test.js::shows network error when login request fails"
+      ],
+      "next_action": "保持登录错误测试；后续补 /agent/chat 的 400/403/500 与断网。"
+    },
+    {
+      "id": "SYS-21",
+      "layer": "system_capability",
+      "title": "PDF 解析、切分与上传门禁",
+      "requirements": [
+        "F1",
+        "F6"
+      ],
+      "risk": "high",
+      "min_cases": 2,
+      "cases": [],
+      "unit_tests": [
+        "backend/tests/test_chapter_split.py",
+        "backend/tests/test_api_auth.py"
+      ],
+      "next_action": "保持回归。"
+    },
+    {
+      "id": "SYS-22",
+      "layer": "system_capability",
+      "title": "评估复现、版本指纹与基线",
+      "requirements": [
+        "F8"
+      ],
+      "risk": "normal",
+      "min_cases": 3,
+      "cases": [],
+      "unit_tests": [
+        "backend/tests/test_baseline.py",
+        "backend/tests/test_promptmeta.py",
+        "backend/tests/test_scorecard.py",
+        "backend/tests/test_datasets.py",
+        "backend/tests/test_coverage_audit.py",
+        "backend/tests/test_golden_seed.py"
+      ],
+      "next_action": "保持回归。"
+    }
+  ]
+}
