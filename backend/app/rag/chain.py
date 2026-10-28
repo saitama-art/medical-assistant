@@ -48,11 +48,14 @@ def get_llm(timeout: float = 35):
             "LLM_MODEL", os.environ.get("DEEPSEEK_MODEL", "deepseek-chat"),
         ),
         http_client=http_client,
-        # temperature=0：判定/分类必须确定性——实测 0.1 时同一证据的证据判定
+        # temperature：判定/分类必须确定性——实测 0.1 时同一证据的证据判定
         # 会 flip（同一题两次判定一次通过一次拒绝），医疗门禁不允许掷硬币。
-        # max_tokens=2048：512 会把生成回答截断在长答案中段（判定引文也留足余量）。
-        temperature=0.0,
-        max_tokens=2048
+        # 故默认 0.0；部分模型（如 kimi-k2.6 推理模型）只允许 temperature=1，
+        # 可用 LLM_TEMPERATURE 覆盖，但会引入非确定性，需知悉上述风险。
+        # max_tokens=2048：512 会把生成回答截断在长答案中段（判定引文也留足余量）；
+        # 推理模型的 reasoning tokens 也计入 completion，不足时可用 LLM_MAX_TOKENS 加大。
+        temperature=float(os.environ.get("LLM_TEMPERATURE", "0.0")),
+        max_tokens=int(os.environ.get("LLM_MAX_TOKENS", "2048")),
     )
     return llm
 

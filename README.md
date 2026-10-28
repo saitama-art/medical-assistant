@@ -85,6 +85,9 @@ LLM_MODEL=kimi-k2-0905-preview
 
   > ⚠️ 换模型会使全部评估基线失效（评分卡、门禁、FR-01 均按原模型实测），
   > 须重跑验收并更新条件指纹（见 `docs/开发进度.md` S4d 条目）。
+  > 另可用 `LLM_TEMPERATURE` / `LLM_MAX_TOKENS` 覆盖采样参数（默认 0.0 / 2048）；
+  > 注意：推理型模型（如 kimi-k2.6）常强制 temperature=1 且单次调用 10~40s，
+  > 会突破环节预算与门禁 G-3，实测结论见 `docs/开发进度.md` 2026-10-28 条目。
 - 安全注意：**`.env` 不入库**（已在 .gitignore）；不要把它写进任何文档/代码/提交。
   系统环境变量若存在同名坏值会被 `.env` 覆盖（override=True，本机实测过）。
 - Embedding 模型 `BAAI/bge-small-zh` 首次运行自动下载；
