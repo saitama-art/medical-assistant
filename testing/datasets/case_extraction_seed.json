@@ -1,0 +1,180 @@
+{
+  "name": "case_extraction_seed",
+  "version": "2026-10-28-draft.1",
+  "description": "纵向病例分析：病历文本→结构化事实抽取器的虚构评测种子集。全部内容为虚构病例，专用于评估终端 2 抽取器的字段语义（polarity/certainty/event_type/时间），不是医学内容评测。",
+  "review_status": "draft_pending_user_review",
+  "excluded_from_stable_metrics": true,
+  "schema_version": 1,
+  "case_count": 12,
+  "fact_type_enum": ["symptom", "disease", "history", "lab_related", "other"],
+  "polarity_enum": ["positive", "negative", "unknown"],
+  "certainty_enum": ["confirmed", "possible", "uncertain"],
+  "medication_event_type_enum": ["prescribed", "reported_active", "reported_stopped", "mentioned", "unknown"],
+  "cases": [
+    {
+      "id": "CE-001",
+      "fictional": true,
+      "raw_note": "虚构：患者3天前开始恶心，伴食欲下降，无发热。",
+      "focus": "肯定症状 + 否定症状",
+      "expected": {
+        "facts": [
+          {"fact_type": "symptom", "display_name": "恶心", "polarity": "positive", "certainty": "confirmed", "time_hint": "3天前"},
+          {"fact_type": "symptom", "display_name": "食欲下降", "polarity": "positive", "certainty": "confirmed", "time_hint": "3天前"},
+          {"fact_type": "symptom", "display_name": "发热", "polarity": "negative", "certainty": "confirmed", "time_hint": null}
+        ],
+        "medications": [],
+        "observations": []
+      }
+    },
+    {
+      "id": "CE-002",
+      "fictional": true,
+      "raw_note": "虚构：医嘱给予二甲双胍 500mg 每日两次口服。",
+      "focus": "处方 ≠ 实际服药",
+      "expected": {
+        "facts": [],
+        "medications": [
+          {"medication_name": "二甲双胍", "dose": 500, "dose_unit": "mg", "frequency": "每日两次", "route": "口服", "event_type": "prescribed"}
+        ],
+        "observations": []
+      }
+    },
+    {
+      "id": "CE-003",
+      "fictional": true,
+      "raw_note": "虚构：患者自述一直在服用二甲双胍，上周已自行停药。",
+      "focus": "报告停药；不得标为正在服用",
+      "expected": {
+        "facts": [],
+        "medications": [
+          {"medication_name": "二甲双胍", "event_type": "reported_stopped", "time_hint": "上周"}
+        ],
+        "observations": []
+      }
+    },
+    {
+      "id": "CE-004",
+      "fictional": true,
+      "raw_note": "虚构：既往史提及阿司匹林肠溶片。",
+      "focus": "仅提及，服药状态未知",
+      "expected": {
+        "facts": [],
+        "medications": [
+          {"medication_name": "阿司匹林肠溶片", "event_type": "mentioned"}
+        ],
+        "observations": []
+      }
+    },
+    {
+      "id": "CE-005",
+      "fictional": true,
+      "raw_note": "虚构：空腹血糖 7.2 mmol/L（参考 3.9-6.1），尿蛋白 ++。",
+      "focus": "数值型与文本型观察值、参考范围保留",
+      "expected": {
+        "facts": [],
+        "medications": [],
+        "observations": [
+          {"indicator_name": "空腹血糖", "value_numeric": 7.2, "unit": "mmol/L", "reference_low": 3.9, "reference_high": 6.1, "abnormal_flag": "high"},
+          {"indicator_name": "尿蛋白", "value_text": "++", "abnormal_flag": "unknown"}
+        ]
+      }
+    },
+    {
+      "id": "CE-006",
+      "fictional": true,
+      "raw_note": "虚构：患者可能有早期白内障，建议复查。",
+      "focus": "certainty=possible，不得升级为确诊",
+      "expected": {
+        "facts": [
+          {"fact_type": "disease", "display_name": "白内障", "polarity": "positive", "certainty": "possible", "time_hint": null}
+        ],
+        "medications": [],
+        "observations": []
+      }
+    },
+    {
+      "id": "CE-007",
+      "fictional": true,
+      "raw_note": "虚构：否认高血压、糖尿病史。",
+      "focus": "双重否定语义，不得抽出阳性病史",
+      "expected": {
+        "facts": [
+          {"fact_type": "history", "display_name": "高血压", "polarity": "negative", "certainty": "confirmed", "time_hint": null},
+          {"fact_type": "history", "display_name": "糖尿病", "polarity": "negative", "certainty": "confirmed", "time_hint": null}
+        ],
+        "medications": [],
+        "observations": []
+      }
+    },
+    {
+      "id": "CE-008",
+      "fictional": true,
+      "raw_note": "虚构：服药后出现皮疹并呼吸困难，立即停药就诊。",
+      "focus": "急症语境：停药事件 + 两个症状",
+      "expected": {
+        "facts": [
+          {"fact_type": "symptom", "display_name": "皮疹", "polarity": "positive", "certainty": "confirmed", "time_hint": "服药后"},
+          {"fact_type": "symptom", "display_name": "呼吸困难", "polarity": "positive", "certainty": "confirmed", "time_hint": "服药后"}
+        ],
+        "medications": [
+          {"medication_name": null, "event_type": "reported_stopped", "time_hint": "立即", "note": "药名缺失时允许 medication_name 留空待补，不得编造药名"}
+        ],
+        "observations": []
+      }
+    },
+    {
+      "id": "CE-009",
+      "fictional": true,
+      "raw_note": "虚构：血压 145/92 mmHg。",
+      "focus": "复合指标可拆两条或一条，值与单位必须逐字保留",
+      "expected": {
+        "facts": [],
+        "medications": [],
+        "observations": [
+          {"indicator_name": "收缩压", "value_numeric": 145, "unit": "mmHg", "abnormal_flag": "unknown", "alternatives": "允许合并为『血压 145/92 mmHg』一条 value_text 记录"}
+        ]
+      }
+    },
+    {
+      "id": "CE-010",
+      "fictional": true,
+      "raw_note": "虚构：半年前体检发现脂肪肝，未治疗。",
+      "focus": "历史疾病 + 时间提示",
+      "expected": {
+        "facts": [
+          {"fact_type": "disease", "display_name": "脂肪肝", "polarity": "positive", "certainty": "confirmed", "time_hint": "半年前"}
+        ],
+        "medications": [],
+        "observations": []
+      }
+    },
+    {
+      "id": "CE-011",
+      "fictional": true,
+      "raw_note": "虚构：HbA1c 6.8%，ALT 56 U/L（参考 <40）。",
+      "focus": "英文指标名、百分号单位、单侧参考上限",
+      "expected": {
+        "facts": [],
+        "medications": [],
+        "observations": [
+          {"indicator_name": "HbA1c", "value_numeric": 6.8, "unit": "%", "abnormal_flag": "unknown"},
+          {"indicator_name": "ALT", "value_numeric": 56, "unit": "U/L", "reference_high": 40, "abnormal_flag": "high"}
+        ]
+      }
+    },
+    {
+      "id": "CE-012",
+      "fictional": true,
+      "raw_note": "虚构：昨夜起剧烈头痛，今晨呕吐一次。",
+      "focus": "多症状 + 相对时间提示（抽取层只记提示，不换算 epoch）",
+      "expected": {
+        "facts": [
+          {"fact_type": "symptom", "display_name": "剧烈头痛", "polarity": "positive", "certainty": "confirmed", "time_hint": "昨夜"},
+          {"fact_type": "symptom", "display_name": "呕吐", "polarity": "positive", "certainty": "confirmed", "time_hint": "今晨"}
+        ],
+        "medications": [],
+        "observations": []
+      }
+    }
+  ]
+}

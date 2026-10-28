@@ -115,6 +115,150 @@ _MIGRATIONS: dict[int, str] = {
       AND EXISTS (SELECT 1 FROM messages m
                   WHERE m.conversation_id=conversations.id AND m.role='user');
     """,
+    4: """
+    -- 纵向病例分析基础设施（case_analysis）：患者/就诊/事实/用药/观察/分析运行/候选关联。
+    -- 全部为新增表，不触碰既有表与医疗知识库数据。
+
+    CREATE TABLE IF NOT EXISTS patients (
+        patient_id    TEXT PRIMARY KEY,
+        owner_user_id INTEGER NOT NULL REFERENCES users(id),
+        display_label TEXT NOT NULL DEFAULT '',
+        status        TEXT NOT NULL DEFAULT 'active'
+                      CHECK(status IN ('active','archived')),
+        created_at    REAL NOT NULL,
+        updated_at    REAL NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_patients_owner
+        ON patients(owner_user_id, status);
+
+    CREATE TABLE IF NOT EXISTS encounters (
+        encounter_id   TEXT PRIMARY KEY,
+        patient_id     TEXT NOT NULL REFERENCES patients(patient_id),
+        encounter_time REAL,             -- 事件发生时间，允许为空（未知）
+        recorded_at    REAL NOT NULL,    -- 记录时间（不等于发生时间）
+        source_type    TEXT NOT NULL DEFAULT 'manual_note',
+        raw_note       TEXT NOT NULL,    -- 原始病历文本，模型产物不得覆盖
+        created_by     INTEGER NOT NULL REFERENCES users(id),
+        created_at     REAL NOT NULL,
+        updated_at     REAL NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_encounters_patient
+        ON encounters(patient_id, encounter_time);
+
+    CREATE TABLE IF NOT EXISTS clinical_facts (
+        fact_id       TEXT PRIMARY KEY,
+        patient_id    TEXT NOT NULL REFERENCES patients(patient_id),
+        encounter_id  TEXT REFERENCES encounters(encounter_id),
+        fact_type     TEXT NOT NULL,
+        code          TEXT NOT NULL DEFAULT '',
+        display_name  TEXT NOT NULL,
+        value_text    TEXT NOT NULL DEFAULT '',
+        value_numeric REAL,
+        unit          TEXT NOT NULL DEFAULT '',
+        polarity      TEXT NOT NULL DEFAULT 'unknown'
+                      CHECK(polarity IN ('positive','negative','unknown')),
+        certainty     TEXT NOT NULL DEFAULT 'uncertain'
+                      CHECK(certainty IN ('confirmed','possible','uncertain')),
+        onset_time    REAL,
+        end_time      REAL,
+        recorded_at   REAL NOT NULL,
+        source_text   TEXT NOT NULL DEFAULT '',
+        source_start  INTEGER,
+        source_end    INTEGER,
+        review_status TEXT NOT NULL DEFAULT 'pending'
+                      CHECK(review_status IN ('pending','confirmed','rejected')),
+        created_at    REAL NOT NULL,
+        updated_at    REAL NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_facts_patient
+        ON clinical_facts(patient_id, fact_type, onset_time);
+
+    CREATE TABLE IF NOT EXISTS medication_events (
+        medication_event_id TEXT PRIMARY KEY,
+        patient_id      TEXT NOT NULL REFERENCES patients(patient_id),
+        encounter_id    TEXT REFERENCES encounters(encounter_id),
+        medication_name TEXT NOT NULL,
+        normalized_name TEXT NOT NULL DEFAULT '',
+        dose            REAL,
+        dose_unit       TEXT NOT NULL DEFAULT '',
+        frequency       TEXT NOT NULL DEFAULT '',
+        route           TEXT NOT NULL DEFAULT '',
+        start_time      REAL,
+        end_time        REAL,
+        event_type      TEXT NOT NULL
+                        CHECK(event_type IN ('prescribed','reported_active',
+                              'reported_stopped','mentioned','unknown')),
+        usage_status    TEXT NOT NULL DEFAULT 'unknown',
+        source_text     TEXT NOT NULL DEFAULT '',
+        review_status   TEXT NOT NULL DEFAULT 'pending'
+                        CHECK(review_status IN ('pending','confirmed','rejected')),
+        created_at      REAL NOT NULL,
+        updated_at      REAL NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_med_events_patient
+        ON medication_events(patient_id, start_time);
+
+    CREATE TABLE IF NOT EXISTS observations (
+        observation_id  TEXT PRIMARY KEY,
+        patient_id      TEXT NOT NULL REFERENCES patients(patient_id),
+        encounter_id    TEXT REFERENCES encounters(encounter_id),
+        indicator_name  TEXT NOT NULL,
+        normalized_name TEXT NOT NULL DEFAULT '',
+        value_numeric   REAL,
+        value_text      TEXT NOT NULL DEFAULT '',
+        unit            TEXT NOT NULL DEFAULT '',
+        reference_low   REAL,
+        reference_high  REAL,
+        abnormal_flag   TEXT NOT NULL DEFAULT 'unknown'
+                        CHECK(abnormal_flag IN ('low','normal','high','unknown')),
+        sample_time     REAL,
+        reported_at     REAL,
+        source_text     TEXT NOT NULL DEFAULT '',
+        review_status   TEXT NOT NULL DEFAULT 'pending'
+                        CHECK(review_status IN ('pending','confirmed','rejected')),
+        created_at      REAL NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_observations_patient
+        ON observations(patient_id, normalized_name, sample_time);
+
+    CREATE TABLE IF NOT EXISTS analysis_runs (
+        run_id           TEXT PRIMARY KEY,
+        patient_id       TEXT NOT NULL REFERENCES patients(patient_id),
+        owner_user_id    INTEGER NOT NULL REFERENCES users(id),
+        triggered_at     REAL NOT NULL,
+        time_range_start REAL,
+        time_range_end   REAL,
+        status           TEXT NOT NULL DEFAULT 'pending'
+                         CHECK(status IN ('pending','running','completed','failed')),
+        input_summary    TEXT NOT NULL DEFAULT '',
+        error_code       TEXT NOT NULL DEFAULT '',
+        created_at       REAL NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_analysis_runs_patient
+        ON analysis_runs(patient_id, triggered_at);
+
+    CREATE TABLE IF NOT EXISTS candidate_associations (
+        association_id        TEXT PRIMARY KEY,
+        run_id                TEXT NOT NULL REFERENCES analysis_runs(run_id),
+        patient_id            TEXT NOT NULL REFERENCES patients(patient_id),
+        association_type      TEXT NOT NULL,
+        fact_ids              TEXT NOT NULL DEFAULT '[]',   -- JSON 数组（沿用 agent_tasks 风格）
+        temporal_relationship TEXT NOT NULL DEFAULT 'unknown',
+        supporting_evidence   TEXT NOT NULL DEFAULT '[]',   -- JSON 数组
+        contradicting_evidence TEXT NOT NULL DEFAULT '[]',  -- JSON 数组
+        missing_information   TEXT NOT NULL DEFAULT '[]',   -- JSON 数组
+        explanation           TEXT NOT NULL DEFAULT '',
+        certainty             TEXT NOT NULL DEFAULT 'uncertain'
+                              CHECK(certainty IN ('confirmed','possible','uncertain')),
+        review_status         TEXT NOT NULL DEFAULT 'pending'
+                              CHECK(review_status IN ('pending','confirmed','rejected')),
+        created_at            REAL NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_associations_run
+        ON candidate_associations(run_id);
+    CREATE INDEX IF NOT EXISTS idx_associations_patient
+        ON candidate_associations(patient_id, created_at);
+    """,
 }
 
 _SCHEMA_VERSION = max(_MIGRATIONS)
