@@ -64,6 +64,44 @@ _MIGRATIONS: dict[int, str] = {
     );
     CREATE INDEX IF NOT EXISTS idx_msg_conv ON messages(conversation_id, id);
     """,
+    2: """
+    -- 仅多轮待续任务需要持久化；普通问答不创建任务记录。
+    CREATE TABLE IF NOT EXISTS agent_tasks (
+        task_id         TEXT PRIMARY KEY,
+        owner_user_id   INTEGER NOT NULL REFERENCES users(id),
+        conversation_id TEXT NOT NULL REFERENCES conversations(id),
+        task_type       TEXT NOT NULL,
+        status          TEXT NOT NULL CHECK(status IN (
+            'waiting_for_input', 'ready', 'running',
+            'completed', 'failed', 'cancelled')),
+        required_inputs TEXT NOT NULL,
+        provided_inputs TEXT NOT NULL,
+        missing_inputs  TEXT NOT NULL,
+        created_at      REAL NOT NULL,
+        updated_at      REAL NOT NULL,
+        attempt         INTEGER NOT NULL DEFAULT 0,
+        result_ref      TEXT NOT NULL DEFAULT '',
+        error_code      TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS idx_agent_tasks_pending
+        ON agent_tasks(owner_user_id, conversation_id, status, updated_at);
+
+    -- 用户明确提供的事实；来源消息必须同属一个用户和会话。
+    CREATE TABLE IF NOT EXISTS user_facts (
+        fact_id           TEXT PRIMARY KEY,
+        owner_user_id     INTEGER NOT NULL REFERENCES users(id),
+        conversation_id   TEXT NOT NULL REFERENCES conversations(id),
+        source_message_id INTEGER NOT NULL REFERENCES messages(id),
+        fact_type         TEXT NOT NULL,
+        value             REAL NOT NULL,
+        unit              TEXT NOT NULL,
+        event_time        REAL NOT NULL,
+        recorded_at       REAL NOT NULL,
+        status            TEXT NOT NULL DEFAULT 'active'
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_facts_context
+        ON user_facts(owner_user_id, conversation_id, fact_type, status, recorded_at);
+    """,
 }
 
 _SCHEMA_VERSION = max(_MIGRATIONS)

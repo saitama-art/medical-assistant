@@ -27,6 +27,7 @@ MAX_MODEL_REPAIRS = 1          # N02/N04/N08 通用修复：单请求合计最�
 TOOL_BUDGET_MS = 5000          # 单次检索
 BUDGET_JUDGE_MS = 8000         # 第 3 段模型判定
 BUDGET_GENERATE_MS = 12000     # 回答生成
+EVIDENCE_CONTEXT_TOKEN_BUDGET = 12000  # N08/N10 调用前的证据上下文估算上限
 
 # 子 Agent 启动门槛：低于此剩余预算不启动（防假动作）
 MIN_LAUNCH_BUDGET_MS = tools.MIN_USABLE_BUDGET_MS + TOOL_BUDGET_MS  # 8000

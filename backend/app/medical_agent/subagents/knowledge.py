@@ -20,7 +20,7 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Mapping
 
-from .. import complex_handler, task_spec, tools
+from .. import complex_handler, context_engineering, task_spec, tools
 from ..state import (
     AgentError,
     AgentErrorKind,
@@ -134,6 +134,23 @@ def run(
             )
 
         # —— N08：来源提取 + 三段证据判定（第 1 段未校准禁用，第 3 段条件调 LLM） ——
+        evidence_context = context_engineering.build_context(
+            current_question=work.resolved_question,
+            retrieval_evidence=[
+                context_engineering.EvidenceContext(
+                    chunk.content, chunk.document, chunk.page,
+                )
+                for chunk in work.retrieval.chunks
+            ],
+            token_budget=_cfg.EVIDENCE_CONTEXT_TOKEN_BUDGET,
+        )
+        work.add_trace("N08", "context", {
+            "assembly_status": evidence_context.assembly_status.value,
+            "token_estimate": evidence_context.token_estimate,
+            "source_count": len(evidence_context.source_refs),
+        })
+        if evidence_context.assembly_status is not context_engineering.ContextAssemblyStatus.OK:
+            return _fail(work, SubagentStatus.BUDGET_EXHAUSTED, "evidence_context_budget")
         work.sources = service.extract_sources(work.retrieval.chunks)
         node_budget = _node_budget(work, BUDGET_JUDGE_MS)
         if node_budget is None:

@@ -11,7 +11,12 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, TYPE_CHECKING, TypeVar
+
+if TYPE_CHECKING:
+    from .context_engineering import (
+        ContextPackage, MessageContext, StructuredFact, TaskRecord,
+    )
 
 
 # ==================== 枚举 ====================
@@ -362,6 +367,15 @@ class AgentState:
     history: list[tuple[str, str]] = field(default_factory=list)
     context_status: ContextStatus = ContextStatus.NOT_NEEDED
     resolved_question: str = ""
+    # 上下文工程运行态；可靠持久化由 context_engineering + SQLite 负责。
+    context_package: ContextPackage | None = None
+    context_history: list[MessageContext] = field(default_factory=list)
+    context_tasks: list[TaskRecord] = field(default_factory=list)
+    context_facts: list[StructuredFact] = field(default_factory=list)
+    task_record: TaskRecord | None = None
+    pending_facts: list[StructuredFact] = field(default_factory=list)
+    context_owner_user_id: int | None = None
+    context_persistent: bool = False
 
     # —— 判定结果 ——
     emergency: EmergencyHit = field(default_factory=EmergencyHit)

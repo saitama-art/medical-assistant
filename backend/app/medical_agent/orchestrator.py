@@ -29,7 +29,7 @@ import time
 import uuid
 
 from . import respond, router, safety, session, tools
-from . import calculator, complex_handler, task_spec
+from . import calculator, complex_handler, context_engineering, task_spec
 from .state import (
     AgentError,
     AgentErrorKind,
@@ -102,6 +102,7 @@ def run_agent(session_id: str, question: str) -> AgentState:
     got_lock, history, ctx_status = session.acquire(session_id)
     state.history = history
     state.context_status = ctx_status
+    context_engineering.begin_turn(state)
     state.turn_id = sum(1 for role, _ in history if role == "user") + 1
     state.add_trace("N00", "decision", {
         "context_status": ctx_status.value,
@@ -130,10 +131,15 @@ def run_agent(session_id: str, question: str) -> AgentState:
         or router.has_followup_lead(state.resolved_question)
     )
     if (
-        state.history
+        state.context_history
         and state.context_status is not ContextStatus.MISSING
         and needs_context
     ):
+        if (state.context_package is not None
+                and state.context_package.assembly_status
+                is not context_engineering.ContextAssemblyStatus.OK):
+            return _finish(state, got_lock, TerminationReason.CLARIFICATION_REQUIRED,
+                           respond.CLARIFICATION_REPLY)
         node_budget = _node_budget(state, BUDGET_FOLLOWUP_MS)
         if node_budget is None:
             resolution = NodeResult(NodeStatus.BUDGET_BLOCKED)
@@ -161,6 +167,7 @@ def run_agent(session_id: str, question: str) -> AgentState:
             return _finish_recovery(state, got_lock, decision, "N02")
 
     # ---- N03 紧急风险检查（补全后），取两趟中更强者 ----
+    context_engineering.refresh_context(state)
     try:
         second = safety.check_emergency(state.resolved_question)
     except safety.EmergencyRuleError:
@@ -172,6 +179,12 @@ def run_agent(session_id: str, question: str) -> AgentState:
     if state.emergency.level is EmergencyLevel.STRONG:
         return _finish(state, got_lock, TerminationReason.EMERGENCY_HANDLED,
                        respond.EMERGENCY_ANSWER)
+
+    if (state.context_package is not None
+            and state.context_package.assembly_status
+            is not context_engineering.ContextAssemblyStatus.OK):
+        return _finish(state, got_lock, TerminationReason.CLARIFICATION_REQUIRED,
+                       respond.CLARIFICATION_REPLY)
 
     # 弱紧急信号：回答顶部附加风险提示（不与知识库结论混写）
     if state.emergency.level is EmergencyLevel.WEAK:
@@ -204,10 +217,15 @@ def run_agent(session_id: str, question: str) -> AgentState:
         if filled_plan is not None:
             calc_plan = filled_plan
         param_filled = calc_plan.status == "ready"
+    calc_plan = context_engineering.prepare_calculation(state, calc_plan)
+    context_engineering.refresh_context(state)
     if calc_plan is not None:
         state.add_trace("N04a", "decision",
                         {"status": calc_plan.status, "kind": calc_plan.kind,
                          "param_filled": param_filled})
+        if calc_plan.status in ("ambiguous", "conflict"):
+            return _finish(state, got_lock, TerminationReason.CLARIFICATION_REQUIRED,
+                           respond.CLARIFICATION_REPLY)
         if calc_plan.status == "missing":
             return _finish(state, got_lock, TerminationReason.CLARIFICATION_REQUIRED,
                            respond.CALC_NEED_HEIGHT_WEIGHT
@@ -506,9 +524,8 @@ def _resolve_reference(
     try:
         from langchain_core.prompts import ChatPromptTemplate
 
-        history_text = "\n".join(
-            f"{'用户' if role == 'user' else '助手'}：{content}"
-            for role, content in state.history
+        history_text = context_engineering.format_history(
+            state.context_package, state.history,
         )
         prompt = ChatPromptTemplate.from_messages([
             ("system", RESOLVE_SYSTEM_PROMPT + (RESOLVE_REPAIR_PROMPT if repair else "")),

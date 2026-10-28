@@ -82,11 +82,8 @@ def list_conversations(user_id: int, *, limit: int = 200) -> list[dict]:
 
 
 def append_turn(conv_id: str, user_id: int, question: str, answer: str,
-                *, now: float | None = None) -> None:
-    """双写一轮问答（用户原文 + 组装后的助手回答）到全量历史。
-
-    归属校验先行；turn 从现有最大轮次自增，重启/恢复后与历史连续。
-    """
+                *, now: float | None = None) -> dict[str, int]:
+    """双写一轮问答，并返回消息 id 供结构化事实追溯来源。"""
     init_db()
     ts = now_ts() if now is None else now
     with connect() as conn:
@@ -95,16 +92,19 @@ def append_turn(conv_id: str, user_id: int, question: str, answer: str,
             "SELECT COALESCE(MAX(turn), 0) AS t FROM messages"
             " WHERE conversation_id=?", (conv_id,),
         ).fetchone()["t"] + 1
-        conn.executemany(
+        user_message_id = conn.execute(
             "INSERT INTO messages(conversation_id, role, content, created_at, turn)"
-            " VALUES(?,?,?,?,?)",
-            [(conv_id, "user", question, ts, turn),
-             (conv_id, "assistant", answer, ts, turn)],
-        )
+            " VALUES(?,?,?,?,?)", (conv_id, "user", question, ts, turn),
+        ).lastrowid
+        assistant_message_id = conn.execute(
+            "INSERT INTO messages(conversation_id, role, content, created_at, turn)"
+            " VALUES(?,?,?,?,?)", (conv_id, "assistant", answer, ts, turn),
+        ).lastrowid
         conn.execute(
             "UPDATE conversations SET updated_at=? WHERE id=?", (ts, conv_id),
         )
         conn.commit()
+        return {"user": user_message_id, "assistant": assistant_message_id}
 
 
 def list_messages(conv_id: str, user_id: int, *, limit: int = 500) -> list[dict]:
@@ -112,7 +112,7 @@ def list_messages(conv_id: str, user_id: int, *, limit: int = 500) -> list[dict]
     with connect() as conn:
         get_owned_conversation(conn, conv_id, user_id)
         rows = conn.execute(
-            "SELECT role, content, created_at, turn FROM messages"
+            "SELECT id, role, content, created_at, turn FROM messages"
             " WHERE conversation_id=? ORDER BY id LIMIT ?",
             (conv_id, limit),
         ).fetchall()

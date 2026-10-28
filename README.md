@@ -117,6 +117,25 @@ npm run build      # 生产构建（产物在 frontend/build/）
 - 页面：http://localhost:3000
 - API 文档：http://127.0.0.1:8000/docs
 
+### 本地测试账号
+
+| 用户名 | 密码 | 权限 |
+|:---|:---|:---|
+| `acceptance` | `acceptance-pass-123` | 普通用户，仅用于本地登录与问答验收，无上传权限 |
+
+该账号由 `python -m acceptance` 在本地验收数据库中自动创建；尚未运行验收或提示
+“用户名或密码错误”时，可手动创建：
+
+```powershell
+cd backend
+python scripts/create_user.py acceptance --display-name 测试用户
+# 按提示两次输入：acceptance-pass-123
+```
+
+> 此凭据仅用于本地开发/测试，不是生产默认账号。部署到共享或公网环境前，必须改用
+> 独立强密码或删除该测试账号；也可通过 `ACCEPTANCE_USER`、`ACCEPTANCE_PASSWORD`
+> 修改验收账号约定。
+
 ### Docker（GPU-ready，端口 8080）
 
 需要 Docker Desktop、WSL2 和支持容器 GPU 的 NVIDIA 驱动。项目根目录必须已有 `.env`；
@@ -230,3 +249,32 @@ python -m app.rag.ingest
 - 阈值校准：[`docs/阈值校准报告.md`](docs/阈值校准报告.md)
   （结论：top1 距离不可分，第 1 段距离粗筛维持禁用）。
 - 详见 `docs/开发进度.md` 第三阶段条目。
+
+## 11. 评估优化可视化面板
+
+本地离线面板：[`Evaluation/reports/dashboard.html`](Evaluation/reports/dashboard.html)（双击打开，无需服务）。
+
+生成/刷新：
+
+```powershell
+cd backend
+python -m acceptance.report --coverage ... --scenarios ...
+python -m acceptance.trend
+```
+
+当前面板示例（2026-10-25 数据）：
+
+| Run | 时间 | 总分 | 检索 | 答案质量 | 拒答健康 | 时延 | 成本 | 口径 |
+|:---|:---|---:|---:|---:|---:|---:|---:|:---|
+| scorecard_first | 2026-10-25 | 92.88 | 96.36 | 91.67 | 100.0 | 80 | N/A | 部分口径 |
+| report_s4c | 2026-10-25T12:16:48 | 94.73 | 96.36 | 97.22 | 100.0 | 80 | N/A | 部分口径 |
+| report_full | 2026-10-25T12:49:29 | 93.59 | 96.36 | 91.67 | 100.0 | 80 | 100.0 | 全量口径（基线） |
+
+环比关键结论：
+
+- `report_s4c` 较 `scorecard_first`：总分 ▲+1.85，答案质量 ▲+5.55，其余维度持平；
+- `report_full` 较 `report_s4c`：总分 ▼−1.14，答案质量 ▼−5.55，成本首次补齐为 100.0。
+- 当前各轮条件指纹未完全采集，面板提示分数差异**不能直接归因**到系统改动；
+  后续跑 `acceptance.report` 时默认会采集条件指纹，可做可比性判定。
+
+面板还包含：首屏总分、维度条（0–100 单轴）、历史趋势折线、条件差异卡片、日期×维度矩阵。

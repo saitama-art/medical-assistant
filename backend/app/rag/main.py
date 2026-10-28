@@ -117,12 +117,16 @@ def agent_chat(req: AgentChatRequest, request: Request,
         # 编排器承诺不抛异常；这里是双保险，不向用户泄露内部信息
         raise HTTPException(status_code=500, detail=respond.SERVICE_UNAVAILABLE)
 
-    # 全量历史双写（上下文窗口仍由 session.complete 负责）；失败不影响响应
+    # 原始消息先落库，再让任务/事实关联真实来源 id；失败不影响已生成回答。
     try:
-        conversations.append_turn(conv_id, owner,
-                                  req.question, state.answer_text)
+        message_ids = conversations.append_turn(
+            conv_id, owner, req.question, state.answer_text,
+        )
+        if isinstance(message_ids, dict):
+            from app.medical_agent import context_engineering
+            context_engineering.finalize_turn(state, message_ids["user"])
     except Exception as exc:  # noqa: BLE001 —— 历史落库失败不应吞掉已生成的回答
-        print(f"[chat] 历史落库失败（不影响响应）: {type(exc).__name__}")
+        print(f"[chat] 历史/上下文落库失败（不影响响应）: {type(exc).__name__}")
 
     return {
         "request_id": state.request_id,
