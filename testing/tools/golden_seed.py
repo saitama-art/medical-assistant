@@ -166,9 +166,10 @@ def main(argv=None) -> int:
         return 2
     output = args.output or (args.root / "testing" / "golden_review.md")
     output.write_text(render_review(payload), encoding="utf-8", newline="\n")
+    approved = sum(c.get("review", {}).get("status") == "approved" for c in payload["cases"])
     print(f"审核页：{output}")
     print(f"用例：{len(payload['cases'])}；证据：{sum(len(c['evidence']) for c in payload['cases'])}；"
-          f"待补外部指南提示：{len(warnings)}；全部仍为待审核状态")
+          f"待补外部指南提示：{len(warnings)}；已批准：{approved}；待审核：{len(payload['cases']) - approved}")
     return 0
 
 

@@ -27,14 +27,23 @@ def _draft_with_fake_docs(root: Path) -> dict:
 
 
 class TestGoldenSeed(unittest.TestCase):
-    def test_repository_seed_has_valid_structure_and_pending_review(self):
+    def test_repository_seed_p0_approved_rest_pending(self):
+        """2026-10-28：P0 11 条经用户人工终审通过（approved 含审核人/日期），
+        其余 21 条仍为 pending_user。"""
         payload, errors, warnings = golden_seed_tool.validate(ROOT)
         self.assertEqual(errors, [])
         self.assertEqual(len(payload["cases"]), 32)
         self.assertEqual(sum(len(case["evidence"]) for case in payload["cases"]), 22)
-        self.assertEqual(sum(case["review_priority"] == "P0" for case in payload["cases"]), 11)
-        self.assertTrue(all(case["review"]["status"] == "pending_user"
-                            for case in payload["cases"]))
+        p0 = [case for case in payload["cases"] if case["review_priority"] == "P0"]
+        rest = [case for case in payload["cases"] if case["review_priority"] != "P0"]
+        self.assertEqual(len(p0), 11)
+        self.assertEqual(len(rest), 21)
+        for case in p0:
+            review = case["review"]
+            self.assertEqual(review["status"], "approved", case["id"])
+            self.assertTrue(review.get("reviewer"), case["id"])
+            self.assertTrue(review.get("reviewed_at"), case["id"])
+        self.assertTrue(all(case["review"]["status"] == "pending_user" for case in rest))
         self.assertEqual(len(warnings), 5)
 
     def test_quote_tampering_is_rejected(self):
