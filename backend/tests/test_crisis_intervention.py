@@ -17,6 +17,18 @@ class TestCrisisDetection(unittest.TestCase):
         self.assertIs(hit.level, EmergencyLevel.STRONG)
         self.assertEqual(hit.rule_id, "crisis_subject")
 
+    def test_cannot_control_phrasing_not_falsely_negated(self):
+        """B8 回归：「控制不住/忍不住」中的「不」不得否定后续危机词。"""
+        for text in ("我控制不住想伤害自己", "我忍不住想自残",
+                     "我止不住地胸痛"):
+            with self.subTest(text=text):
+                hit = safety.check_crisis(text)
+                if "胸痛" in text:
+                    self.assertIs(
+                        safety.check_emergency(text).level, EmergencyLevel.STRONG)
+                else:
+                    self.assertIs(hit.level, EmergencyLevel.STRONG)
+
     def test_common_ideation_phrases(self):
         for text in ("我不想活了", "我想死", "我想结束生命",
                      "孩子说要自杀怎么办", "朋友有轻生念头，我该怎么办"):

@@ -121,7 +121,16 @@ def assess_intent(
         return RecoveryDecision(
             RecoveryAction.TERMINATE, TerminationReason.UNCLASSIFIED,
         )
-    if value.confidence < _cfg.CATEGORY_CONFIDENCE_MIN:
+    # 可回答类别：这些路径自身有安全兜底（知识路径有证据判定、就医/日常是
+    # 低风险回答），低置信度或模型罗列的「缺失细节」不足以阻断回答本身。
+    # 低置信度只作为辅助信号记录在 trace（任务书补充要求 2/5：不单独触发模板澄清）。
+    _ANSWERABLE = (
+        QuestionCategory.KNOWLEDGE, QuestionCategory.TRIAGE, QuestionCategory.DAILY,
+    )
+    if (
+        value.confidence < _cfg.CATEGORY_CONFIDENCE_MIN
+        and value.category not in _ANSWERABLE
+    ):
         return RecoveryDecision(
             RecoveryAction.CLARIFY, TerminationReason.CLARIFICATION_REQUIRED,
         )
@@ -133,7 +142,7 @@ def assess_intent(
     # （emergency/chitchat 等异常组合）时才以缺参澄清。
     if (
         value.unresolved is UnresolvedKind.MISSING_INPUT
-        and value.category not in (QuestionCategory.KNOWLEDGE, QuestionCategory.TRIAGE)
+        and value.category not in _ANSWERABLE
     ):
         return RecoveryDecision(
             RecoveryAction.CLARIFY, TerminationReason.CLARIFICATION_REQUIRED,

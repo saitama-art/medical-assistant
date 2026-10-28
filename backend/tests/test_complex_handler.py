@@ -51,19 +51,29 @@ class TestComplexHandler(unittest.TestCase):
         self.assertIs(decision.termination, TerminationReason.UNCLASSIFIED)
         self.assertIsNone(decision.error)
 
-    def test_low_confidence_clarifies_without_changing_category(self):
-        assessment = IntentAssessment(QuestionCategory.KNOWLEDGE, 0.35)
+    def test_low_confidence_does_not_block_answerable_categories(self):
+        """2026-10-28 置信度策略：低置信度只是辅助信号，不单独阻断可回答类别。"""
+        for category in (QuestionCategory.KNOWLEDGE, QuestionCategory.TRIAGE,
+                         QuestionCategory.DAILY):
+            with self.subTest(category=category):
+                assessment = IntentAssessment(category, 0.35)
+                decision = complex_handler.assess_intent(
+                    self.state, NodeResult(NodeStatus.OK, assessment),
+                )
+                self.assertIs(decision.action, complex_handler.RecoveryAction.CONTINUE)
+                self.assertEqual(assessment.confidence, 0.35)
+
+    def test_low_confidence_clarifies_only_non_answerable(self):
+        assessment = IntentAssessment(QuestionCategory.EMERGENCY, 0.35)
         decision = complex_handler.assess_intent(
             self.state, NodeResult(NodeStatus.OK, assessment),
         )
-        self.assertIs(decision.action, complex_handler.RecoveryAction.CLARIFY)
         self.assertIs(decision.termination, TerminationReason.CLARIFICATION_REQUIRED)
-        self.assertIs(assessment.category, QuestionCategory.KNOWLEDGE)
-        self.assertEqual(assessment.confidence, 0.35)
 
     def test_missing_input_does_not_block_answerable_categories(self):
-        """2026-10-28 策略：知识/就医类问题的 missing_input 不阻断回答。"""
-        for category in (QuestionCategory.KNOWLEDGE, QuestionCategory.TRIAGE):
+        """2026-10-28 策略：可回答类别的 missing_input 不阻断回答。"""
+        for category in (QuestionCategory.KNOWLEDGE, QuestionCategory.TRIAGE,
+                         QuestionCategory.DAILY):
             with self.subTest(category=category):
                 value = IntentAssessment(
                     category, 0.85, UnresolvedKind.MISSING_INPUT, ("wound_severity",),

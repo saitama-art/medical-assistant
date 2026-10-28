@@ -45,6 +45,20 @@ class TestFollowupTrigger(unittest.TestCase):
     def test_zero_anaphora_haobuhao(self):
         self.assertTrue(has_followup_lead("空腹吃好不好？"))
 
+    # ---- 2026-10-28 实测缺口补：「什么/办法」结尾的省略追问 ----
+    def test_zero_anaphora_xuyaozhuyi(self):
+        self.assertTrue(has_followup_lead("需要注意什么？"))
+
+    def test_zero_anaphora_chishenme(self):
+        self.assertTrue(has_followup_lead("吃什么？"))
+
+    def test_zero_anaphora_banfa(self):
+        self.assertTrue(has_followup_lead("有什么办法？"))
+
+    def test_selfcontained_weishenme_still_triggered(self):
+        # 「为什么？」单独出现时依赖上文（解释什么），合法触发
+        self.assertTrue(has_followup_lead("为什么？"))
+
     # ---- D1b：自包含句误触发（基线 True=缺口；S1 修复后翻转 False）----
     def test_selfcontained_na_yao(self):
         self.assertFalse(has_followup_lead("那要么明天再说。"))

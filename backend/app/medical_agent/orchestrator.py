@@ -318,8 +318,69 @@ def run_agent(session_id: str, question: str) -> AgentState:
         # 就医指引工具本阶段未注册（tools.py 注释）：直接给通用指引固定文案
         return _finish(state, got_lock, TerminationReason.COMPLETED,
                        respond.TRIAGE_GUIDANCE)
+    if state.route is Route.DAILY:
+        return _answer_daily(state, got_lock)
     # Route.KNOWLEDGE → 委派知识子 Agent 执行 N06–N10（下方）
     return _delegate_knowledge(state, got_lock)
+
+
+# ==================== 日常表达路径：直接轻量回应（0 检索，1 次 LLM） ====================
+
+DAILY_SYSTEM_PROMPT = """你是医疗健康知识助手的日常对话模块。用户这句话不是医学知识查询，
+请结合对话记录直接给出自然、简短、有用的回应（2~4 句话）：
+
+1. 可以提供安全的一般性生活建议；不得给出诊断、处方或具体用药推荐；
+2. 如有必要，最多再提一个开放式的追问，不要连环发问；
+3. 若用户问的是「我之前说了什么/我们聊了什么」，只能依据给定对话记录回答，
+   记录里没有的内容一律不说，不得编造；
+4. 内容若涉及可能的危险信号，提醒尽快就医；
+5. 不要输出 JSON，不要引用或编造任何资料来源。"""
+
+DAILY_USER_PROMPT = """{history_block}用户：{question}"""
+
+
+def _answer_daily(state: AgentState, got_lock: bool) -> AgentState:
+    """daily 路由：一次轻量 LLM 调用给出自然回应；失败回退固定文案。
+
+    与知识路径的边界：不检索、不引用来源、不追加医学免责声明——回应性质
+    是日常对话而非医学结论。会话历史仅作为回应语境，不改变安全约束。
+    """
+    node_budget = _node_budget(state, _cfg.BUDGET_DAILY_MS)
+    if node_budget is None:
+        return _finish(state, got_lock, TerminationReason.BUDGET_EXHAUSTED,
+                       respond.BUDGET_EXHAUSTED_REPLY)
+    history_block = ""
+    if state.history:
+        recent = "\n".join(
+            f"{'用户' if role == 'user' else '助手'}：{content}"
+            for role, content in state.history[-6:]
+        )
+        history_block = f"【对话记录】\n{recent}\n\n"
+    try:
+        from langchain_core.prompts import ChatPromptTemplate
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", DAILY_SYSTEM_PROMPT),
+            ("human", DAILY_USER_PROMPT),
+        ])
+        messages = prompt.format_messages(
+            history_block=history_block, question=state.resolved_question,
+        )
+        llm = get_llm(timeout=max(1.0, node_budget / 1000))
+        response = llm.invoke(messages)
+    except Exception as exc:
+        state.add_trace("N04b", "error", {
+            "detail": type(exc).__name__,
+        }, node_budget_ms=node_budget)
+        return _finish(state, got_lock, TerminationReason.COMPLETED,
+                       respond.DAILY_FALLBACK_REPLY)
+    content = getattr(response, "content", None)
+    if not isinstance(content, str) or not content.strip():
+        return _finish(state, got_lock, TerminationReason.COMPLETED,
+                       respond.DAILY_FALLBACK_REPLY)
+    state.add_trace("N04b", "decision", {
+        "answer_len": len(content.strip()),
+    }, node_budget_ms=node_budget)
+    return _finish(state, got_lock, TerminationReason.COMPLETED, content.strip())
 
 
 # ==================== 知识路径：委派子 Agent（N06–N10） ====================
@@ -444,8 +505,9 @@ RESOLVE_USER_PROMPT = """【此前的对话】
 
 RESOLVE_REPAIR_PROMPT = """
 
-上一次输出未通过 JSON 或语义约束校验。请重新输出合法 JSON；question 必须保留原问题
-的实体、否定词和限定语。无法可靠补全时只能输出空字符串，不得猜测。"""
+上一次输出未通过校验（含「原样返回未补全」的情况）。请重新输出合法 JSON：
+question 必须把指代词替换为对话记录中的具体实体、保留否定词和限定语，
+不得原样返回用户的问题；确实无法确定指代对象时只能输出空字符串。"""
 
 
 def _try_calc_param_fill(
@@ -573,6 +635,11 @@ def _resolve_reference(
         return NodeResult(
             NodeStatus.INVALID_OUTPUT, detail="model_constraint_violation",
         )
+    if resolved and resolved == state.resolved_question.strip():
+        # no-op 改写（2026-10-28 实测）：N02 只在检测到指代/追问时触发，
+        # 原样返回意味着模型没有补全任何上下文——按可修复失败处理，
+        # 走既有的一次 repair 路径，避免裸问句直接送分类器被判 unknown。
+        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="resolution_noop")
     if not resolved:
         return NodeResult(
             NodeStatus.OK, ResolutionResult(ResolutionStatus.CONTEXT_REQUIRED),

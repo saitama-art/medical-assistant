@@ -18,7 +18,8 @@ REQUEST_DEADLINE = 45.0        # 整体硬上限（5.6 选项 A），单位：�
 # ---- 父 Agent 环节 ----
 BUDGET_FOLLOWUP_MS = 6000      # N02 上下文补全
 BUDGET_CLASSIFY_MS = 6000      # N04 意图识别
-CATEGORY_CONFIDENCE_MIN = 0.6  # 低于此值只澄清，不改写为业务未知
+BUDGET_DAILY_MS = 8000         # 日常表达直接回应（一次轻量 LLM 调用）
+CATEGORY_CONFIDENCE_MIN = 0.6  # 仅作辅助信号：不再单独阻断可回答类别
 
 # ---- 复杂处理层恢复预算 ----
 MAX_MODEL_REPAIRS = 1          # N02/N04/N08 通用修复：单请求合计最多一次

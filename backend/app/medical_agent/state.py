@@ -29,6 +29,7 @@ class QuestionCategory(str, Enum):
     TRIAGE = "triage"
     EMERGENCY = "emergency"
     CHITCHAT = "chitchat"
+    DAILY = "daily"              # 日常表达/生活建议：直接自然回应，不进 RAG
     UNCLASSIFIABLE = "unclassifiable"
 
 
@@ -40,6 +41,7 @@ class Route(str, Enum):
     CHITCHAT = "chitchat"
     UNCLASSIFIABLE = "unclassifiable"
     TRIAGE = "triage"
+    DAILY = "daily"
     KNOWLEDGE = "knowledge"
 
 

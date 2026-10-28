@@ -240,14 +240,29 @@ class TestT05IntentFailureModes(unittest.TestCase):
         )
         self.assertEqual(llm.calls, 1)
 
+    def test_low_confidence_knowledge_proceeds_to_answer(self):
+        """2026-10-28 置信度策略：低置信度是辅助信号，不再阻断可回答类别。"""
+        chunks = [_chunk("盐酸二甲双胍片适用于2型糖尿病患者。")]
+        retrieval = RetrievalResult(outcome=None, chunks=chunks, distance_metric="l2")
+        llm = FakeLLM(
+            classify={"category": "knowledge", "confidence": 0.35},
+            judge={"answerable": True, "supporting_quote": "适用于2型糖尿病患者"},
+            answer="二甲双胍用于2型糖尿病。",
+        )
+        state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm, retrieval)
+        self.assertIs(state.termination_reason, TerminationReason.COMPLETED)
+        self.assertEqual(calls["retrieval"], 1)
+        self.assertIs(state.category, QuestionCategory.KNOWLEDGE)
+        self.assertEqual(state.category_confidence, 0.35)
+
     def test_low_confidence_clarifies_without_forcing_category(self):
-        llm = FakeLLM(classify={"category": "knowledge", "confidence": 0.35})
+        llm = FakeLLM(classify={"category": "emergency", "confidence": 0.35})
         state, calls = _run(_fresh_session(), "二甲双胍怎么用", llm, None)
         self._assert_no_retrieval(
             state, calls, TerminationReason.CLARIFICATION_REQUIRED,
             respond.CLARIFICATION_REPLY,
         )
-        self.assertIs(state.category, QuestionCategory.KNOWLEDGE)
+        self.assertIs(state.category, QuestionCategory.EMERGENCY)
         self.assertEqual(state.category_confidence, 0.35)
         self.assertEqual(llm.calls, 1)
 
