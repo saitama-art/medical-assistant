@@ -270,6 +270,10 @@ python -m acceptance.trend
 | report_s4c | 2026-10-25T12:16:48 | 94.73 | 96.36 | 97.22 | 100.0 | 80 | N/A | 部分口径 |
 | report_full | 2026-10-25T12:49:29 | 93.59 | 96.36 | 91.67 | 100.0 | 80 | 100.0 | 全量口径（基线） |
 
+生成效果示意：
+
+![医疗 RAG 评估趋势面板示意](docs/images/dashboard-preview.png)
+
 环比关键结论：
 
 - `report_s4c` 较 `scorecard_first`：总分 ▲+1.85，答案质量 ▲+5.55，其余维度持平；
