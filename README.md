@@ -272,7 +272,9 @@ python -m acceptance.trend
 
 生成效果示意：
 
-![医疗 RAG 评估趋势面板示意](docs/images/dashboard-preview.png)
+![医疗 RAG 评估趋势面板 - 首屏总分与维度条](docs/images/dashboard-preview-1.png)
+
+![医疗 RAG 评估趋势面板 - 矩阵与 run 口径](docs/images/dashboard-preview-2.png)
 
 环比关键结论：
 
