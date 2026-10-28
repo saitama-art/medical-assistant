@@ -80,11 +80,13 @@ class TestCaseIsolation(CaseTestBase):
         object.__setattr__(swapped, "patient_id", pb.patient_id)
         with self.assertRaises(CaseValidationError):
             service.save_clinical_facts(pa.patient_id, self.owner, [swapped])
-        # 两个患者名下都不得留下这条事实
-        self.assertEqual(service.get_patient_history(pa.patient_id, self.owner), [])
-        self.assertEqual(
-            service.get_patient_history(pb.patient_id, self.other)[0].display_name,
-            "B的症状")
+        # 替换被拒绝后：A 只剩预置的 1 条（未新增），B 不受影响
+        self.assertEqual([f.display_name for f in
+                          service.get_patient_history(pa.patient_id, self.owner)],
+                         ["A的症状"])
+        self.assertEqual([f.display_name for f in
+                          service.get_patient_history(pb.patient_id, self.other)],
+                         ["B的症状"])
 
     def test_c8_foreign_encounter_cannot_be_attached(self):
         pa, pb = self._two_users_two_patients()
@@ -92,7 +94,10 @@ class TestCaseIsolation(CaseTestBase):
         with self.assertRaises(CaseValidationError):
             service.save_clinical_facts(pa.patient_id, self.owner, [
                 self.make_fact(pa.patient_id, encounter_id=enc_b.encounter_id)])
-        self.assertEqual(service.get_patient_history(pa.patient_id, self.owner), [])
+        # A 只剩预置的 1 条（跨患者 encounter 未被挂入）
+        self.assertEqual([f.display_name for f in
+                          service.get_patient_history(pa.patient_id, self.owner)],
+                         ["A的症状"])
 
 
 if __name__ == "__main__":

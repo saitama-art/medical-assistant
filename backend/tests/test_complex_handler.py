@@ -61,21 +61,36 @@ class TestComplexHandler(unittest.TestCase):
         self.assertIs(assessment.category, QuestionCategory.KNOWLEDGE)
         self.assertEqual(assessment.confidence, 0.35)
 
-    def test_missing_input_and_conflict_require_clarification(self):
-        for unresolved, missing in (
-            (UnresolvedKind.MISSING_INPUT, ("height_cm",)),
-            (UnresolvedKind.INTENT_CONFLICT, ()),
-        ):
-            with self.subTest(unresolved=unresolved):
+    def test_missing_input_does_not_block_answerable_categories(self):
+        """2026-10-28 策略：知识/就医类问题的 missing_input 不阻断回答。"""
+        for category in (QuestionCategory.KNOWLEDGE, QuestionCategory.TRIAGE):
+            with self.subTest(category=category):
                 value = IntentAssessment(
-                    QuestionCategory.KNOWLEDGE, 0.95, unresolved, missing,
+                    category, 0.85, UnresolvedKind.MISSING_INPUT, ("wound_severity",),
                 )
                 decision = complex_handler.assess_intent(
                     self.state, NodeResult(NodeStatus.OK, value),
                 )
-                self.assertIs(
-                    decision.termination, TerminationReason.CLARIFICATION_REQUIRED,
-                )
+                self.assertIs(decision.action, complex_handler.RecoveryAction.CONTINUE)
+
+    def test_missing_input_still_clarifies_when_category_not_answerable(self):
+        value = IntentAssessment(
+            QuestionCategory.EMERGENCY, 0.85,
+            UnresolvedKind.MISSING_INPUT, ("location",),
+        )
+        decision = complex_handler.assess_intent(
+            self.state, NodeResult(NodeStatus.OK, value),
+        )
+        self.assertIs(decision.termination, TerminationReason.CLARIFICATION_REQUIRED)
+
+    def test_intent_conflict_requires_clarification(self):
+        value = IntentAssessment(
+            QuestionCategory.KNOWLEDGE, 0.95, UnresolvedKind.INTENT_CONFLICT, (),
+        )
+        decision = complex_handler.assess_intent(
+            self.state, NodeResult(NodeStatus.OK, value),
+        )
+        self.assertIs(decision.termination, TerminationReason.CLARIFICATION_REQUIRED)
 
     def test_timeout_and_unavailable_have_distinct_errors(self):
         cases = (

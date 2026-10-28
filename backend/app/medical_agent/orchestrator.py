@@ -113,13 +113,20 @@ def run_agent(session_id: str, question: str) -> AgentState:
     # ---- N01 紧急风险检查（原始输入） ----
     try:
         state.emergency = safety.check_emergency(question)
+        crisis = safety.check_crisis(question)
     except safety.EmergencyRuleError:
         state.add_trace("N01", "error", {"reason": "emergency_rule_fault"})
         return _finish(state, got_lock, TerminationReason.EMERGENCY_RULE_FAULT,
                        respond.CONSERVATIVE_MEDICAL_NOTICE)
     state.add_trace("N01", "decision", {
         "level": state.emergency.level.value, "rule_id": state.emergency.rule_id,
+        "crisis": crisis.level.value, "crisis_rule": crisis.rule_id,
     })
+    if crisis.level is EmergencyLevel.STRONG:
+        # 心理危机优先：危机文案含急救引导，覆盖医疗急症同现的情况
+        state.emergency = crisis
+        return _finish(state, got_lock, TerminationReason.EMERGENCY_HANDLED,
+                       respond.CRISIS_ANSWER)
     if state.emergency.level is EmergencyLevel.STRONG:
         return _finish(state, got_lock, TerminationReason.EMERGENCY_HANDLED,
                        respond.EMERGENCY_ANSWER)
@@ -170,12 +177,20 @@ def run_agent(session_id: str, question: str) -> AgentState:
     context_engineering.refresh_context(state)
     try:
         second = safety.check_emergency(state.resolved_question)
+        crisis = safety.check_crisis(state.resolved_question)
     except safety.EmergencyRuleError:
         state.add_trace("N03", "error", {"reason": "emergency_rule_fault"})
         return _finish(state, got_lock, TerminationReason.EMERGENCY_RULE_FAULT,
                        respond.CONSERVATIVE_MEDICAL_NOTICE)
     state.emergency = _merge_hits(state.emergency, second)
-    state.add_trace("N03", "decision", {"level": state.emergency.level.value})
+    state.add_trace("N03", "decision", {
+        "level": state.emergency.level.value,
+        "crisis": crisis.level.value, "crisis_rule": crisis.rule_id,
+    })
+    if crisis.level is EmergencyLevel.STRONG:
+        state.emergency = crisis
+        return _finish(state, got_lock, TerminationReason.EMERGENCY_HANDLED,
+                       respond.CRISIS_ANSWER)
     if state.emergency.level is EmergencyLevel.STRONG:
         return _finish(state, got_lock, TerminationReason.EMERGENCY_HANDLED,
                        respond.EMERGENCY_ANSWER)

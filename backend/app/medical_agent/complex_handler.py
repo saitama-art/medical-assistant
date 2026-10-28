@@ -113,7 +113,7 @@ def assess_intent(
         return RecoveryDecision(
             RecoveryAction.CLARIFY, TerminationReason.CONTEXT_MISSING,
         )
-    if value.unresolved in (UnresolvedKind.MISSING_INPUT, UnresolvedKind.INTENT_CONFLICT):
+    if value.unresolved is UnresolvedKind.INTENT_CONFLICT:
         return RecoveryDecision(
             RecoveryAction.CLARIFY, TerminationReason.CLARIFICATION_REQUIRED,
         )
@@ -122,6 +122,19 @@ def assess_intent(
             RecoveryAction.TERMINATE, TerminationReason.UNCLASSIFIED,
         )
     if value.confidence < _cfg.CATEGORY_CONFIDENCE_MIN:
+        return RecoveryDecision(
+            RecoveryAction.CLARIFY, TerminationReason.CLARIFICATION_REQUIRED,
+        )
+    # missing_input 不阻断可回答的类别（2026-10-28 策略修正）：分类器对知识/就医类
+    # 问题罗列的「缺失细节」（如狗是否免疫、症状细节）不是回答前置条件——知识库
+    # 回答本就应覆盖「视情况尽快就医」的指引。temperature=1 模型对同一短句的
+    # missing_input 输出不稳定，阻断会造成同一问题时而回答时而澄清的抛硬币体验。
+    # 缺失参数仍保留在 intent_assessment 供 trace 审计；只有无法定位可执行类别
+    # （emergency/chitchat 等异常组合）时才以缺参澄清。
+    if (
+        value.unresolved is UnresolvedKind.MISSING_INPUT
+        and value.category not in (QuestionCategory.KNOWLEDGE, QuestionCategory.TRIAGE)
+    ):
         return RecoveryDecision(
             RecoveryAction.CLARIFY, TerminationReason.CLARIFICATION_REQUIRED,
         )

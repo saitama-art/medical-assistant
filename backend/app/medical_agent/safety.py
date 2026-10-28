@@ -102,6 +102,20 @@ HELP_SEEKING: tuple[str, ...] = (
 # 否定词：出现在急症词之前的小窗口内即视为否定。
 NEGATION: tuple[str, ...] = ("不", "没", "无", "未", "别")
 
+# 心理危机词（2026-10-28 新增）：自伤/自杀意念表述。命中且有求助主体或
+# 当下语境时走危机干预固定文案（CRISIS_ANSWER），不进检索与生成。
+# 「不想活/想死」作为整体词条，其内部的「不」不算否定标记——
+# 「我不想伤害自己」会按否定排除，「我不想活了」是阳性意念。
+CRISIS_TERMS: tuple[str, ...] = (
+    "自杀", "轻生", "不想活", "活不下去", "结束生命", "了断",
+    "伤害自己", "自残", "自伤", "割腕", "想死",
+)
+
+# 当下危机语境：意念正在发生或失控（叠加在通用 CURRENT_CONTEXT 之外）。
+CRISIS_CONTEXT: tuple[str, ...] = (
+    "控制不住", "忍不住", "马上", "现在就", "今晚", "准备", "打算",
+)
+
 # 含否定字但不是否定语义的搭配，避免误判为"没有症状"。
 NEGATION_EXCEPTIONS: tuple[str, ...] = ("不止", "不仅", "不但", "不光是", "不排除")
 
@@ -186,6 +200,44 @@ def check_emergency(text: str) -> EmergencyHit:
         return EmergencyHit(EmergencyLevel.STRONG, "multiple_groups", terms, has_negated)
 
     return EmergencyHit(BARE_SYMPTOM_LEVEL, "bare_symptom", terms, has_negated)
+
+
+def check_crisis(text: str) -> EmergencyHit:
+    """心理危机（自伤/自杀意念）判定。与急症检查共用否定与主体纪律。
+
+    STRONG 的触发条件（命中危机词后满足其一）：
+    - 第一/第三人称主体（「我有伤害自己的念头」「朋友想轻生」）；
+    - 通用急症语境或求助语（「现在」「怎么办」）；
+    - 当下失控语境（「控制不住」「马上」「今晚」）。
+
+    裸词条不升级：「自杀率是多少」这类统计/资料问题走 NONE，交回常规分类。
+    否定与急症同一窗口规则：「我不想伤害自己」不命中。
+    """
+    _validate_tables()
+    normalized = _normalize(text)
+    if not normalized:
+        return EmergencyHit(level=EmergencyLevel.NONE, rule_id="empty_input")
+
+    hit_terms = [term for term in CRISIS_TERMS if term in normalized]
+    if not hit_terms:
+        return EmergencyHit(level=EmergencyLevel.NONE, rule_id="no_crisis_term")
+
+    active, negated = _split_by_negation(normalized, hit_terms)
+    if not active:
+        return EmergencyHit(
+            level=EmergencyLevel.NONE, rule_id="crisis_all_negated",
+            terms=tuple(negated), hit_negated=True,
+        )
+
+    terms = tuple(active)
+    has_negated = bool(negated)
+    if _contains_any(normalized, FIRST_PERSON) or _contains_any(normalized, THIRD_PERSON_SUBJECTS):
+        return EmergencyHit(EmergencyLevel.STRONG, "crisis_subject", terms, has_negated)
+    if (_contains_any(normalized, CURRENT_CONTEXT)
+            or _contains_any(normalized, HELP_SEEKING)
+            or _contains_any(normalized, CRISIS_CONTEXT)):
+        return EmergencyHit(EmergencyLevel.STRONG, "crisis_context", terms, has_negated)
+    return EmergencyHit(EmergencyLevel.NONE, "crisis_bare_term", terms, has_negated)
 
 
 # ==================== 内部实现 ====================
