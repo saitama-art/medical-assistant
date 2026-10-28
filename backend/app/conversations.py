@@ -103,6 +103,14 @@ def append_turn(conv_id: str, user_id: int, question: str, answer: str,
         conn.execute(
             "UPDATE conversations SET updated_at=? WHERE id=?", (ts, conv_id),
         )
+        if turn == 1:
+            # 首轮问答时用用户问题自动命名；仅限默认标题，不覆盖自定义/导入标题。
+            title = question.strip().replace("\n", " ")[:20]
+            if title:
+                conn.execute(
+                    "UPDATE conversations SET title=? WHERE id=? AND title='新的对话'",
+                    (title, conv_id),
+                )
         conn.commit()
         return {"user": user_message_id, "assistant": assistant_message_id}
 

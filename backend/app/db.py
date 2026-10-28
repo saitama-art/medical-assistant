@@ -102,6 +102,19 @@ _MIGRATIONS: dict[int, str] = {
     CREATE INDEX IF NOT EXISTS idx_user_facts_context
         ON user_facts(owner_user_id, conversation_id, fact_type, status, recorded_at);
     """,
+    3: """
+    -- 会话标题回填：默认标题的历史会话用首轮用户问题命名（截断 20 字）。
+    -- 只改 title='新的对话' 的行；已有自定义标题与空会话不动。可重复执行。
+    UPDATE conversations SET title=(
+        SELECT substr(replace(m.content, char(10), ' '), 1, 20)
+        FROM messages m
+        WHERE m.conversation_id=conversations.id AND m.role='user'
+        ORDER BY m.id LIMIT 1
+    )
+    WHERE title='新的对话'
+      AND EXISTS (SELECT 1 FROM messages m
+                  WHERE m.conversation_id=conversations.id AND m.role='user');
+    """,
 }
 
 _SCHEMA_VERSION = max(_MIGRATIONS)

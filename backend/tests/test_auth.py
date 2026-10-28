@@ -246,6 +246,77 @@ class TestUsers(unittest.TestCase):
         self.assertEqual(self.users.get_by_id(uid)["username"], row["username"])
         self.assertIsNone(self.users.get_by_username("nobody"))
 
+class TestConversationAutoTitle(unittest.TestCase):
+    """首轮问答自动命名：默认标题 → 首轮问题（截断 20 字），不覆盖自定义标题。"""
+
+    def setUp(self):
+        _fresh_db(self)
+        from app.auth.passwords import hash_password
+        from app.auth import users
+        from app import conversations
+        self.conv = conversations
+        self.user = users.create_user("user-t", hash_password("pw-t-123456"))
+
+    def _title(self, cid):
+        return next(c["title"] for c in self.conv.list_conversations(self.user)
+                    if c["id"] == cid)
+
+    def test_first_turn_renames_default_title(self):
+        cid = self.conv.create_conversation(self.user, now=1.0)
+        self.conv.append_turn(cid, self.user, "高血压患者在生活方式上要注意什么？", "答",
+                              now=2.0)
+        self.assertEqual(self._title(cid), "高血压患者在生活方式上要注意什么？")
+
+    def test_title_truncated_to_20_chars(self):
+        cid = self.conv.create_conversation(self.user, now=1.0)
+        long_q = "这是一个非常非常长的问题超过二十个字需要被截断处理才行"
+        self.conv.append_turn(cid, self.user, long_q, "答", now=2.0)
+        self.assertEqual(self._title(cid), long_q[:20])
+
+    def test_second_turn_keeps_title(self):
+        cid = self.conv.create_conversation(self.user, now=1.0)
+        self.conv.append_turn(cid, self.user, "第一个问题", "答", now=2.0)
+        self.conv.append_turn(cid, self.user, "第二个问题", "答", now=3.0)
+        self.assertEqual(self._title(cid), "第一个问题")
+
+    def test_custom_title_preserved(self):
+        cid = self.conv.create_conversation(self.user, "我的自定义标题", now=1.0)
+        self.conv.append_turn(cid, self.user, "任意问题", "答", now=2.0)
+        self.assertEqual(self._title(cid), "我的自定义标题")
+
+    def test_newlines_replaced_with_space(self):
+        cid = self.conv.create_conversation(self.user, now=1.0)
+        self.conv.append_turn(cid, self.user, "第一行\n第二行", "答", now=2.0)
+        self.assertEqual(self._title(cid), "第一行 第二行")
+
+
+class TestTitleBackfillMigration(unittest.TestCase):
+    """迁移 v3：存量默认标题会话按首轮用户问题回填，幂等。"""
+
+    def setUp(self):
+        _fresh_db(self)
+        from app.auth.passwords import hash_password
+        from app.auth import users
+        from app import conversations, db
+        self.conv, self.db = conversations, db
+        self.user = users.create_user("user-m", hash_password("pw-m-123456"))
+
+    def test_backfill_renames_and_is_idempotent(self):
+        cid = self.conv.create_conversation(self.user, now=1.0)
+        self.conv.append_turn(cid, self.user, "狗咬了怎么办", "答", now=2.0)
+        empty = self.conv.create_conversation(self.user, now=3.0)
+        with self.db.connect() as conn:
+            conn.execute("UPDATE conversations SET title='新的对话' WHERE id=?", (cid,))
+            conn.execute("PRAGMA user_version=2")
+        self.db.init_db()  # 重跑 v3 回填
+        titles = {c["id"]: c["title"] for c in self.conv.list_conversations(self.user)}
+        self.assertEqual(titles[cid], "狗咬了怎么办")
+        self.assertEqual(titles[empty], "新的对话")  # 无消息的会话不动
+        with self.db.connect() as conn:
+            self.assertEqual(
+                conn.execute("PRAGMA user_version").fetchone()[0], self.db._SCHEMA_VERSION)
+
 
 if __name__ == "__main__":
+    unittest.main()
     unittest.main()

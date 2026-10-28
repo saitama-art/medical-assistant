@@ -26,17 +26,27 @@ def get_llm(timeout: float = 35):
     """
     from langchain_openai import ChatOpenAI
     import httpx
-    api_key = os.environ.get("DEEPSEEK_API_KEY")
+    # 通用 OpenAI 兼容协议：LLM_* 优先，DEEPSEEK_* 为旧配置回退。
+    # 例如 Kimi（Moonshot）：LLM_BASE_URL=https://api.moonshot.cn/v1
+    #   LLM_API_KEY=sk-kimi-...  LLM_MODEL=kimi-k2-0905-preview
+    api_key = os.environ.get("LLM_API_KEY") or os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
         raise RuntimeError(
-            "未找到 DEEPSEEK_API_KEY。请在项目根目录或 backend/ 下创建 .env 并写入："
-            "DEEPSEEK_API_KEY=sk-xxxxxxxx"
+            "未找到 LLM_API_KEY / DEEPSEEK_API_KEY。请在项目根目录或 backend/ 下"
+            "创建 .env 并写入：LLM_API_KEY=sk-xxxxxxxx"
         )
     http_client = httpx.Client(trust_env=False, timeout=timeout)
     llm = ChatOpenAI(
         api_key=api_key,
-        base_url="https://api.deepseek.com/v1",
-        model="deepseek-chat",
+        base_url=os.environ.get(
+            "LLM_BASE_URL",
+            os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
+        ),
+        # 模型名可用 LLM_MODEL 覆盖（默认 deepseek-chat）。
+        # 换模型会使全部评估基线失效，须重跑验收并更新条件指纹（开发进度 S4d）。
+        model=os.environ.get(
+            "LLM_MODEL", os.environ.get("DEEPSEEK_MODEL", "deepseek-chat"),
+        ),
         http_client=http_client,
         # temperature=0：判定/分类必须确定性——实测 0.1 时同一证据的证据判定
         # 会 flip（同一题两次判定一次通过一次拒绝），医疗门禁不允许掷硬币。
