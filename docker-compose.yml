@@ -16,7 +16,7 @@ services:
       SESSION_PERSIST_DIR: /app/backend/session_data
       SESSION_COOKIE_SECURE: "false"
       SESSION_COOKIE_SAMESITE: lax
-      CORS_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+      CORS_ORIGINS: http://localhost:8080,http://127.0.0.1:8080,http://localhost:8081,http://127.0.0.1:8081
     volumes:
       - ./backend/data:/app/backend/data
       - ./backend/chroma_db:/app/backend/chroma_db
@@ -41,7 +41,7 @@ services:
       network: host
       dockerfile: frontend/Dockerfile
     ports:
-      - "8080:80"
+      - "8081:80"
     depends_on:
       backend:
         condition: service_healthy
