@@ -77,7 +77,7 @@ class TestRealSources(unittest.TestCase):
         base = Path(__file__).resolve().parents[1]
         cases = [
             ("app/medical_agent/router.py", "CLASSIFY_SYSTEM_PROMPT", "意图分类器"),
-            ("app/medical_agent/orchestrator.py", "RESOLVE_SYSTEM_PROMPT",
+            ("app/medical_agent/resolver.py", "RESOLVE_SYSTEM_PROMPT",
              "上下文整理器"),
             ("app/rag/service.py", "JUDGE_SYSTEM_PROMPT", "证据充分性判定器"),
             ("app/rag/chain.py", "MEDICAL_SYSTEM_PROMPT", "参考文档"),

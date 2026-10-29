@@ -38,7 +38,7 @@ HASH_LEN = 12
 PROMPT_SPECS = (
     ("classify", "app/medical_agent/router.py",
      ("CLASSIFY_SYSTEM_PROMPT", "CLASSIFY_USER_PROMPT")),   # N01 意图分类
-    ("resolve", "app/medical_agent/orchestrator.py",
+    ("resolve", "app/medical_agent/resolver.py",
      ("RESOLVE_SYSTEM_PROMPT", "RESOLVE_USER_PROMPT")),     # N02 上下文补全
     ("judge", "app/rag/service.py",
      ("JUDGE_SYSTEM_PROMPT", "JUDGE_USER_PROMPT")),         # 证据充分性判定

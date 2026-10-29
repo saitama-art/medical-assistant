@@ -24,15 +24,20 @@
 from __future__ import annotations
 
 import hashlib
-import os
 import time
 import uuid
 
-from . import respond, router, safety, session, tools
-from . import calculator, complex_handler, context_engineering, task_spec
+from . import daily, delegate, resolver
+from . import respond, router, safety, session
+from . import calculator, complex_handler, context_engineering
+from .finalize import (
+    assemble as _assemble,
+    display_sources,
+    finish as _finish,
+    finish_recovery as _finish_recovery,
+    format_sources as _format_sources,
+)
 from .state import (
-    AgentError,
-    AgentErrorKind,
     AgentState,
     ContextStatus,
     EmergencyHit,
@@ -43,10 +48,8 @@ from .state import (
     ResolutionResult,
     ResolutionStatus,
     Route,
-    SubagentStatus,
     TerminationReason,
 )
-from .subagents import knowledge
 from ..rag.chain import get_llm
 from . import config as _cfg
 
@@ -65,23 +68,6 @@ _EMERGENCY_ROUTES = (Route.EMERGENCY,)
 class AgentRequestError(ValueError):
     """N00 参数缺失。由接口层转 400，不进入编排（设计文档 2.1 N00）。消息只含
     机器可读标识，不含用户原文。"""
-
-
-# ==================== 子 Agent 返回 → 终止原因/文案映射（父侧唯一解释点） ====================
-
-_SUBAGENT_TERMINATION: dict[SubagentStatus, tuple[TerminationReason, str]] = {
-    SubagentStatus.OK: (TerminationReason.COMPLETED, ""),
-    SubagentStatus.INSUFFICIENT: (TerminationReason.INSUFFICIENT_EVIDENCE, respond.EVIDENCE_INSUFFICIENT),
-    SubagentStatus.EMPTY_RESULT: (TerminationReason.EMPTY_KNOWLEDGE_BASE, respond.EMPTY_RESULT),
-    SubagentStatus.RETRIEVAL_FAILED: (TerminationReason.RETRIEVAL_FAILED, respond.RETRIEVAL_ERROR),
-    SubagentStatus.GENERATION_FAILED: (TerminationReason.GENERATION_FAILED, respond.GENERATION_ERROR),
-    SubagentStatus.BUDGET_EXHAUSTED: (TerminationReason.BUDGET_EXHAUSTED, respond.BUDGET_EXHAUSTED_REPLY),
-    SubagentStatus.ARGUMENT_INVALID: (TerminationReason.ARGUMENT_INVALID, respond.INVALID_ARGS_REPLY),
-    SubagentStatus.REPEATED_CALL_BLOCKED: (TerminationReason.REPEATED_CALL_BLOCKED, respond.REPEATED_CALL_REPLY),
-    SubagentStatus.MAX_ROUNDS_REACHED: (TerminationReason.MAX_ROUNDS_REACHED, respond.ROUNDS_EXCEEDED_REPLY),
-    SubagentStatus.PROCESSING_FAILED: (TerminationReason.PROCESSING_FAILED, respond.PROCESSING_ERROR),
-    SubagentStatus.SAFETY_REJECTED: (TerminationReason.SAFETY_REJECTED, respond.SAFETY_REJECTED_REPLY),
-}
 
 
 # ==================== 入口 ====================
@@ -257,7 +243,7 @@ def run_agent(session_id: str, question: str) -> AgentState:
             state.resolved_question = calc_plan.remaining
             state.category = QuestionCategory.KNOWLEDGE
             state.route = Route.KNOWLEDGE
-            state = _delegate_knowledge(state, got_lock)
+            state = delegate.delegate_knowledge(state, got_lock)
             if state.answer_text:
                 state.answer_text = calc_text + note + "\n\n---\n\n" + state.answer_text
             return state
@@ -319,154 +305,9 @@ def run_agent(session_id: str, question: str) -> AgentState:
         return _finish(state, got_lock, TerminationReason.COMPLETED,
                        respond.TRIAGE_GUIDANCE)
     if state.route is Route.DAILY:
-        return _answer_daily(state, got_lock)
+        return daily.answer_daily(state, got_lock, llm_factory=get_llm)
     # Route.KNOWLEDGE → 委派知识子 Agent 执行 N06–N10（下方）
-    return _delegate_knowledge(state, got_lock)
-
-
-# ==================== 日常表达路径：直接轻量回应（0 检索，1 次 LLM） ====================
-
-DAILY_SYSTEM_PROMPT = """你是医疗健康知识助手的日常对话模块。用户这句话不是医学知识查询，
-请结合对话记录直接给出自然、简短、有用的回应（2~4 句话）：
-
-1. 可以提供安全的一般性生活建议；不得给出诊断、处方或具体用药推荐；
-2. 如有必要，最多再提一个开放式的追问，不要连环发问；
-3. 若用户问的是「我之前说了什么/我们聊了什么」，只能依据给定对话记录回答，
-   记录里没有的内容一律不说，不得编造；
-4. 内容若涉及可能的危险信号，提醒尽快就医；
-5. 不要输出 JSON，不要引用或编造任何资料来源。"""
-
-DAILY_USER_PROMPT = """{history_block}用户：{question}"""
-
-
-def _answer_daily(state: AgentState, got_lock: bool) -> AgentState:
-    """daily 路由：一次轻量 LLM 调用给出自然回应；失败回退固定文案。
-
-    与知识路径的边界：不检索、不引用来源、不追加医学免责声明——回应性质
-    是日常对话而非医学结论。会话历史仅作为回应语境，不改变安全约束。
-    """
-    node_budget = _node_budget(state, _cfg.BUDGET_DAILY_MS)
-    if node_budget is None:
-        return _finish(state, got_lock, TerminationReason.BUDGET_EXHAUSTED,
-                       respond.BUDGET_EXHAUSTED_REPLY)
-    history_block = ""
-    if state.history:
-        recent = "\n".join(
-            f"{'用户' if role == 'user' else '助手'}：{content}"
-            for role, content in state.history[-6:]
-        )
-        history_block = f"【对话记录】\n{recent}\n\n"
-    try:
-        from langchain_core.prompts import ChatPromptTemplate
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", DAILY_SYSTEM_PROMPT),
-            ("human", DAILY_USER_PROMPT),
-        ])
-        messages = prompt.format_messages(
-            history_block=history_block, question=state.resolved_question,
-        )
-        llm = get_llm(timeout=max(1.0, node_budget / 1000))
-        response = llm.invoke(messages)
-    except Exception as exc:
-        state.add_trace("N04b", "error", {
-            "detail": type(exc).__name__,
-        }, node_budget_ms=node_budget)
-        return _finish(state, got_lock, TerminationReason.COMPLETED,
-                       respond.DAILY_FALLBACK_REPLY)
-    content = getattr(response, "content", None)
-    if not isinstance(content, str) or not content.strip():
-        return _finish(state, got_lock, TerminationReason.COMPLETED,
-                       respond.DAILY_FALLBACK_REPLY)
-    state.add_trace("N04b", "decision", {
-        "answer_len": len(content.strip()),
-    }, node_budget_ms=node_budget)
-    return _finish(state, got_lock, TerminationReason.COMPLETED, content.strip())
-
-
-# ==================== 知识路径：委派子 Agent（N06–N10） ====================
-
-
-def _delegate_knowledge(state: AgentState, got_lock: bool) -> AgentState:
-    """KNOWLEDGE 路由的委派入口：启动预算检查 → 委派 → 合并产出 → 映射终止。
-
-    父 Agent 不介入子 Agent 的内部循环（重试/判定/生成），只消费
-    SubagentResult 契约——这是"受控委派"与"模型自主循环"的分界。
-    """
-    launch_budget = _node_budget(state, knowledge.MIN_LAUNCH_BUDGET_MS)
-    if launch_budget is None:
-        # 剩余预算不足以启动一次有意义的检索：不启动子 Agent（防"假动作"）
-        return _finish(state, got_lock, TerminationReason.BUDGET_EXHAUSTED,
-                       respond.BUDGET_EXHAUSTED_REPLY)
-    spec = task_spec.build_task_spec(state)
-    authorization = task_spec.authorize_task_spec(spec, state)
-    if not authorization.ok:
-        blocked_budget = authorization.detail == "budget_blocked"
-        state.error = AgentError(
-            "TASK_SPEC",
-            AgentErrorKind.BUDGET_BLOCKED if blocked_budget else AgentErrorKind.SAFETY_REJECTED,
-            authorization.detail,
-        )
-        state.add_trace("N06", "decision", {
-            "delegate": False, "reason": authorization.detail,
-        })
-        return _finish(
-            state, got_lock,
-            TerminationReason.BUDGET_EXHAUSTED if blocked_budget else TerminationReason.SAFETY_REJECTED,
-            respond.BUDGET_EXHAUSTED_REPLY if blocked_budget else respond.SAFETY_REJECTED_REPLY,
-        )
-
-    state.add_trace("N06", "decision", {
-        "delegate": "knowledge_subagent",
-        "spec_id": spec.spec_id,
-        "tool_whitelist": list(spec.constraints.allowed_tools),
-        "question_len": len(state.resolved_question),
-    }, node_budget_ms=launch_budget)
-    state.recovery.worker_launched = True
-    try:
-        result = knowledge.run(spec, authorization.permit, recovery=state.recovery)
-    except Exception as exc:
-        state.error = AgentError(
-            "WORKER", AgentErrorKind.WORKER_RESULT_INVALID,
-            f"worker_exception:{type(exc).__name__}",
-        )
-        return _finish(state, got_lock, TerminationReason.PROCESSING_FAILED,
-                       respond.PROCESSING_ERROR)
-
-    # 合并子 Agent 产出：seq 重排后并入父状态，trace 连续性不断（T-15）
-    state.tool_rounds += result.tool_rounds
-    for record in result.tool_calls:
-        record.seq = len(state.tool_calls) + 1
-        state.tool_calls.append(record)
-    for trace in result.trace:
-        trace.seq = len(state.trace) + 1
-        state.trace.append(trace)
-    if result.evidence is not None:
-        state.evidence = result.evidence
-    if result.retrieval is not None:
-        state.retrieval = result.retrieval
-
-    validation = task_spec.validate_worker_result(spec, result)
-    if not validation.ok:
-        state.error = AgentError(
-            "WORKER", AgentErrorKind.WORKER_RESULT_INVALID, validation.detail,
-        )
-        state.add_trace("N11", "worker_result_invalid", {
-            "reason": validation.detail,
-        })
-        return _finish(state, got_lock, TerminationReason.PROCESSING_FAILED,
-                       respond.PROCESSING_ERROR)
-
-    if result.sources:
-        state.sources = result.sources
-    if result.error is not None:
-        state.error = result.error
-
-    # 父侧唯一解释点：status → 终止原因 + 固定文案
-    reason, body = _SUBAGENT_TERMINATION[result.status]
-    if result.status is SubagentStatus.OK:
-        state.answer_text = result.answer
-        return _finish(state, got_lock, reason, result.answer)
-    return _finish(state, got_lock, reason, body)
+    return delegate.delegate_knowledge(state, got_lock)
 
 
 # ==================== 内部工具 ====================
@@ -478,36 +319,6 @@ def _merge_hits(first: EmergencyHit, second: EmergencyHit) -> EmergencyHit:
     if order[second.level] > order[first.level]:
         return second
     return first
-
-
-RESOLVE_SYSTEM_PROMPT = """你是对话上下文整理器。用户本轮的问题引用了此前的对话，
-请把它改写成一个不依赖上下文、独立完整的问题。
-
-要求：
-1. 只输出 JSON 对象，不要输出解释、前后缀或 markdown 代码块；
-2. 改写后的问题必须保留用户本轮的原始意图，补全被指代的药名、症状或事物；
-3. **保留实体**：本轮问题中出现的或历史对话中已明确的具体实体（疾病名、症状、
-   药品名、检查名）必须原样保留在改写后的问题里，只补全指代词所指的内容，
-   不得把具体问题泛化成通用问题（如「腹泻要去医院的情况」不得泛化为
-   「什么情况要去医院」）；
-4. **保留否定词与限定语**：不、没有、别、未、无以及时间/人群限定
-   （如「最近一周」「空腹」）必须原样保留，不得省略、反转或改写为反义；
-5. 确实无法确定指代对象时，输出 {{"question": ""}}，不要猜测；
-6. 输出格式：{{"question": "改写后的完整问题"}}"""
-
-RESOLVE_USER_PROMPT = """【此前的对话】
-{history}
-
-【用户本轮的问题】
-{question}
-
-请输出改写后的完整问题。"""
-
-RESOLVE_REPAIR_PROMPT = """
-
-上一次输出未通过校验（含「原样返回未补全」的情况）。请重新输出合法 JSON：
-question 必须把指代词替换为对话记录中的具体实体、保留否定词和限定语，
-不得原样返回用户的问题；确实无法确定指代对象时只能输出空字符串。"""
 
 
 def _try_calc_param_fill(
@@ -545,19 +356,6 @@ def _try_calc_param_fill(
     return plan, None
 
 
-def _dropped_negation(raw: str, resolved: str) -> bool:
-    """改写产物是否丢弃了原句的否定词（S1-D2，程序校验先于 LLM 信任）。
-
-    「没有胃肠道反应吗」被改写成「有胃肠道反应吗」是语义反转，医疗场景
-    绝不能放行。校验不通过→调用方降级 missing 走"请重述"，不猜。
-    保守取向：宁可误判漏改（多一次重述）也不放过反转（错误医疗语义）。
-    """
-    return any(m in raw and m not in resolved for m in _NEGATION_MARKERS)
-
-
-_NEGATION_MARKERS = ("没有", "别", "不要", "未", "无")
-
-
 def _classify_once(
     state: AgentState, node_budget_ms: int, *, repair: bool = False,
 ) -> NodeResult:
@@ -592,104 +390,6 @@ def _run_with_repair(
         "action": "retry", "repair_total": state.recovery.repair_total,
     }, node_budget_ms=retry_budget)
     return attempt(state, retry_budget, repair=True)
-
-
-def _resolve_reference(
-    state: AgentState, node_budget_ms: int, *, repair: bool = False,
-) -> NodeResult[ResolutionResult]:
-    """执行一次 N02 补全；合法无法补全与调用/输出失败分别返回。"""
-    try:
-        from langchain_core.prompts import ChatPromptTemplate
-
-        history_text = context_engineering.format_history(
-            state.context_package, state.history,
-        )
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", RESOLVE_SYSTEM_PROMPT + (RESOLVE_REPAIR_PROMPT if repair else "")),
-            ("human", RESOLVE_USER_PROMPT),
-        ])
-        messages = prompt.format_messages(history=history_text, question=state.resolved_question)
-        llm = get_llm(timeout=max(1.0, node_budget_ms / 1000))
-        response = llm.invoke(messages)
-    except Exception as exc:
-        return complex_handler.exception_result(exc)
-
-    content = getattr(response, "content", None)
-    if not isinstance(content, str):
-        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="content_not_text")
-    import json
-    import re
-
-    match = re.search(r"\{.*\}", content, re.S)
-    if not match:
-        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="json_invalid")
-    try:
-        payload = json.loads(match.group(0))
-    except (TypeError, ValueError, json.JSONDecodeError):
-        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="json_invalid")
-    if not isinstance(payload, dict) or not isinstance(payload.get("question"), str):
-        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="question_invalid")
-
-    resolved = payload["question"].strip()
-    if _dropped_negation(state.resolved_question, resolved):
-        return NodeResult(
-            NodeStatus.INVALID_OUTPUT, detail="model_constraint_violation",
-        )
-    if resolved and resolved == state.resolved_question.strip():
-        # no-op 改写（2026-10-28 实测）：N02 只在检测到指代/追问时触发，
-        # 原样返回意味着模型没有补全任何上下文——按可修复失败处理，
-        # 走既有的一次 repair 路径，避免裸问句直接送分类器被判 unknown。
-        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="resolution_noop")
-    if not resolved:
-        return NodeResult(
-            NodeStatus.OK, ResolutionResult(ResolutionStatus.CONTEXT_REQUIRED),
-        )
-    return NodeResult(
-        NodeStatus.OK, ResolutionResult(ResolutionStatus.RESOLVED, resolved),
-    )
-
-
-# 来源展示上限：同一文档的页码最多列 3 个、文档最多列 3 个（其余以「等」示意）。
-# 背景：检索 k=10 的每个 chunk 都产出来源，同一文档常连续出现 7~9 条页码，
-# 用户可读性差（2026-10-20 实测反馈）。
-_SOURCE_MAX_PAGES_PER_DOC = 3
-_SOURCE_MAX_DOCS = 3
-
-
-def _format_sources(sources) -> list[str]:
-    """把来源列表聚合成用户可读的展示串：按文档分组、页码升序去重、超限截断。
-
-    返回每个文档一条（"文档 - 第2、7、12页"），保持检索相关度带来的首次出现顺序。
-    """
-    by_doc: dict[str, list[int]] = {}
-    no_page: list[str] = []
-    for s in sources:
-        # 历史 Chroma 元数据可能是 Windows 路径；Linux 也需去掉盘符和目录。
-        name = os.path.basename(s.document.replace("\\", "/")) if s.document else ""
-        if not name:
-            continue
-        if s.page:
-            pages = by_doc.setdefault(name, [])
-            if s.page not in pages:
-                pages.append(s.page)
-        elif name not in no_page:
-            no_page.append(name)
-
-    out: list[str] = []
-    for name, pages in by_doc.items():
-        pages.sort()
-        if len(pages) > _SOURCE_MAX_PAGES_PER_DOC:
-            page_txt = "、".join(str(p) for p in pages[:_SOURCE_MAX_PAGES_PER_DOC]) + "页等"
-        else:
-            page_txt = "、".join(str(p) for p in pages) + "页"
-        out.append(f"{name} - 第{page_txt}")
-    for name in no_page:
-        out.append(name)
-
-    if len(out) > _SOURCE_MAX_DOCS:
-        out = out[:_SOURCE_MAX_DOCS]
-        out.append("等")
-    return out
 
 
 def _run_calc(plan) -> tuple[str, bool]:
@@ -732,80 +432,22 @@ def _run_calc(plan) -> tuple[str, bool]:
     return "", False
 
 
-def display_sources(state: AgentState) -> list[dict]:
-    """接口层序列化用：聚合后的展示串，不含原始路径。"""
-    return [{"document": t, "page": None} for t in _format_sources(state.sources)]
 
 
-def _assemble(state: AgentState, body: str) -> str:
-    """N11 回答组装：风险提示 / 无历史说明 → 正文 → 来源 → 免责声明，固定顺序。
+# ==================== 兼容包装（2026-10-29 解耦：实现已迁出，引用面不变） ====================
+# _resolve_reference / _delegate_knowledge 的实现分别在 resolver.py / delegate.py；
+# _finish/_finish_recovery/_assemble/_format_sources 在 finalize.py（顶部已 re-export）。
+# 包装存在的唯一理由：LLM 注入点保持在 orchestrator.get_llm，测试 patch 面不变。
 
-    组装本身不抛异常；缺件按分支降级（来源为空则不拼来源段）。
-    """
-    parts: list[str] = []
-    if state.risk_notice:
-        parts.append(state.risk_notice)
-    if state.context_status is ContextStatus.DEGRADED_NO_HISTORY:
-        parts.append(respond.NO_HISTORY_NOTICE)
-    parts.append(body)
-    if state.termination_reason is TerminationReason.COMPLETED and state.sources:
-        sources_text = "；".join(_format_sources(state.sources))
-        if sources_text:
-            parts.append(respond.SOURCE_HEADER.lstrip("\n") + sources_text)
-    # 免责声明只跟在"含医学内容"的路径后：知识问答完成、紧急应答；
-    # 闲聊/无法处理/重述等固定文案自身已完整，不再追加。
-    show_disclaimer = (
-        state.termination_reason is TerminationReason.EMERGENCY_HANDLED
-        or (state.termination_reason is TerminationReason.COMPLETED
-            and state.route is Route.KNOWLEDGE)
+
+def _resolve_reference(state, node_budget_ms, *, repair: bool = False):
+    return resolver.resolve_reference(
+        state, node_budget_ms, repair=repair, llm_factory=get_llm,
     )
-    if show_disclaimer:
-        parts.append(respond.DISCLAIMER)
-    return "\n\n".join(parts)
 
 
-def _finish_recovery(
-    state: AgentState,
-    got_lock: bool,
-    decision: complex_handler.RecoveryDecision,
-    node: str,
-) -> AgentState:
-    """把纯策略决策映射到唯一终态收口，不在此重试或调用 Worker。"""
-    reason = decision.termination
-    if reason is None:
-        raise ValueError("recovery_decision_missing_termination")
-    if decision.error is not None:
-        state.error = decision.error
-    if decision.action is complex_handler.RecoveryAction.CLARIFY:
-        state.recovery.clarified = True
-    if reason is TerminationReason.CONTEXT_MISSING:
-        state.route = Route.CONTEXT_MISSING
-    elif reason is TerminationReason.UNCLASSIFIED:
-        state.route = Route.UNCLASSIFIABLE
-    state.add_trace(node, "recovery", {
-        "action": decision.action.value,
-        "termination": reason.value,
-        "error_kind": decision.error.kind.value if decision.error else None,
-    })
-    return _finish(state, got_lock, reason, respond.TERMINATION_TEXTS[reason])
-
-
-def _finish(state: AgentState, got_lock: bool, reason: TerminationReason, body: str) -> AgentState:
-    """终态收口：落终止原因、组装用户可见文本、写 trace、更新会话（N12）。
-
-    会话更新失败不影响响应（session.complete 内部已兜底）。
-    """
-    state.termination_reason = reason
-    state.answer_text = _assemble(state, body)
-    state.add_trace("N12", "decision", {
-        "termination": reason.value,
-        "tool_rounds": state.tool_rounds,
-        "tool_calls": len(state.tool_calls),
-    })
-    session.complete(
-        state.session_id, state.raw_question, state.answer_text, got_lock=got_lock,
-    )
-    return state
+def _delegate_knowledge(state, got_lock):
+    return delegate.delegate_knowledge(state, got_lock)
 
 
 __all__ = [
