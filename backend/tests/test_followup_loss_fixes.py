@@ -111,3 +111,25 @@ class TestClarifyTextSplit(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestThreeTurnConsultation(unittest.TestCase):
+    """任务书场景：「最近经常头疼」→「已经持续三天了」必须走 N02 补全而非澄清。"""
+
+    def test_progress_statement_resolves_with_history(self):
+        sid = _fresh_session()
+        session.complete(sid, "最近经常头疼", "答：注意休息。", got_lock=True)
+        llm = FakeLLM(
+            resolve=json.dumps({"question": "头疼已经持续三天了，应该怎么办？"},
+                               ensure_ascii=False),
+            classify={"category": "knowledge", "confidence": 0.9},
+            judge={"answerable": True, "supporting_quote": "依据片段"},
+        )
+        from app.rag import service
+        ok = service.RetrievalResult(
+            outcome=None,
+            chunks=[service.RetrievedChunk(content="依据片段", document="d.pdf",
+                                           page=1, distance=0.3)])
+        state, _ = _run(sid, "已经持续三天了", llm, ok)
+        self.assertIn("头疼", state.resolved_question)
+        self.assertIs(state.termination_reason, TerminationReason.COMPLETED)

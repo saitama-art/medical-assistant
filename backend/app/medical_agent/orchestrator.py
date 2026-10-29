@@ -48,6 +48,7 @@ from .state import (
     ResolutionResult,
     ResolutionStatus,
     Route,
+    UnresolvedKind,
     TerminationReason,
 )
 from ..rag.chain import get_llm
@@ -154,9 +155,11 @@ def run_agent(session_id: str, question: str) -> AgentState:
         if decision.action is complex_handler.RecoveryAction.CONTINUE:
             state.resolved_question = resolution.value.question
             state.context_status = ContextStatus.OK
+            context_engineering.associate_followup_on_resolution(state)
         else:
             if decision.termination is TerminationReason.CONTEXT_MISSING:
                 if state.context_history:
+                    context_engineering.register_followup(state, ())
                     # M2：历史仍在但改写失败——用「内容还在但没确定指代」的文案，
                     # 不谎称历史丢失；context_status 不改（历史确实可用）。
                     return _finish_recovery(
@@ -286,6 +289,18 @@ def run_agent(session_id: str, question: str) -> AgentState:
         ),
     }, node_budget_ms=node_budget)
     if decision.action is not complex_handler.RecoveryAction.CONTINUE:
+        if (
+            decision.action is complex_handler.RecoveryAction.CLARIFY
+            and classification.value is not None
+            and classification.value.unresolved in (
+                UnresolvedKind.CONTEXT_REQUIRED, UnresolvedKind.MISSING_INPUT,
+            )
+            and state.context_history
+        ):
+            # M4：分类器报缺且历史可用——登记咨询续问任务（白名单校验不过则跳过）
+            context_engineering.register_followup(
+                state, classification.value.missing_inputs,
+            )
         if (decision.termination is TerminationReason.CONTEXT_MISSING
                 and state.context_history):
             # M2：分类器要上下文但改写/解析失败，历史仍在时不谎称丢失

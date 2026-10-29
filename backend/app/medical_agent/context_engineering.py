@@ -45,7 +45,8 @@ class TaskRecord:
     task_type: str
     status: TaskStatus
     required_inputs: tuple[str, ...]
-    provided_inputs: Mapping[str, float] = field(default_factory=dict)
+    # 计算任务的参数值是数值；followup 的 anchor_question 是用户原文（字符串）
+    provided_inputs: Mapping[str, object] = field(default_factory=dict)
     missing_inputs: tuple[str, ...] = ()
     created_at: float = 0.0
     updated_at: float = 0.0
@@ -126,9 +127,38 @@ class ContextPackage:
     candidate_task_count: int = 0
 
 
+@dataclass(frozen=True)
+class TaskTypeSpec:
+    """任务类型注册项（M5，2026-10-29）。dynamic=True 表示缺失字段由
+    运行期校验决定（followup），否则必须等于 required_inputs 才能 READY。"""
+
+    required_inputs: tuple[str, ...]
+    dynamic: bool = False
+
+
+_TASK_REGISTRY: dict[str, TaskTypeSpec] = {
+    "bmi": TaskTypeSpec(("height_cm", "weight_kg")),
+    "standard_weight": TaskTypeSpec(("height_cm",)),
+    "followup": TaskTypeSpec((), dynamic=True),
+}
+
+FOLLOWUP_TASK_TYPE = "followup"
+FOLLOWUP_TTL_SECONDS = 7 * 24 * 3600
+
+
+def task_type_spec(task_type: str) -> TaskTypeSpec:
+    """注册表查询：未注册的 task_type 明确失败，不静默绕过（M5）。"""
+    from ..case_analysis.models import CaseValidationError
+    try:
+        return _TASK_REGISTRY[task_type]
+    except KeyError:
+        raise CaseValidationError(f"unknown_task_type:{task_type}")
+
+
+# 兼容别名：原 _REQUIRED_INPUTS 的读取方（事实选择）只看带必填参数的类型。
 _REQUIRED_INPUTS = {
-    "bmi": ("height_cm", "weight_kg"),
-    "standard_weight": ("height_cm",),
+    name: spec.required_inputs
+    for name, spec in _TASK_REGISTRY.items() if spec.required_inputs
 }
 _INPUT_LABELS = {"height_cm": "身高", "weight_kg": "体重"}
 _UNITS = {"height_cm": "cm", "weight_kg": "kg"}
@@ -141,7 +171,7 @@ _PARAMETER_FILLER = re.compile(
 
 
 def _new_task(owner: int, conversation_id: str, kind: str, *, now: float) -> TaskRecord:
-    required = _REQUIRED_INPUTS[kind]
+    required = task_type_spec(kind).required_inputs
     return TaskRecord(
         task_id=uuid.uuid4().hex, owner_user_id=owner,
         conversation_id=conversation_id, task_type=kind,
@@ -210,6 +240,104 @@ def _merge_facts(state: AgentState, facts: Iterable[StructuredFact]) -> None:
     by_type = {fact.fact_type: fact for fact in state.pending_facts}
     by_type.update({fact.fact_type: fact for fact in facts})
     state.pending_facts = list(by_type.values())
+
+
+# ==================== M4：咨询续问任务（2026-10-29） ====================
+
+# 缺失字段白名单：中英文、数字、常见计量/标点；拒绝引号、花括号、尖括号、
+# 分号等注入形态——分类器的 missing_inputs 永远不当 SQL/代码碎片落库。
+_MISSING_FIELD_RE = re.compile(r"^[A-Za-z0-9_一-鿿（）()\-—/，,。 .]{1,20}$")
+_MAX_MISSING_FIELDS = 8
+
+
+def _validate_missing_fields(values) -> tuple[str, ...] | None:
+    """missing_inputs 白名单校验；任何一项非法即整体不创建（返回 None）。"""
+    if not isinstance(values, (list, tuple)) or len(values) > _MAX_MISSING_FIELDS:
+        return None
+    out: list[str] = []
+    for value in values:
+        if not isinstance(value, str):
+            return None
+        value = value.strip()
+        if not value or not _MISSING_FIELD_RE.fullmatch(value):
+            return None
+        out.append(value)
+    return tuple(dict.fromkeys(out))
+
+
+def _last_user_message(history) -> str:
+    for role, content in reversed(list(history or [])):
+        if role == "user" and isinstance(content, str) and content.strip():
+            return content.strip()
+    return ""
+
+
+def register_followup(state: AgentState, missing_inputs) -> TaskRecord | None:
+    """创建或复用一条咨询续问待续任务（M4）。
+
+    只在「历史可用」时创建；锚点是上一轮用户原始问题（不是模型改写产物）。
+    missing_inputs 经白名单校验，失败则返回 None（调用方按无任务继续）。
+    """
+    anchor = _last_user_message(state.history)
+    if not anchor:
+        return None
+    missing = _validate_missing_fields(missing_inputs)
+    if missing is None:
+        return None
+    for task in state.context_tasks:
+        if (task.task_type == FOLLOWUP_TASK_TYPE
+                and task.status is TaskStatus.WAITING_FOR_INPUT
+                and task.provided_inputs.get("anchor_question") == anchor):
+            state.task_record = task
+            return task
+    now = now_ts()
+    task = TaskRecord(
+        task_id=uuid.uuid4().hex,
+        owner_user_id=state.context_owner_user_id or 0,
+        conversation_id=state.session_id,
+        task_type=FOLLOWUP_TASK_TYPE,
+        status=TaskStatus.WAITING_FOR_INPUT,
+        required_inputs=(),
+        provided_inputs={"anchor_question": anchor},
+        missing_inputs=missing,
+        created_at=now,
+        updated_at=now,
+    )
+    state.task_record = task
+    state.context_tasks = [*state.context_tasks, task]
+    return task
+
+
+def followup_anchor(state: AgentState) -> str:
+    """唯一待续咨询任务的锚点；多个候选不自动选择，返回空串。"""
+    waiting = [t for t in state.context_tasks
+               if t.task_type == FOLLOWUP_TASK_TYPE
+               and t.status is TaskStatus.WAITING_FOR_INPUT]
+    if len(waiting) != 1:
+        return ""
+    anchor = waiting[0].provided_inputs.get("anchor_question")
+    return anchor if isinstance(anchor, str) else ""
+
+
+def associate_followup_on_resolution(state: AgentState) -> None:
+    """N02 成功改写后：唯一待续咨询任务转 RUNNING。
+
+    是否最终完成由 finalize_turn 按本轮真实业务结果决定——
+    改写成功本身不等于任务完成（任务书 M4 规则 2/6）。
+    """
+    waiting = [t for t in state.context_tasks
+               if t.task_type == FOLLOWUP_TASK_TYPE
+               and t.status is TaskStatus.WAITING_FOR_INPUT]
+    if len(waiting) == 1:
+        # followup 是动态任务：WAITING→RUNNING 是合法转换（关联已确定）；
+        # mark_running 的 READY 门槛只服务静态必填参数任务，这里显式转换。
+        now = now_ts()
+        state.task_record = replace(
+            waiting[0], status=TaskStatus.RUNNING,
+            attempt=waiting[0].attempt + 1, updated_at=now,
+        )
+
+
 
 
 def prepare_calculation(state: AgentState, plan) -> calculator.CalcPlan | None:
@@ -561,7 +689,9 @@ def finalize_turn(state: AgentState, source_message_id: int) -> bool:
 
 
 def load_pending_tasks(owner: int, conversation_id: str) -> list[TaskRecord]:
+    """加载待续任务；followup 超过 TTL 的任务标记 cancelled 并跳过（M4）。"""
     init_db()
+    now = now_ts()
     with connect() as conn:
         rows = conn.execute(
             "SELECT t.* FROM agent_tasks t JOIN conversations c ON c.id=t.conversation_id"
@@ -570,7 +700,20 @@ def load_pending_tasks(owner: int, conversation_id: str) -> list[TaskRecord]:
             " ORDER BY t.updated_at, t.task_id",
             (owner, conversation_id, owner),
         ).fetchall()
-    return [_task_from_row(row) for row in rows]
+        out: list[TaskRecord] = []
+        for row in rows:
+            task = _task_from_row(row)
+            if (task.task_type == FOLLOWUP_TASK_TYPE
+                    and now - task.updated_at > FOLLOWUP_TTL_SECONDS):
+                conn.execute(
+                    "UPDATE agent_tasks SET status='cancelled', updated_at=?"
+                    " WHERE task_id=?",
+                    (now, task.task_id),
+                )
+                continue
+            out.append(task)
+        conn.commit()
+    return out
 
 
 def load_facts(owner: int, conversation_id: str) -> list[StructuredFact]:

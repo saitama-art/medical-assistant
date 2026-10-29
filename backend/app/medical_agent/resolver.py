@@ -74,6 +74,11 @@ def resolve_reference(
         history_text = context_engineering.format_history(
             state.context_package, state.history,
         )
+        anchor = context_engineering.followup_anchor(state)
+        if anchor:
+            # M4：待续咨询任务的锚点（用户原文）置顶给改写器当候选上下文；
+            # 仅注入提示词，不覆盖 state.resolved_question 的原始问题。
+            history_text = f"【待续问题】{anchor}\n\n" + history_text
         prompt = ChatPromptTemplate.from_messages([
             ("system", RESOLVE_SYSTEM_PROMPT + (RESOLVE_REPAIR_PROMPT if repair else "")),
             ("human", RESOLVE_USER_PROMPT),
