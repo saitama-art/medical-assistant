@@ -47,7 +47,7 @@ from ..rag.chain import get_llm
 from ..rag.service import MAX_QUESTION_LEN
 from . import adapter, narrative
 from . import config as _cfg
-from .context import build_analysis_context
+from .context import build_analysis_context, filter_timeline_by_range
 from .outputs import (
     CaseAnalysisResult,
     CaseAnalysisStatus,
@@ -77,15 +77,24 @@ def run_case_analysis(
         resolved_question=focus_question.strip() if focus_question else "",
     )
     work.budget.deadline = time.monotonic() + _cfg.CASE_ANALYSIS_DEADLINE_S
+    # run_ref 让外层兜底能拿到已登记的 run_id：未预期异常时把运行收口为
+    # failed，避免运行记录永久悬挂 pending（第二轮审查 H1）。
+    run_ref: dict[str, str | None] = {"run_id": None}
     try:
         return _run(
             work, owner_user_id, patient_id,
             time_range_start=time_range_start, time_range_end=time_range_end,
+            run_ref=run_ref,
         )
     except Exception as exc:  # 兜底：任何未预期异常都归一为结构化失败
         work.add_trace("CA00", "error", {"reason": f"internal:{type(exc).__name__}"})
+        run_id = run_ref["run_id"]
+        if run_id:
+            # _close_run 内部吞错并留 trace，不会再次抛出
+            _close_run(work, run_id, owner_user_id, ok=False,
+                       error_code="internal_error")
         return _finish(work, CaseAnalysisStatus.PROCESSING_FAILED,
-                       patient_id, error_code="internal_error")
+                       patient_id, run_id=run_id, error_code="internal_error")
 
 
 def _run(
@@ -95,6 +104,7 @@ def _run(
     *,
     time_range_start: float | None,
     time_range_end: float | None,
+    run_ref: dict[str, str | None],
 ) -> CaseAnalysisResult:
     degraded: list[str] = []
 
@@ -146,6 +156,7 @@ def _run(
         work.add_trace("CA03", "error", {"reason": err or "run_missing"})
     else:
         run_id = run.run_id
+        run_ref["run_id"] = run_id
         work.add_trace("CA03", "decision", {"run_registered": True})
 
     # ---- CA04 数据装载（逐项容错；全部失败才判存储故障） ----
@@ -171,6 +182,8 @@ def _run(
         if call_err:
             read_failures += 1
             degraded.append(f"{name}_read_failed")
+            # 区分"执行失败"与"执行成功但为空"：失败必须有 error 级 trace（审查 M2）
+            work.add_trace("CA04", "error", {"section": name, "reason": call_err})
             sections[name] = ()
         else:
             sections[name] = tuple(value)
@@ -184,22 +197,28 @@ def _run(
                        run_id=run_id, error_code="storage_error",
                        degraded=tuple(degraded))
 
-    # ---- CA05 结构化上下文 ----
+    # ---- CA05 结构化上下文（时间线先裁剪到分析范围，未知时间条目保留并标记） ----
+    timeline = filter_timeline_by_range(
+        sections["timeline"], time_range_start, time_range_end,
+    )
     context = build_analysis_context(
         patient_id,
         sections["encounters"], sections["facts"], sections["medications"],
-        sections["observations"], sections["timeline"],
+        sections["observations"], timeline,
     )
     work.add_trace("CA05", "decision", {
         "empty": context.empty,
         "unknown_time_count": context.unknown_time_count,
         "pending_facts": context.pending_fact_count,
+        "timeline_total": len(sections["timeline"]),
+        "timeline_in_scope": len(timeline),
     })
     if context.empty:
-        _close_run(work, run_id, owner_user_id, ok=True)
+        if run_id and not _close_run(work, run_id, owner_user_id, ok=True):
+            degraded.append("run_update_failed")
         return _finish(work, CaseAnalysisStatus.NO_HISTORY, patient_id,
                        run_id=run_id, context=context,
-                       timeline=tuple(sections["timeline"]),
+                       timeline=timeline,
                        degraded=tuple(degraded))
 
     # ---- CA06 确定性分析（时间先后 ≠ 因果，由 service/analysis 保证） ----
@@ -209,6 +228,8 @@ def _run(
     )
     if err:
         degraded.append("comparison_failed")
+        work.add_trace("CA06", "error",
+                       {"stage": "compare_observations", "reason": err})
         comparisons = []
     drafts, err = adapter.find_temporal_associations(
         patient_id, owner_user_id,
@@ -216,6 +237,8 @@ def _run(
     )
     if err:
         degraded.append("association_failed")
+        work.add_trace("CA06", "error",
+                       {"stage": "find_temporal_associations", "reason": err})
         drafts = []
     comparisons = tuple(comparisons)
     drafts = tuple(drafts)
@@ -297,10 +320,13 @@ def _run(
         else:
             associations = tuple(saved)
     final_ok = not degraded
-    _close_run(
+    run_closed = _close_run(
         work, run_id, owner_user_id, ok=True,
         error_code="" if final_ok else ",".join(degraded)[:200],
     )
+    if run_id and not run_closed:
+        # 运行状态更新失败时不得仍标记为 COMPLETED（审查 M3）
+        degraded.append("run_update_failed")
 
     if evidence_insufficient:
         status = CaseAnalysisStatus.INSUFFICIENT_EVIDENCE
@@ -312,7 +338,7 @@ def _run(
     return _finish(
         work, status, patient_id,
         run_id=run_id, context=context,
-        timeline=tuple(sections["timeline"]),
+        timeline=timeline,
         comparisons=comparisons,
         associations=associations,
         association_drafts=() if associations else drafts,
@@ -499,10 +525,15 @@ def _validate_inputs(owner_user_id, patient_id, start, end) -> str:
     return ""
 
 
-def _close_run(work, run_id, owner_user_id, *, ok: bool, error_code: str = "") -> None:
-    """更新运行状态；登记已失败（run_id 为空）或更新失败都只记 trace。"""
+def _close_run(work, run_id, owner_user_id, *, ok: bool, error_code: str = "") -> bool:
+    """更新运行状态，返回是否成功。
+
+    run_id 为空（登记已失败）或更新本身失败都返回 False 并只留 trace，
+    不再抛出；返回 False 时调用方必须把"run_update_failed"计入降级标记，
+    不得在更新失败的情况下仍将结果标记为 COMPLETED（审查 H1/M3）。
+    """
     if not run_id:
-        return
+        return False
     _, err = adapter.update_analysis_run(
         run_id, owner_user_id,
         status="completed" if ok else "failed",
@@ -510,6 +541,8 @@ def _close_run(work, run_id, owner_user_id, *, ok: bool, error_code: str = "") -
     )
     if err:
         work.add_trace("CA12", "error", {"reason": f"run_update:{err}"})
+        return False
+    return True
 
 
 def _finish(

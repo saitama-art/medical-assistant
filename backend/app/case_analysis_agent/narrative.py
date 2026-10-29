@@ -10,7 +10,14 @@
    归属校验通过的 service 读取）；
 3. 叙述文本中出现的每个 YYYY-MM-DD 日期必须出现在上下文允许日期集里
    （由真实发生/录入时间预先格式化而来），模型不得写出新日期；
-4. 不得出现指令性表述（确诊/处方/停药建议等），命中即整体作废。
+4. 不得出现指令性表述（确诊/处方/停药建议等）或因果表述（导致/引起等），
+   命中即整体作废。
+
+已知校验边界（诚实声明，第二轮审查 M1）：程序无法可靠核对叙述中的
+**数值是否与上下文一致**、**否定语义是否被反转**、**时间关系是否被改写**——
+这三项靠提示词约束 + 上述兜底，不构成事实一致性证明。因此本模块的产出
+一律视为**非权威补充**：不进入 answer_text 正式结果（render 只放确定性
+内容），调用方若展示必须带非权威标注。
 """
 
 from __future__ import annotations
@@ -22,6 +29,12 @@ import time
 from ..medical_agent.state import NodeResult, NodeStatus, exception_result
 from .context import AnalysisContext
 from .outputs import BANNED_DIRECTIVE_PHRASES
+
+# 因果表述词表：命中即整体作废。这只是兜底防线，不等于"事实一致性验证"
+# （见模块 docstring 的校验边界声明）。
+CAUSAL_PHRASES: tuple[str, ...] = (
+    "导致", "引起", "所致", "诱发", "因此发病", "由此引发",
+)
 
 _DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 _MAX_NARRATIVE_CHARS = 4000
@@ -118,6 +131,8 @@ def validate_narrative(data, context: AnalysisContext,
             return NodeResult(NodeStatus.INVALID_OUTPUT, detail="unknown_date")
     if any(p in joined for p in BANNED_DIRECTIVE_PHRASES):
         return NodeResult(NodeStatus.INVALID_OUTPUT, detail="directive_phrase")
+    if any(p in joined for p in CAUSAL_PHRASES):
+        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="causal_phrase")
 
     parts = [summary.strip()]
     if highlights:

@@ -91,7 +91,8 @@ class CaseAnalysisResult:
     knowledge: tuple[KnowledgeReference, ...] = ()
     doctor_questions: tuple[DoctorQuestion, ...] = ()
 
-    # —— 叙述（可选，LLM 生成且通过校验；未通过则为 ""） ——
+    # —— 叙述（可选，LLM 生成且通过程序校验；非权威补充，不进 answer_text ——
+    # —— 程序无法核对数值/否定/时间关系的一致性，见 narrative.py 校验边界声明） ——
     narrative: str = ""
 
     # —— 用户可读汇总（确定性组装，不依赖 LLM） ——
@@ -175,8 +176,15 @@ def render_answer_text(result: CaseAnalysisResult) -> str:
         for q in result.doctor_questions:
             lines.append(f"- 【{q.topic}】{q.detail}")
 
+    # 模型叙述不进入正式结果：程序无法可靠核对其中数值/否定/时间关系与
+    # 事实的一致性（narrative.py 校验边界）。answer_text 保持纯确定性内容，
+    # narrative 作为非权威补充单独存放在结果字段中，展示方须自行加标注。
     if result.narrative:
-        lines += ["", "### 模型叙述（已经过程序校验，仍须医生复核）", result.narrative]
+        lines.append("")
+        lines.append(
+            "附：本次分析另有模型生成的叙述文本（结果 narrative 字段），"
+            "未完成逐项事实一致性核对，不纳入本汇总，仅供医生参考。"
+        )
 
     if result.status is CaseAnalysisStatus.EMERGENCY_HANDLED:
         lines = [respond.EMERGENCY_ANSWER]

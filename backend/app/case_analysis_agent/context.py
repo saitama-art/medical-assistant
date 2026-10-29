@@ -140,4 +140,33 @@ def build_analysis_context(
     )
 
 
-__all__ = ["AnalysisContext", "build_analysis_context"]
+def filter_timeline_by_range(
+    timeline,
+    start: float | None,
+    end: float | None,
+) -> tuple[TimelineEntry, ...]:
+    """把全量时间线裁剪到本次分析范围内（任务书：时间线与分析范围一致）。
+
+    规则：
+    - event_time 已知的条目，只有落在 [start, end] 内才保留；
+    - event_time 未知（unknown_time=True）的条目一律保留——它们本就不属于
+      任何时间区间，靠 unknown_time 标记与范围内事件区分，不得伪装成范围内
+      事件，也不得被范围过滤静默丢弃。
+
+    已知口径差异（service.get_patient_timeline 不接范围参数，过滤只能在本层
+    做）：medication 的时间线 event_time 取 start_time，而 SQL 侧对用药的
+    范围过滤是"区间重叠"语义；跨界用药会留在 medications 列表但其时间线条目
+    可能被裁掉。结论性内容（drafts/comparisons）不依赖时间线，不受影响。
+    """
+    out = []
+    for entry in timeline:
+        if entry.event_time is None:
+            out.append(entry)
+        elif (start is None or entry.event_time >= start) and (
+            end is None or entry.event_time <= end
+        ):
+            out.append(entry)
+    return tuple(out)
+
+
+__all__ = ["AnalysisContext", "build_analysis_context", "filter_timeline_by_range"]
