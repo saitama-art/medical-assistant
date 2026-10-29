@@ -2,7 +2,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
 embeddings = HuggingFaceEmbeddings(
-    model_name=r"C:\Users\user\.cache\huggingface\hub\models--BAAI--bge-small-zh-v1.5\snapshots\bge",
+    model_name="BAAI/bge-small-zh-v1.5",
     model_kwargs={"device": "cpu"},
     encode_kwargs={"normalize_embeddings": True},
 )

@@ -12,8 +12,8 @@ from chain import get_llm
 
 # ==================== 路径 ====================
 CHROMA_DIR = r"/chroma_db"
-EMBEDDING_PATH = r"C:\Users\user\.cache\huggingface\hub\models--BAAI--bge-small-zh-v1.5\snapshots\bge"
-RERANKER_PATH = r"F:\models\bge-reranker-base"
+EMBEDDING_PATH = "BAAI/bge-small-zh-v1.5"
+RERANKER_PATH = "BAAI/bge-reranker-base"
 
 
 # ==================== Embedding ====================

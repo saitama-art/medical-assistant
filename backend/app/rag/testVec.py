@@ -1,7 +1,7 @@
 from langchain_huggingface import HuggingFaceEmbeddings
 import json
 
-embeddings = HuggingFaceEmbeddings(model_name = r"C:\Users\user\.cache\huggingface\hub\models--BAAI--bge-small-zh-v1.5\snapshots\bge",
+embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-small-zh-v1.5",
 )
 
 vec = embeddings.embed_query("来那度胺")
