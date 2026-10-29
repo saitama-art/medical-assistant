@@ -76,7 +76,7 @@ class TestRealSources(unittest.TestCase):
         from pathlib import Path
         base = Path(__file__).resolve().parents[1]
         cases = [
-            ("app/medical_agent/router.py", "CLASSIFY_SYSTEM_PROMPT", "意图分类器"),
+            ("app/medical_agent/intent.py", "CLASSIFY_SYSTEM_PROMPT", "意图分类器"),
             ("app/medical_agent/resolver.py", "RESOLVE_SYSTEM_PROMPT",
              "上下文整理器"),
             ("app/rag/service.py", "JUDGE_SYSTEM_PROMPT", "证据充分性判定器"),

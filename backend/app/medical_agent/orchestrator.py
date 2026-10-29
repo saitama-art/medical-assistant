@@ -27,7 +27,7 @@ import hashlib
 import time
 import uuid
 
-from . import daily, delegate, resolver
+from . import daily, delegate, intent, resolver
 from . import respond, router, safety, session
 from . import calculator, complex_handler, context_engineering
 from .finalize import (
@@ -363,7 +363,7 @@ def _classify_once(
         llm = get_llm(timeout=max(1.0, node_budget_ms / 1000))
     except Exception as exc:
         return complex_handler.exception_result(exc)
-    return router.classify(state.resolved_question, llm=llm, repair=repair)
+    return intent.classify(state.resolved_question, llm=llm, repair=repair)
 
 
 def _run_with_repair(

@@ -36,7 +36,7 @@ HASH_LEN = 12
 # 5 份 Prompt（实施方案 V2 §四）：(指纹名, 源码相对 backend/ 路径, 常量名)。
 # system+user 两段用 "\n\n" 连接后一起哈希——任一段变化指纹都变。
 PROMPT_SPECS = (
-    ("classify", "app/medical_agent/router.py",
+    ("classify", "app/medical_agent/intent.py",
      ("CLASSIFY_SYSTEM_PROMPT", "CLASSIFY_USER_PROMPT")),   # N01 意图分类
     ("resolve", "app/medical_agent/resolver.py",
      ("RESOLVE_SYSTEM_PROMPT", "RESOLVE_USER_PROMPT")),     # N02 上下文补全
