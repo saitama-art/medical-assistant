@@ -197,6 +197,11 @@ CLASSIFY_BATTERY = [
     ("胸口疼要不要去医院", "triage"),
     # 「什么情况要去医院」问的是该病的就医指征知识 → knowledge（T-12 一致性暴露的边界）
     ("腹泻出现什么情况要去医院", "knowledge"),
+    # ---- 2026-10-29 身份/对话元问题 → daily（ux 实测「我是谁」同句 4 次落在
+    # daily/context_required/unclassifiable 三种处置，根因是分类体系无元问题锚点）
+    ("我是谁", "daily"),
+    ("我是干嘛的", "daily"),
+    ("我是一个医学生", "daily"),
 ]
 
 

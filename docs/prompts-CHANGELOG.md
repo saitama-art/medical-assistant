@@ -10,8 +10,8 @@
 
 | 指纹名 | 内容 | 来源 |
 |---|---|---|
-| classify | N01 意图分类 system+user | `app/medical_agent/router.py` CLASSIFY_SYSTEM_PROMPT / CLASSIFY_USER_PROMPT |
-| resolve | N02 上下文补全 system+user | `app/medical_agent/orchestrator.py` RESOLVE_SYSTEM_PROMPT / RESOLVE_USER_PROMPT |
+| classify | N01 意图分类 system+user | `app/medical_agent/intent.py` CLASSIFY_SYSTEM_PROMPT / CLASSIFY_USER_PROMPT（2026-10-29 起，原 router.py） |
+| resolve | N02 上下文补全 system+user | `app/medical_agent/resolver.py` RESOLVE_SYSTEM_PROMPT / RESOLVE_USER_PROMPT（2026-10-29 起，原 orchestrator.py） |
 | judge | 证据充分性判定 system+user | `app/rag/service.py` JUDGE_SYSTEM_PROMPT / JUDGE_USER_PROMPT |
 | generate | 知识问答生成 system+user | `app/rag/chain.py` MEDICAL_SYSTEM_PROMPT / MEDICAL_HUMAN_PROMPT |
 | rewrite | 检索改写模板（f-string → `{expr}` 占位） | `app/rag/store.py` rewrite_query 内局部 prompt |
@@ -45,3 +45,8 @@ store.py 因模块级坏 import 无法运行时导入，仅静态提取）。
 （此后新增：日期 ｜ 指纹名 ｜ 旧哈希 → 新哈希 ｜ 原因/关联提交 ｜ 影响维度）
 
 - 2026-10-25 ｜ 全部 ｜ — → 上表基线 ｜ S4a 首采，非行为变更 ｜ 仅新增观测，不改变任何运行行为
+- 2026-10-29 ｜ classify ｜ `b73b9519bdcf` → `1246ad459979` ｜ badcase 修复：分类体系补
+  "身份/对话元问题与用户自我陈述 → daily"锚点（实测「我是谁」同句 4 次落在
+  daily/context_required/unclassifiable 三种处置）；daily.py 的 DAILY_SYSTEM_PROMPT
+  规则 3 同步扩展到身份问题（该 Prompt 不在本表 5 份指纹范围内，附记于此）｜
+  影响维度：意图分类（daily 覆盖率），知识/急症判定路径不变
