@@ -76,6 +76,7 @@ class ResolutionStatus(str, Enum):
     """N02 的业务解析结果，与模型调用是否成功分开表达。"""
 
     RESOLVED = "resolved"
+    SELF_CONTAINED = "self_contained"   # 改写判定原问题已自含（repair 后仍 no-op）
     CONTEXT_REQUIRED = "context_required"
 
 

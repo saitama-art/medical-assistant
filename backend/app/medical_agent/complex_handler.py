@@ -14,6 +14,12 @@ from enum import Enum
 
 from . import config as _cfg
 from . import tools
+# 硬指代标记：这些词出现时问题必然依赖上文，no-op 不得采信为自含。
+# 是 router.REFERENCE_WORDS 的真指代子集（不含「之前/刚才」等时间词——
+# 时间状语不意味着问题不可独立理解）。
+_HARD_REFERENCE_MARKERS = ("它", "这个", "那个", "这种", "该药", "这药", "哪个", "哪种")
+
+
 from .state import (
     AgentError,
     AgentErrorKind,
@@ -93,6 +99,16 @@ def assess_resolution(
         return RecoveryDecision(
             RecoveryAction.CLARIFY, TerminationReason.CONTEXT_MISSING,
         )
+    if value.status is ResolutionStatus.SELF_CONTAINED:
+        # 模型判定原问题已自含（M3）：软触发接受原句继续；
+        # 硬指代（它/这个/那种…）的 no-op 说明改写没解决指代——不得当自含，继续澄清。
+        if not value.question.strip():
+            return _invalid_payload(state, node)
+        if any(m in value.question for m in _HARD_REFERENCE_MARKERS):
+            return RecoveryDecision(
+                RecoveryAction.CLARIFY, TerminationReason.CONTEXT_MISSING,
+            )
+        return _CONTINUE
     if value.status is ResolutionStatus.RESOLVED and value.question.strip():
         return _CONTINUE
     return _invalid_payload(state, node)

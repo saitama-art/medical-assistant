@@ -96,6 +96,8 @@ def finish_recovery(
     got_lock: bool,
     decision: complex_handler.RecoveryDecision,
     node: str,
+    *,
+    body: str | None = None,
 ) -> AgentState:
     """把纯策略决策映射到唯一终态收口，不在此重试或调用 Worker。"""
     reason = decision.termination
@@ -114,7 +116,10 @@ def finish_recovery(
         "termination": reason.value,
         "error_kind": decision.error.kind.value if decision.error else None,
     })
-    return finish(state, got_lock, reason, respond.TERMINATION_TEXTS[reason])
+    return finish(
+        state, got_lock, reason,
+        body if body is not None else respond.TERMINATION_TEXTS[reason],
+    )
 
 
 def finish(state: AgentState, got_lock: bool, reason: TerminationReason, body: str) -> AgentState:

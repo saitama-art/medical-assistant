@@ -156,6 +156,13 @@ def run_agent(session_id: str, question: str) -> AgentState:
             state.context_status = ContextStatus.OK
         else:
             if decision.termination is TerminationReason.CONTEXT_MISSING:
+                if state.context_history:
+                    # M2：历史仍在但改写失败——用「内容还在但没确定指代」的文案，
+                    # 不谎称历史丢失；context_status 不改（历史确实可用）。
+                    return _finish_recovery(
+                        state, got_lock, decision, "N02",
+                        body=respond.RESOLUTION_FAILED_REPLY,
+                    )
                 state.context_status = ContextStatus.MISSING
             return _finish_recovery(state, got_lock, decision, "N02")
 
@@ -279,6 +286,13 @@ def run_agent(session_id: str, question: str) -> AgentState:
         ),
     }, node_budget_ms=node_budget)
     if decision.action is not complex_handler.RecoveryAction.CONTINUE:
+        if (decision.termination is TerminationReason.CONTEXT_MISSING
+                and state.context_history):
+            # M2：分类器要上下文但改写/解析失败，历史仍在时不谎称丢失
+            return _finish_recovery(
+                state, got_lock, decision, "N04",
+                body=respond.RESOLUTION_FAILED_REPLY,
+            )
         return _finish_recovery(state, got_lock, decision, "N04")
 
     # ---- N05 条件路由 ----

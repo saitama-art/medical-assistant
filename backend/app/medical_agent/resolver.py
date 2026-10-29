@@ -107,9 +107,16 @@ def resolve_reference(
         )
     if resolved and resolved == state.resolved_question.strip():
         # no-op 改写（2026-10-28 实测）：N02 只在检测到指代/追问时触发，
-        # 原样返回意味着模型没有补全任何上下文——按可修复失败处理，
-        # 走既有的一次 repair 路径，避免裸问句直接送分类器被判 unknown。
-        return NodeResult(NodeStatus.INVALID_OUTPUT, detail="resolution_noop")
+        # 原样返回意味着模型没有补全任何上下文。
+        # 首趟按可修复失败处理，走一次 repair；repair 后仍 no-op 则采信
+        # 模型的「已自含」判定（M3，2026-10-29）——硬指代词（它/这个）的
+        # 自含采信由 complex_handler 否决，仍走澄清，不猜。
+        if not repair:
+            return NodeResult(NodeStatus.INVALID_OUTPUT, detail="resolution_noop")
+        return NodeResult(
+            NodeStatus.OK,
+            ResolutionResult(ResolutionStatus.SELF_CONTAINED, resolved),
+        )
     if not resolved:
         return NodeResult(
             NodeStatus.OK, ResolutionResult(ResolutionStatus.CONTEXT_REQUIRED),

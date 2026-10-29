@@ -63,6 +63,8 @@ _FRAGMENT_RE = re.compile(r"^[一-鿿A-Za-z0-9]{2,8}？$")
 # 裸问句直送分类器被判 unclassifiable（ux_probe S1-T2/T3、S3-T2）。
 _FRAGMENT_MARKERS = ("呢", "吗", "吧", "几", "多", "怎", "什么", "办法", "好不好", "行行")
 
+_PROGRESS_RE = re.compile(r"持续|连续|还是|仍在|还在|第[一二三四五六七八九十\d]+天")
+
 
 def has_followup_lead(text: str) -> bool:
     """文本是否以隐性追问开头（那什么/那该/那要…），或为零代词省略追问短句。
@@ -80,6 +82,12 @@ def has_followup_lead(text: str) -> bool:
         # 宁精勿滥，漏触发有 unclassified 的安全兜底。
         return len(s) <= 10 and not s.endswith(("。", "！", "!"))
     if _FRAGMENT_RE.match(s) and any(m in s for m in _FRAGMENT_MARKERS):
+        return True
+    # 进展式陈述（2026-10-29 M1）：「已经持续三天了」「还是不舒服」——
+    # 不以「那」开头、不带问号，但显然在补充上文的病情进展。
+    # 约束：≤15 字 + 进展标记 + 非完结句（「已经吃过药了。」不触发）；
+    # 不含「已经」裸词（「我已经吃了二甲双胍三天了」是完整陈述，不触发）。
+    if len(s) <= 15 and _PROGRESS_RE.search(s) and not s.endswith(("。", "！", "!")):
         return True
     return False
 
