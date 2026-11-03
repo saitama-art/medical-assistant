@@ -270,6 +270,7 @@ function App() {
 
   // ---- 发送消息 -> 调用后端 /agent/chat（主 Agent 编排链路，同步返回完整回答） ----
   const sendChat = (text) => {
+    // console.log(`text`,'::当前问题')
     const question = (text ?? message).trim();
     if (!question || loading || !activeId) return; // 防止连点
     if (question.length > MAX_QUESTION_LEN) {
