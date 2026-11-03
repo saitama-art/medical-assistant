@@ -153,6 +153,19 @@ CALC_PARAM_FROM_HISTORY = "（本次计算参数取自你此前在对话中提�
 SOURCE_HEADER = "\n\n【参考来源】："
 
 
+def strip_assembly_for_context(answer: str) -> str:
+    """从组装后的回答中剥离上下文不需要的固定部件：【参考来源】段与免责声明。
+
+    剥离规则的唯一出处（P1，2026-10-29）：内存轨写回（session.complete）与
+    SQLite 历史轨读取（context_engineering.begin_turn）共用；对不含组装件的
+    文本幂等。只剥离组装层固定部件——风险提示、紧急文案与正文一律保留。
+    """
+    parts = answer.split("\n\n")
+    kept = [p for p in parts
+            if p != DISCLAIMER and not p.startswith("【参考来源】")]
+    return "\n\n".join(kept)
+
+
 # ==================== 终止原因 → 用户可见文案 ====================
 
 TERMINATION_TEXTS: dict[TerminationReason, str] = {

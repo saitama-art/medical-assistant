@@ -290,11 +290,9 @@ def _strip_answer_for_history(answer: str) -> str:
     免责声明，可达数 KB）原样进 5 轮窗口会膨胀 N02 改写 prompt。剥离只针对
     固定部件；**医疗安全信息必须保留**——RISK_NOTICE（弱风险提示）、
     EMERGENCY_ANSWER/CONSERVATIVE_MEDICAL_NOTICE 等紧急文案、正文一律不动。
+    规则本体在 respond.strip_assembly_for_context（P1 单一出处，2026-10-29）。
     """
-    parts = answer.split("\n\n")
-    kept = [p for p in parts
-            if p != respond.DISCLAIMER and not p.startswith("【参考来源】")]
-    return "\n\n".join(kept)
+    return respond.strip_assembly_for_context(answer)
 
 
 def complete(session_id: str, question: str, answer: str, *, got_lock: bool) -> None:

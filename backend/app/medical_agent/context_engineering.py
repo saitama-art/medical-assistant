@@ -16,7 +16,7 @@ from typing import Any, Iterable, Mapping
 
 from .. import conversations
 from ..db import connect, init_db, now_ts
-from . import calculator
+from . import calculator, respond
 from .state import AgentState, ContextStatus, TerminationReason
 
 DEFAULT_TOKEN_BUDGET = 3000
@@ -633,7 +633,15 @@ def begin_turn(state: AgentState, *, token_budget: int = DEFAULT_TOKEN_BUDGET) -
     state.context_persistent = False
     if owner is not None:
         try:
-            history = conversations.list_messages(state.session_id, owner)
+            # P1（2026-10-29）：SQLite 存的是 N11 组装后的完整回答（供前端历史
+            # 展示），进上下文前必须幂等剥离【参考来源】与免责声明——否则
+            # N02 改写 prompt 被组装件膨胀、挤占历史预算。展示路径
+            # （GET /conversations/{id}/messages）不经过这里，不受影响。
+            history = [
+                {**m, "content": respond.strip_assembly_for_context(m["content"])}
+                if m.get("role") == "assistant" else m
+                for m in conversations.list_messages(state.session_id, owner)
+            ]
             tasks = load_pending_tasks(owner, state.session_id)
             facts = load_facts(owner, state.session_id)
             state.context_persistent = True

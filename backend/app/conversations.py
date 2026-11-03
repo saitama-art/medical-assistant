@@ -116,14 +116,21 @@ def append_turn(conv_id: str, user_id: int, question: str, answer: str,
 
 
 def list_messages(conv_id: str, user_id: int, *, limit: int = 500) -> list[dict]:
+    """读取会话消息，最多 limit 条，按时间升序返回。
+
+    P2（2026-10-29）：此前为 ORDER BY id ASC LIMIT——取的是**最旧** N 条，
+    会话超过 limit 后最近的历史永远读不到。改为 DESC 取最新 N 条再反转为
+    升序；消息数不足 limit 时行为与旧实现一致。
+    """
     init_db()
     with connect() as conn:
         get_owned_conversation(conn, conv_id, user_id)
         rows = conn.execute(
             "SELECT id, role, content, created_at, turn FROM messages"
-            " WHERE conversation_id=? ORDER BY id LIMIT ?",
+            " WHERE conversation_id=? ORDER BY id DESC LIMIT ?",
             (conv_id, limit),
         ).fetchall()
+        rows.reverse()
         return [dict(r) for r in rows]
 
 
